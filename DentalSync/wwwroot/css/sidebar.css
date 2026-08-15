@@ -1,0 +1,13 @@
+/* Sidebar styles */
+.ds-sidebar{width:240px;background:#ffffff;color:#222;border-right:1px solid #e6e6e6;min-height:100vh;padding:18px;box-sizing:border-box}
+.ds-nav{font-size:0.95rem}
+.ds-list{list-style:none;padding:0;margin:0}
+.ds-item{margin:6px 0}
+.ds-link{display:flex;align-items:center;gap:10px;padding:8px;border-radius:6px;color:#222;text-decoration:none}
+.ds-link svg{flex:0 0 18px}
+.ds-link:hover{background:#f5f7fb}
+.ds-section-title{margin-top:12px;color:#8a8f95;font-size:0.75rem;font-weight:600;letter-spacing:0.04em}
+
+@media (max-width:767px){
+  .ds-sidebar{display:none}
+}

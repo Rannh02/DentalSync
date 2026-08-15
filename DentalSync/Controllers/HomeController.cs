@@ -8,10 +8,51 @@ namespace DentalSync.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+
+        //=================PATIENTS CARE=================
+        public IActionResult Patients()
         {
             return View();
         }
+
+        public IActionResult Dentists()
+        {
+            return View();
+        }
+
+        public IActionResult Appointments()
+        {
+            return View();
+        }
+        public IActionResult Records()
+        {
+            return View();
+        }
+        //=================PATIENTS CARE=================
+
+        //====================FINANCE====================
+        public IActionResult Billing()
+        {
+            return View();
+        }
+
+        public IActionResult Payments()
+        {
+            return View();
+        }
+        //====================FINANCE====================
+
+        //===================Inventory===================
+        public IActionResult DentalSupplies()
+        {
+            return View();
+        }
+        
+        public IActionResult Stocks()
+        {
+            return View();
+        }
+        //===================Inventory===================
 
         [Authorize]
         public IActionResult Dashboard()

@@ -21,6 +21,9 @@ body {
   margin-bottom: 60px;
 }
 
+/* Prevent horizontal scrolling across the site */
+html, body { overflow-x: hidden; }
+
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
@@ -29,3 +32,6 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* Sidebar styles moved from inline markup */
+/* Additional component styles have been moved to separate files: header.css, sidebar.css, footer.css, dashboard.css */

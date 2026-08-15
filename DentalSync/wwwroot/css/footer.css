@@ -1,0 +1,4 @@
+/* Footer styles */
+.ds-footer{background:#0b0f12;color:#9fb1a6;padding:1rem;margin-top:1rem}
+.ds-footer .container-fluid{text-align:center}
+@media (max-width:767px){.ds-footer{padding:0.75rem}}

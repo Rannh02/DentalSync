@@ -1,0 +1,8 @@
+/* Dashboard page styles */
+.dashboard-root{display:flex;align-items:flex-start;min-height:calc(100vh - 56px);width:100%;box-sizing:border-box}
+.dashboard-main{flex:1;padding:1.5rem;min-width:0}
+.card{background:#fff;border-radius:6px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+.row{display:flex;flex-wrap:wrap;margin: -0.5rem}
+.col-md-3{width:25%;padding:0.5rem;box-sizing:border-box}
+.display-6{font-size:1.5rem;font-weight:700}
+@media (max-width:767px){.col-md-3{width:50%}}
