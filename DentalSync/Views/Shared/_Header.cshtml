@@ -1,0 +1,16 @@
+@* Simple header partial *@
+<header class="ds-header" style="background:#0b0f12;color:#fff;padding:0.75rem 1rem;">
+  <div class="container-fluid d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <h4 style="margin:0;">DentalSync</h4>
+      <nav aria-label="main-nav">
+        <a href="/" class="text-muted ms-3" style="color:rgba(255,255,255,0.85);text-decoration:none">Home</a>
+        <a href="/Home/Privacy" class="text-muted ms-3" style="color:rgba(255,255,255,0.65);text-decoration:none">Privacy</a>
+      </nav>
+    </div>
+    <div>
+      <span class="me-3" style="color:rgba(255,255,255,0.8)">@User?.Identity?.Name</span>
+      <a asp-controller="Account" asp-action="Logout" class="btn btn-ghost" style="color:#ffffff;border-color:rgba(255,255,255,0.06);">Logout</a>
+    </div>
+  </div>
+</header>

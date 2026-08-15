@@ -1,0 +1,85 @@
+:root{
+  --bg:#f6f9fc;
+  --card:#ffffff;
+  --accent:#0d6efd;
+  --muted:#6c757d;
+}
+
+body{
+  background:var(--bg);
+}
+
+.login-container{
+  min-height:80vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2rem;
+}
+
+.login-card{
+  width:100%;
+  max-width:420px;
+  background:var(--card);
+  border-radius:10px;
+  box-shadow:0 10px 30px rgba(25,30,40,0.08);
+  padding:2rem;
+}
+
+.login-card h2{
+  margin:0 0 1rem 0;
+  font-size:1.25rem;
+  color:#111827;
+}
+
+.form-group{
+  margin-bottom:1rem;
+}
+
+.form-group label{
+  display:block;
+  margin-bottom:0.35rem;
+  color:var(--muted);
+  font-size:0.9rem;
+}
+
+.form-control{
+  width:100%;
+  padding:0.6rem 0.75rem;
+  border:1px solid #e6e9ef;
+  border-radius:6px;
+  font-size:0.95rem;
+}
+
+.remember-me{
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+
+.btn{
+  display:inline-block;
+  width:100%;
+  padding:0.6rem 0.75rem;
+  border-radius:6px;
+  border:0;
+  background:var(--accent);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.btn:active{transform:translateY(1px)}
+
+.links{
+  margin-top:0.75rem;
+  text-align:center;
+  color:var(--muted);
+  font-size:0.9rem;
+}
+
+.links a{color:var(--accent); text-decoration:none}
+
+@media (max-width:480px){
+  .login-card{ padding:1.25rem; }
+}

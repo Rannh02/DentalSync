@@ -1,0 +1,52 @@
+@{
+    // Render this view without the shared layout so we can compose header/sidebar/footer manually
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/_Header.cshtml")
+
+<div class="d-flex" style="min-height:calc(100vh - 56px);">
+    @await Html.PartialAsync("~/Views/Shared/_Sidebar.cshtml")
+
+    <main style="flex:1;padding:1.5rem;">
+        <div class="container-fluid">
+            <h2>Dashboard</h2>
+
+            <div class="row g-3 mt-3">
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h5 class="mb-1">Total Users</h5>
+                        <div class="display-6">1,234</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h5 class="mb-1">Active Sessions</h5>
+                        <div class="display-6">42</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h5 class="mb-1">New Signups</h5>
+                        <div class="display-6">8</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3">
+                        <h5 class="mb-1">Errors</h5>
+                        <div class="display-6 text-danger">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="mt-4">
+                <h4>KPI Details</h4>
+                <div class="card p-3 mt-2">
+                    <!-- Your KPI content goes here -->
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/_Footer.cshtml")

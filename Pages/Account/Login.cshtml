@@ -1,0 +1,35 @@
+@page
+@{
+    Layout = "_Layout";
+}
+<link rel="stylesheet" href="~/css/login.css" />
+
+<div class="login-container">
+  <div class="login-card">
+    <h2>Sign in to DentalSync</h2>
+    <form method="post" action="/Account/Login">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="Email" type="email" class="form-control" placeholder="you@example.com" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="Password" type="password" class="form-control" placeholder="••••••••" required />
+      </div>
+
+      <div class="form-group remember-me">
+        <input id="remember" name="RememberMe" type="checkbox" />
+        <label for="remember">Remember me</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+
+      <div class="links">
+        <a href="/Account/ForgotPassword">Forgot password?</a>
+        <span> | </span>
+        <a href="/Account/Register">Create account</a>
+      </div>
+    </form>
+  </div>
+</div>
