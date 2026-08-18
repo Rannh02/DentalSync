@@ -1,11 +1,7 @@
 ﻿.account-container{
-    /* Dark grid background using layered CSS gradients (no image required)
-       - Large subtle grid every 160px (darker line)
-       - Fine grid every 20px (lighter line)
-    */
-    background-color: #0b0f12; /* base color */
+    
+    background-color: #0b0f12;
     background-image:
-        /* large grid lines */
         linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
         linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),

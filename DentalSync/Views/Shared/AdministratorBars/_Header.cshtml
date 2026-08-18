@@ -1,0 +1,72 @@
+@* Header partial: includes minimal CSS links when used without the main layout *@
+<link rel="stylesheet" href="~/css/site.css" />
+<link rel="stylesheet" href="~/css/header.css" />
+<link rel="stylesheet" href="~/css/sidebar.css" />
+
+
+<header class="ds-header" style="background:transparent;padding:0.5rem 1rem;border-bottom:1px solid rgba(0,0,0,0.04);">
+    <div class="ds-header-inner" style="display:flex;align-items:center;justify-content:space-between;padding:0 18px;">
+        <div class="ds-header-left">
+            <a style="display:flex;align-items:center;gap:10px;text-decoration:none;padding-left:12px;">
+                <div class="ds-brand-icon" style="width:36px;height:36px;border-radius:8px;background:#eef6ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0b5bd6;">DS</div>
+                <div class="ds-brand-title" style="color:#0b1220;font-weight:700;">DentalSync</div>
+            </a>
+        </div>
+        <div class="ds-header-right" style="display:flex;align-items:center;gap:12px;padding-right:12px;">
+
+            <!-- other icons (theme, notifications) placed at top-right -->
+            <button type="button" class="icon-btn" title="Theme" aria-label="Theme">☼</button>
+            <button type="button" class="icon-btn" title="Notifications" aria-label="Notifications">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#0b1220"/>
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="#0b1220" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </button>
+
+            <!--PROFILE DROPDOWN-->
+            <div class="profile-wrap">
+                <button id="profileToggle" type="button" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+                    <span class="profile-avatar"></span>
+                </button>
+
+                <div id="profileMenu" class="profile-menu" role="menu">
+                    <a class="profile-menu-item" href="/Account/Manage">Account</a>
+                    <a class="profile-menu-item" href="/Account/Settings">Settings</a>
+                    <a class="profile-menu-item" href="#" id="logoutLink">Logout</a>
+                    <form id="logoutFormMenu" asp-controller="Account" asp-action="Logout" method="post" style="display:none">
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    (function() {
+        var btn = document.getElementById('profileToggle');
+        var menu = document.getElementById('profileMenu');
+        if (!btn || !menu) return;
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var shown = menu.style.display === 'block';
+            menu.style.display = shown ? 'none' : 'block';
+            btn.setAttribute('aria-expanded', (!shown).toString());
+        });
+        // logout link triggers hidden POST form
+        var logoutLink = document.getElementById('logoutLink');
+        var logoutForm = document.getElementById('logoutFormMenu');
+        if (logoutLink && logoutForm) {
+            logoutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                logoutForm.submit();
+            });
+        }
+        document.addEventListener('click', function(e) {
+            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    })();
+</script>

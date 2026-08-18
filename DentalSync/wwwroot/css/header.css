@@ -4,6 +4,16 @@
 .ds-header-left{display:flex;align-items:center}
 .ds-header-right{display:flex;align-items:center;gap:12px}
 .icon-btn{background:transparent;border:0;padding:6px;cursor:pointer}
+.icon-btn svg{width:20px;height:20px;display:block}
+
+/* Brand logo styling */
+.ds-brand-link{display:flex;align-items:center;gap:10px;text-decoration:none}
+.ds-brand-icon{width:36px;height:36px;border-radius:8px;display:inline-block;object-fit:cover;background:#eef6ff;}
+.ds-brand-title{color:#0b1220;font-weight:700}
+.ds-brand-link{padding-left:12px}
+.ds-header-right{padding-right:12px}
+/* hide the logout form by default; visible when JS submits it */
+#logoutFormMenu{display:none}
 
 /* Profile dropdown */
 .profile-wrap{position:relative}
@@ -18,3 +28,4 @@
 @media (max-width:767px){
   .ds-header-inner{padding:0 8px}
 }
+

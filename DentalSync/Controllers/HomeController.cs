@@ -9,38 +9,19 @@ namespace DentalSync.Controllers
     public class HomeController : Controller
     {
 
-        //=================PATIENTS CARE=================
-        public IActionResult Patients()
+        //=================ADMINISTRATOR=================
+        public IActionResult Users()
         {
             return View();
         }
 
-        public IActionResult Dentists()
+        public IActionResult Services()
         {
             return View();
         }
+        //=================ADMINISTRATOR=================
 
-        public IActionResult Appointments()
-        {
-            return View();
-        }
-        public IActionResult Records()
-        {
-            return View();
-        }
-        //=================PATIENTS CARE=================
 
-        //====================FINANCE====================
-        public IActionResult Billing()
-        {
-            return View();
-        }
-
-        public IActionResult Payments()
-        {
-            return View();
-        }
-        //====================FINANCE====================
 
         //===================Inventory===================
         public IActionResult DentalSupplies()
@@ -53,7 +34,10 @@ namespace DentalSync.Controllers
             return View();
         }
         //===================Inventory===================
-
+        public IActionResult Records()
+        {
+            return View();
+        }
         [Authorize]
         public IActionResult Dashboard()
         {
