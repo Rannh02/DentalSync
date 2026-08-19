@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\..\Downloads\DentalSync.png" Link="wwwroot\Images\DentalSync.png" />
+    <Content Include="..\..\..\..\Downloads\DentalSyncERP-CRM.png" Link="wwwroot\Images\DentalSyncERP-CRM.png" />
   </ItemGroup>
 
   <ItemGroup>

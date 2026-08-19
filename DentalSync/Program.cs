@@ -15,9 +15,11 @@ options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddIdentity<Users, IdentityRole>(options =>
 {
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 0;
-    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireDigit = true;
     options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
@@ -29,6 +31,12 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
 
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -4,24 +4,42 @@
 <link rel="stylesheet" href="~/css/sidebar.css" />
 
 
-<header class="ds-header" style="background:transparent;padding:0.5rem 1rem;border-bottom:1px solid rgba(0,0,0,0.04);">
-    <div class="ds-header-inner" style="display:flex;align-items:center;justify-content:space-between;padding:0 18px;">
+<header class="ds-header">
+    <div class="ds-header-inner">
         <div class="ds-header-left">
-            <a style="display:flex;align-items:center;gap:10px;text-decoration:none;padding-left:12px;">
-                <div class="ds-brand-icon" style="width:36px;height:36px;border-radius:8px;background:#eef6ff;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0b5bd6;">DS</div>
-                <div class="ds-brand-title" style="color:#0b1220;font-weight:700;">DentalSync</div>
+            <a class="ds-brand-link">
+                <h2 class="ds-brand-title">Dental<span class="ds-brand-accent">Sync</span></h2>
             </a>
         </div>
-        <div class="ds-header-right" style="display:flex;align-items:center;gap:12px;padding-right:12px;">
+        <div class="ds-header-right">
 
-            <!-- other icons (theme, notifications) placed at top-right -->
-            <button type="button" class="icon-btn" title="Theme" aria-label="Theme">☼</button>
-            <button type="button" class="icon-btn" title="Notifications" aria-label="Notifications">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                    <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#0b1220"/>
-                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="#0b1220" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-            </button>
+
+            <div class="notification-container">
+                <button id="notifToggle" type="button" class="header-icon" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" aria-controls="notifDropdown">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#0b1220"/>
+                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="#0b1220" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    <div class="badge" id="badgeDot"></div>
+                </button>
+                <div class="dropdown" id="notifDropdown" role="menu" aria-hidden="true">
+                    <div class="dd-header">
+                        <span class="dd-title">Notifications <span class="notif-count">(3)</span></span>
+                        <button type="button" class="dd-mark" id="markAllRead">Mark all as read</button>
+                    </div>
+                    <div class="notif-list">
+                        <div class="notif-item unread">
+                            <div class="notif-avatar avatar-security"><i class="ti ti-shield-alert"></i></div>
+                            <div class="notif-content">
+                                <p class="notif-text">Multiple failed login attempts detected.</p>
+                                <span class="notif-time">2 mins ago</span>
+                            </div>
+                            <div class="unread-dot"></div>
+                        </div>
+                    </div>
+                    <div class="dd-footer"><a href="#">View all notifications</a></div>
+                </div>
+            </div>
 
             <!--PROFILE DROPDOWN-->
             <div class="profile-wrap">
@@ -33,7 +51,7 @@
                     <a class="profile-menu-item" href="/Account/Manage">Account</a>
                     <a class="profile-menu-item" href="/Account/Settings">Settings</a>
                     <a class="profile-menu-item" href="#" id="logoutLink">Logout</a>
-                    <form id="logoutFormMenu" asp-controller="Account" asp-action="Logout" method="post" style="display:none">
+                    <form id="logoutFormMenu" asp-controller="Account" asp-action="Logout" method="post">
                         @Html.AntiForgeryToken()
                     </form>
                 </div>
@@ -44,6 +62,46 @@
 
 <script>
     (function() {
+        var notificationToggle = document.getElementById('notifToggle');
+        var notificationMenu = document.getElementById('notifDropdown');
+        var notificationContainer = document.querySelector('.notification-container');
+        var markAllReadButton = document.getElementById('markAllRead');
+
+        function closeNotifications() {
+            if (!notificationToggle || !notificationMenu) return;
+            notificationMenu.classList.remove('is-open');
+            notificationToggle.setAttribute('aria-expanded', 'false');
+            notificationMenu.setAttribute('aria-hidden', 'true');
+        }
+
+        if (notificationToggle && notificationMenu && notificationContainer) {
+            notificationToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = notificationMenu.classList.toggle('is-open');
+                notificationToggle.setAttribute('aria-expanded', isOpen.toString());
+                notificationMenu.setAttribute('aria-hidden', (!isOpen).toString());
+            });
+            notificationMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        if (markAllReadButton) {
+            markAllReadButton.addEventListener('click', function() {
+                document.querySelectorAll('.notif-item.unread').forEach(function(item) {
+                    item.classList.remove('unread');
+                });
+                document.querySelectorAll('.unread-dot').forEach(function(dot) {
+                    dot.remove();
+                });
+                document.querySelectorAll('.notif-count').forEach(function(count) {
+                    count.textContent = '(0)';
+                });
+                var badge = document.getElementById('badgeDot');
+                if (badge) badge.classList.add('is-hidden');
+            });
+        }
+
         var btn = document.getElementById('profileToggle');
         var menu = document.getElementById('profileMenu');
         if (!btn || !menu) return;
@@ -63,10 +121,17 @@
             });
         }
         document.addEventListener('click', function(e) {
+            if (notificationContainer && !notificationContainer.contains(e.target)) {
+                closeNotifications();
+            }
             if (!btn.contains(e.target) && !menu.contains(e.target)) {
                 menu.style.display = 'none';
                 btn.setAttribute('aria-expanded', 'false');
             }
         });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeNotifications();
+        });
+
     })();
 </script>

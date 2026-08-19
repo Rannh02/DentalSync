@@ -1,16 +1,88 @@
-﻿@{
-    // Render this view without the shared layout so we can compose header/sidebar/footer manually
-    Layout = null;
-}
+﻿@model DentalSync.ViewModels.UserManagementViewModel
+@{ Layout = null; }
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
-
-<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/users.css" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div><h1>Users</h1><p>Manage user accounts, roles, and access status.</p></div>
+            <div class="users-heading-actions"><span class="users-total">@Model.TotalUsers users</span><button type="button" class="users-add-button" id="openCreateUser">+ Add user</button></div>
+        </div>
+        <section class="users-panel" aria-label="User management">
+            <form method="get" asp-controller="Users" asp-action="Users" class="users-filters">
+                <label class="users-search"><span class="sr-only">Search users</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input type="search" name="search" value="@Model.Search" placeholder="Search by name or email" /></label>
+                <label><span class="sr-only">Filter by role</span><select name="role"><option value="">All roles</option>@foreach (var role in Model.Roles) { <option value="@role" selected="@(Model.Role == role)">@role</option> }</select></label>
+                <label><span class="sr-only">Filter by status</span><select name="status"><option value="">All statuses</option><option value="active" selected="@(Model.Status == "active")">Active</option><option value="inactive" selected="@(Model.Status == "inactive")">Inactive</option></select></label>
+                <button type="submit" class="users-filter-button">Apply filters</button><a asp-controller="Users" asp-action="Users" class="users-clear-button">Clear</a>
+            </form>
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <colgroup><col class="users-col-user" /><col class="users-col-role" /><col class="users-col-status" /><col class="users-col-actions" /></colgroup>
+                    <thead><tr><th>User</th><th>Role</th><th>Status</th><th class="users-actions-heading">Actions</th></tr></thead>
+                    <tbody>
+                    @if (Model.Users.Count == 0)
+                    {
+                        <tr><td colspan="4" class="users-empty">No users match the selected filters.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td><div class="user-cell"><span class="user-avatar">@GetInitials(user.FullName)</span><span><strong>@user.FullName</strong><small>@user.Email</small></span></div></td>
+                                <td><span class="role-pill">@user.Role</span></td>
+                                <td><span class="status-pill @(user.IsActive ? "status-active" : "status-inactive")">@(user.IsActive ? "Active" : "Inactive")</span></td>
+                                <td><div class="user-actions"><a class="action-button action-view" asp-controller="Users" asp-action="UserDetails" asp-route-id="@user.Id">View</a><a class="action-button action-edit" asp-controller="Users" asp-action="EditUser" asp-route-id="@user.Id">Edit</a><form method="post" asp-controller="Users" asp-action="ToggleUserStatus" asp-route-id="@user.Id">@Html.AntiForgeryToken()<button type="submit" class="action-button action-status">@(user.IsActive ? "Deactivate" : "Activate")</button></form><a class="action-button action-reset" asp-controller="Users" asp-action="ResetUserPassword" asp-route-id="@user.Id">Reset password</a></div></td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Users pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalUsers == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalUsers) of @Model.TotalUsers</span>
+                    <div>
+                    @for (var page = 1; page <= Model.TotalPages; page++)
+                    {
+                        <a class="@(page == Model.Page ? "current" : "")" asp-controller="Users" asp-action="Users" asp-route-search="@Model.Search" asp-route-role="@Model.Role" asp-route-status="@Model.Status" asp-route-page="@(page)">@(page)</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
+</div>
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
 
-    <h2>Manage Users</h2>
+<div class="user-modal" id="createUserModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="createUserTitle">
+    <div class="user-modal-backdrop" data-close-user-modal></div>
+    <section class="user-modal-card">
+        <div class="user-modal-header"><div><h2 id="createUserTitle">Add new user</h2><p>Create an account and assign its access role.</p></div><button type="button" class="user-modal-close" data-close-user-modal aria-label="Close">&times;</button></div>
+        @if (TempData["UserCreateError"] is string createError && !string.IsNullOrWhiteSpace(createError)) { <div class="modal-error">@createError</div> }
+        <form method="post" asp-controller="Users" asp-action="CreateUser" class="create-user-form">
+            @Html.AntiForgeryToken()
+            <div class="modal-section-title">Account Information</div>
+            <label for="createFullName">Full Name</label><input id="createFullName" name="FullName" required autocomplete="name" />
+            <label for="createUserName">Username</label><input id="createUserName" name="UserName" required autocomplete="username" />
+            <label for="createEmail">Email</label><input id="createEmail" name="Email" type="email" required autocomplete="email" />
+            <label for="createPassword">Password</label><input id="createPassword" name="Password" type="password" minlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{12,}" title="Use at least 12 characters with uppercase, lowercase, a number, and a special character." required autocomplete="new-password" /><div class="password-strength" aria-live="polite"><div class="password-strength-track"><span id="passwordStrengthBar"></span></div><strong id="passwordStrengthLabel">Enter a password</strong></div><small class="password-requirements">At least 12 characters, including uppercase, lowercase, a number, and a special character.</small>
+            <label for="createRole">Role</label><select id="createRole" name="Role" required><option value="">Select Role</option>@foreach (var role in DentalSync.ViewModels.UserRoles.Creatable) { <option value="@role">@role</option> }</select>
+            <div class="user-modal-actions"><button type="button" class="users-clear-button" data-close-user-modal>Cancel</button><button type="submit" class="users-filter-button">Create User</button></div>
+        </form>
+    </section>
 </div>
 
-@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
+<script src="~/js/users.js" asp-append-version="true"></script>
+
+@functions {
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1 ? parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant() : $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+}

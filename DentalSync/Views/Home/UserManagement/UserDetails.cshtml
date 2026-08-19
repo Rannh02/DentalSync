@@ -1,0 +1,9 @@
+@model DentalSync.ViewModels.UserListItemViewModel
+@{ Layout = null; }
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page"><a asp-action="Users" class="back-link">&larr; Back to users</a><section class="user-detail-card"><span class="user-avatar user-avatar-large">@Model.FullName.Substring(0, Math.Min(2, Model.FullName.Length)).ToUpperInvariant()</span><h1>@Model.FullName</h1><p>@Model.Email</p><dl><dt>Role</dt><dd>@Model.Role</dd><dt>Status</dt><dd>@(Model.IsActive ? "Active" : "Inactive")</dd></dl><div class="detail-actions"><a asp-action="EditUser" asp-route-id="@Model.Id" class="users-filter-button">Edit user</a><a asp-action="ResetUserPassword" asp-route-id="@Model.Id" class="users-clear-button">Reset password</a></div></section></main>
+</div>
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

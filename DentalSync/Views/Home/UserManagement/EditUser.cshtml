@@ -1,0 +1,9 @@
+@model DentalSync.ViewModels.EditUserViewModel
+@{ Layout = null; }
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page"><a asp-action="Users" class="back-link">&larr; Back to users</a><section class="user-form-card"><h1>Edit user</h1><form method="post" asp-action="EditUser"><input asp-for="Id" type="hidden" /><div asp-validation-summary="ModelOnly" class="form-error"></div><label asp-for="FullName"></label><input asp-for="FullName" /><span asp-validation-for="FullName" class="form-error"></span><label asp-for="Email"></label><input asp-for="Email" /><span asp-validation-for="Email" class="form-error"></span><label asp-for="Role"></label><select asp-for="Role">@foreach (var role in Model.Roles) { <option value="@role">@role</option> }</select><span asp-validation-for="Role" class="form-error"></span><div class="detail-actions"><button type="submit" class="users-filter-button">Save changes</button><a asp-action="Users" class="users-clear-button">Cancel</a></div></form></section></main>
+</div>
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

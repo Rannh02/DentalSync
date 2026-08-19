@@ -1,0 +1,57 @@
+﻿@model DentalSync.ViewModels.RolePermissionViewModel
+@{ Layout = null; }
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/role-permissions.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+
+    <main class="role-permissions-page">
+        <div class="role-permissions-heading">
+            <div>
+                <h1>Roles &amp; Permissions</h1>
+                <p>Manage access levels for each role in DentalSync.</p>
+            </div>
+        </div>
+
+        <form method="post" asp-controller="RolePermissions" asp-action="Save" class="permissions-panel">
+            @Html.AntiForgeryToken()
+            <div class="permissions-panel-heading">
+                <div>
+                    <h2>Manage Permissions</h2>
+                    <p>Turn access on or off for each role.</p>
+                </div>
+                <button type="submit" class="permissions-save-button">Save changes</button>
+            </div>
+            @if (TempData["PermissionsSaved"] is string savedMessage)
+            {
+                <div class="permissions-success">@savedMessage</div>
+            }
+            <div class="permissions-table-wrap">
+                <table class="permissions-table">
+                    <thead>
+                        <tr><th>Permission</th>@foreach (var role in Model.Roles) { <th>@role</th> }</tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var permission in Model.Permissions)
+                    {
+                        <tr>
+                            <td><strong>@permission.Name</strong><small>@permission.Description</small></td>
+                            @foreach (var role in Model.Roles)
+                            {
+                                var isEnabled = permission.RoleAccess[role];
+                                <td><label class="permission-switch"><input type="checkbox" name="enabledPermissions" value="@role|@permission.PermissionId" checked="@isEnabled" /><span></span><b class="sr-only">@(isEnabled ? "" : "")</b></label></td>
+                            }
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

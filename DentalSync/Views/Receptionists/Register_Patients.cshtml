@@ -1,0 +1,15 @@
+﻿@{
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+
+    <h2>Register Patients</h2>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
