@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using DentalSync.Models;
 
@@ -13,6 +13,7 @@ namespace DentalSync.Data
 
         public DbSet<PermissionDefinition> PermissionDefinitions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<Patient> Patients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

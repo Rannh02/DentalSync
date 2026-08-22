@@ -27,14 +27,24 @@ namespace DentalSync.Controllers
             return View();
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
             if (ModelState.IsValid)
             {
-                var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
+                var user = await userManager.FindByEmailAsync(model.Email)
+                    ?? await userManager.FindByNameAsync(model.Email);
+                var result = user == null
+                    ? Microsoft.AspNetCore.Identity.SignInResult.Failed
+                    : await signInManager.PasswordSignInAsync(user.UserName ?? model.Email, model.Password, model.RememberMe, false);
 
                 if (result.Succeeded)
                 {
+                    if (user != null && await userManager.IsInRoleAsync(user, "Receptionist"))
+                    {
+                        return RedirectToAction("Receptionist_Dashboard", "Receptionist");
+                    }
+
                     // Sanitize returnUrl: only redirect to local URLs and avoid suspicious values like trailing ':' or embedded scheme
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     {
@@ -53,7 +63,7 @@ namespace DentalSync.Controllers
                         }
                     }
 
-                return RedirectToAction("Dashboard", "Home");
+                    return RedirectToAction("Dashboard", "Home");
                 }
                 else
                 {
@@ -128,16 +138,16 @@ namespace DentalSync.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await userManager.FindByNameAsync(model.Email);
+                var user = await userManager.FindByEmailAsync(model.Email);
 
                 if (user == null)
                 {
-                    ModelState.AddModelError("", "Something is wrong!");
+                    ModelState.AddModelError(string.Empty, "No user was found with that email address.");
                     return View(model);
                 }
                 else
                 {
-                    return RedirectToAction("ChangePassword", "Account", new { username = user.UserName });
+                    return RedirectToAction(nameof(ChangePassword), new { email = user.Email });
                 }
             }
             return View(model);
@@ -148,27 +158,28 @@ namespace DentalSync.Controllers
 
 
 
-        public IActionResult ChangePassword(string username)
+        public IActionResult ChangePassword(string email)
         {
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrEmpty(email))
             {
-                return RedirectToAction("VerifyEmail", "Account");
+                return RedirectToAction(nameof(VerifyEmail));
             }
-            return View(new ChangePasswordViewModel { Email = username });
+            return View(new ChangePasswordViewModel { Email = email });
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = await userManager.FindByNameAsync(model.Email);
+                var user = await userManager.FindByEmailAsync(model.Email);
                 if (user != null)
                 {
-                    var result = await userManager.RemovePasswordAsync(user);
+                    var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                    var result = await userManager.ResetPasswordAsync(user, token, model.NewPassword);
                     if (result.Succeeded)
                     {
-                        result = await userManager.AddPasswordAsync(user, model.NewPassword);
-                        return RedirectToAction("Login", "Account");
+                        return RedirectToAction(nameof(Login));
                     }
                     else
                     {
@@ -181,7 +192,7 @@ namespace DentalSync.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Email Not Found!");
+                    ModelState.AddModelError(string.Empty, "No user was found with that email address.");
                     return View(model);
                 }
             }

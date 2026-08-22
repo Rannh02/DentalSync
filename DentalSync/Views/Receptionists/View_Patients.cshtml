@@ -2,14 +2,13 @@
     Layout = null;
 }
 
-@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
 
 <link rel="stylesheet" href="~/css/dashboard.css" />
 
 <div class="dashboard-root">
-    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
 
     <h2>Patients</h2>
 </div>
 
-@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

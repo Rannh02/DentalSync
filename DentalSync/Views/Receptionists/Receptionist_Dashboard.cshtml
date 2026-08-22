@@ -1,0 +1,130 @@
+@{
+    Layout = null;
+}
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+
+    <div class="dc-wrap">
+        <h2>Welcome back, <span class="ds-brand-accent">@ViewBag.UserFullName!</span></h2>
+        <p class="dc-subtitle">Here’s what’s happening across the clinic today.</p>
+
+        <!-- KPI Cards -->
+        <div class="dc-kpi-grid">
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">▲ 8.2%</span>
+                </div>
+                <div class="dc-kpi-value">2,148</div>
+                <div class="dc-kpi-label">Patients</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">Today</span>
+                </div>
+                <div class="dc-kpi-value">24</div>
+                <div class="dc-kpi-label">Appointments</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">▲ 12.4%</span>
+                </div>
+                <div class="dc-kpi-value">₱386,250</div>
+                <div class="dc-kpi-label">Revenue</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 10h18M6 14h12M6 18h12" /><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-down">Needs attention</span>
+                </div>
+                <div class="dc-kpi-value">₱24,500</div>
+                <div class="dc-kpi-label">Pending Payments</div>
+            </div>
+
+        </div>
+
+        <!-- Today's appointments and recent activity -->
+        <div class="dc-lower-grid">
+            <div class="dc-lower-column">
+                <div class="dc-panel">
+                    <div class="dc-panel-header">
+                        <span class="dc-panel-title">Today's Appointments</span>
+                        <a href="#" class="dc-panel-link">View all</a>
+                    </div>
+                    <div class="dc-appt-list">
+                        <div class="dc-appt-row">
+                            <div class="dc-avatar">MR</div>
+                            <div class="dc-appt-info">
+                                <div class="dc-appt-name">Maria Reyes</div>
+                                <div class="dc-appt-service">Dental Cleaning · Dr. Santos</div>
+                            </div>
+                            <div class="dc-appt-time">10:00 AM<br /><span class="dc-status dc-status-confirmed">Confirmed</span></div>
+                        </div>
+                        <div class="dc-appt-row">
+                            <div class="dc-avatar">JC</div>
+                            <div class="dc-appt-info">
+                                <div class="dc-appt-name">Jerome Cruz</div>
+                                <div class="dc-appt-service">Tooth Extraction · Dr. Lim</div>
+                            </div>
+                            <div class="dc-appt-time">10:45 AM<br /><span class="dc-status dc-status-confirmed">Confirmed</span></div>
+                        </div>
+                        <div class="dc-appt-row">
+                            <div class="dc-avatar">AS</div>
+                            <div class="dc-appt-info">
+                                <div class="dc-appt-name">Angela Santiago</div>
+                                <div class="dc-appt-service">Braces Adjustment · Dr. Santos</div>
+                            </div>
+                            <div class="dc-appt-time">11:30 AM<br /><span class="dc-status dc-status-pending">Pending</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="dc-lower-column">
+                <div class="dc-panel">
+                    <div class="dc-panel-header">
+                        <span class="dc-panel-title">Recent Activity</span>
+                        <a href="#" class="dc-panel-link">View all</a>
+                    </div>
+                    <div class="dc-activity-list">
+                        <div class="dc-activity-row">
+                            <div class="dc-activity-icon dc-icon-blue">+</div>
+                            <div class="dc-activity-info"><strong>New patient registered</strong><span>Maria Reyes was added to the patient list</span></div>
+                            <time>10 min ago</time>
+                        </div>
+                        <div class="dc-activity-row">
+                            <div class="dc-activity-icon dc-icon-green">₱</div>
+                            <div class="dc-activity-info"><strong>Payment received</strong><span>Payment recorded for Jerome Cruz</span></div>
+                            <time>32 min ago</time>
+                        </div>
+                        <div class="dc-activity-row">
+                            <div class="dc-activity-icon dc-icon-teal">✓</div>
+                            <div class="dc-activity-info"><strong>Appointment completed</strong><span>Dental cleaning for Angela Santiago</span></div>
+                            <time>1 hr ago</time>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

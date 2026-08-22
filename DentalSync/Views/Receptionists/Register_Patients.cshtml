@@ -1,15 +1,164 @@
-﻿@{
+@model DentalSync.ViewModels.PatientManagementViewModel
+@{
     Layout = null;
 }
 
-@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
-
-<link rel="stylesheet" href="~/css/dashboard.css" />
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
 
 <div class="dashboard-root">
-    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Register Patients</h1>
+                <p>Manage and register patient records.</p>
+            </div>
+            <div class="users-heading-actions">
+                <span class="users-total">@Model.TotalPatients patients</span>
+                <button type="button" class="users-add-button" id="openCreatePatient">+ Add patient</button>
+            </div>
+        </div>
 
-    <h2>Register Patients</h2>
+        @if (TempData["PatientSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="modal-success" style="margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #e9f9ee; color: #158a3e; font-size: 13px; font-weight: 500;">
+                @successMessage
+            </div>
+        }
+
+        <section class="users-panel" aria-label="Patient management">
+            <form method="get" asp-controller="Receptionist" asp-action="Register_Patients" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search patients</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by name, contact, or address" />
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Receptionist" asp-action="Register_Patients" class="users-clear-button">Clear</a>
+            </form>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <colgroup>
+                        <col style="width: 28%;" />
+                        <col style="width: 20%;" />
+                        <col style="width: 32%;" />
+                        <col style="width: 20%;" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Contact Number</th>
+                            <th>Address</th>
+                            <th>Registered Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.Patients.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4" class="users-empty">No patients registered yet.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var patient in Model.Patients)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="user-avatar">@GetInitials(patient.FullName)</span>
+                                        <span>
+                                            <strong>@patient.FullName</strong>
+                                            @if (!string.IsNullOrWhiteSpace(patient.Suffix))
+                                            {
+                                                <small>Suffix: @patient.Suffix</small>
+                                            }
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>@patient.ContactNumber</td>
+                                <td>@patient.Address</td>
+                                <td>@patient.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Patients pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalPatients == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalPatients) of @Model.TotalPatients</span>
+                    <div>
+                    @for (var page = 1; page <= Model.TotalPages; page++)
+                    {
+                        <a class="@(page == Model.Page ? "current" : "")" asp-controller="Receptionist" asp-action="Register_Patients" asp-route-search="@Model.Search" asp-route-page="@(page)">@(page)</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
 </div>
 
-@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
+<div class="user-modal" id="createPatientModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="createPatientTitle">
+    <div class="user-modal-backdrop" data-close-patient-modal></div>
+    <section class="user-modal-card">
+        <div class="user-modal-header">
+            <div>
+                <h2 id="createPatientTitle">Add New Patient</h2>
+                <p>Enter patient details to register a new patient.</p>
+            </div>
+            <button type="button" class="user-modal-close" data-close-patient-modal aria-label="Close">&times;</button>
+        </div>
+
+        @if (TempData["PatientCreateError"] is string createError && !string.IsNullOrWhiteSpace(createError))
+        {
+            <div class="modal-error">@createError</div>
+        }
+
+        <form method="post" asp-controller="Receptionist" asp-action="CreatePatient" class="create-user-form">
+            @Html.AntiForgeryToken()
+            <div class="modal-section-title">Personal Information</div>
+
+            <label for="createFirstName">Firstname *</label>
+            <input id="createFirstName" name="FirstName" required placeholder="Enter first name" />
+
+            <label for="createLastName">Lastname *</label>
+            <input id="createLastName" name="LastName" required placeholder="Enter last name" />
+
+            <label for="createMiddleName">Middlename</label>
+            <input id="createMiddleName" name="MiddleName" placeholder="Enter middle name (optional)" />
+
+            <label for="createSuffix">Suffix</label>
+            <input id="createSuffix" name="Suffix" placeholder="e.g. Jr., Sr., III (optional)" />
+
+            <div class="modal-section-title">Contact & Location</div>
+
+            <label for="createContactNumber">Contact Number *</label>
+            <input id="createContactNumber" name="ContactNumber" type="tel" required placeholder="Enter contact number" />
+
+            <label for="createAddress">Address *</label>
+            <input id="createAddress" name="Address" required placeholder="Enter complete address" />
+
+            <div class="user-modal-actions">
+                <button type="button" class="users-clear-button" data-close-patient-modal>Cancel</button>
+                <button type="submit" class="users-filter-button">Add Patient</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script src="~/js/register_patients.js" asp-append-version="true"></script>
+
+@functions {
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "P";
+        return parts.Length == 1 ? parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant() : $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+}

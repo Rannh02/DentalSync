@@ -1,6 +1,15 @@
 ﻿<aside class="ds-sidebar">
     <nav aria-label="PATIENT & FINANCIAL MANAGEMENT" class="ds-nav">
         <ul class="ds-list">
+            <li class="ds-item">
+                <a asp-controller="Receptionist" asp-action="Receptionist_Dashboard" class="ds-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="13" y="3" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="3" y="13" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="13" y="13" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /></svg>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+        </ul>
+        <div class="ds-section-title">PATIENT MANAGEMENT</div>
+        <ul class="ds-list">
             <li class="ds-item"><a asp-controller="Receptionist" asp-action="Register_Patients" class="ds-link">Register Patient</a></li>
             <li class="ds-item"><a asp-controller="Receptionist" asp-action="View_Patients" class="ds-link">Manage Appointments</a></li>
             <li class="ds-item"><a asp-controller="Receptionist" asp-action="Bills_Patients" class="ds-link">Bills & Payments</a></li>
