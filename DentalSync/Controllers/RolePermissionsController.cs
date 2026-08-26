@@ -1,3 +1,4 @@
+using DentalSync.Attributes;
 using DentalSync.Data;
 using DentalSync.Models;
 using DentalSync.ViewModels;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DentalSync.Controllers
 {
     [Authorize]
+    [HasPermission("roles.manage")]
     public class RolePermissionsController : Controller
     {
         private readonly AppDbContext dbContext;

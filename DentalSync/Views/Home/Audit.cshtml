@@ -1,20 +1,124 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
-@{
-    Layout = null;
-}
+@model DentalSync.ViewModels.AuditLogViewModel
+@{ Layout = null; }
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
-
-<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="stylesheet" href="~/css/audit.css" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Audit Logs</h1>
+                <p>Track all system activity, user actions, and security events.</p>
+            </div>
+            <div class="users-heading-actions">
+                <span class="users-total">@Model.TotalLogs entries</span>
+            </div>
+        </div>
 
-    <h2>Audit Logs</h2>
+        <section class="users-panel" aria-label="Audit log management">
+
+            @*-- Filter bar --*@
+            <form method="get" asp-controller="Home" asp-action="Audit" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search audit logs</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by user, action, or module" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by role</span>
+                    <select name="role">
+                        <option value="">All Roles</option>
+                        @foreach (var r in Model.Roles)
+                        {
+                            <option value="@r" selected="@(Model.Role == r)">@r</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply Filters</button>
+                <a asp-controller="Home" asp-action="Audit" class="users-clear-button">Clear</a>
+            </form>
+
+            @*-- Table --*@
+            <div class="users-table-wrap">
+                <table class="users-table audit-table">
+                    <colgroup>
+                        <col class="audit-col-datetime" />
+                        <col class="audit-col-user" />
+                        <col class="audit-col-role" />
+                        <col class="audit-col-action" />
+                        <col class="audit-col-module" />
+                        <col class="audit-col-desc" />
+                        <col class="audit-col-ip" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Date &amp; Time</th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Module</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Logs.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="users-empty">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Role))
+                                    {
+                                        <span>No audit logs match the selected filters.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>No audit log entries yet. Activity will appear here once users start interacting with the system.</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.Logs)
+                            {
+                                <tr>
+                                    <td class="audit-datetime">@log.DateTime.ToString("MMM dd, yyyy hh:mm tt")</td>
+                                    <td><strong>@log.User</strong></td>
+                                    <td><span class="role-pill">@log.Role</span></td>
+                                    <td><span class="audit-action-pill audit-action-@log.Action.ToLower()">@log.Action</span></td>
+                                    <td>@log.Module</td>
+                                    <td class="audit-desc">@log.Description</td>
+                                    <td class="audit-ip">@log.IpAddress</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @*-- Pagination --*@
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Audit log pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalLogs == 0 ? 0 : 1))–@Math.Min(Model.Page * Model.PageSize, Model.TotalLogs) of @Model.TotalLogs</span>
+                    <div>
+                        @for (var p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <a class="@(p == Model.Page ? "current" : "")"
+                               asp-controller="Home" asp-action="Audit"
+                               asp-route-search="@Model.Search"
+                               asp-route-role="@Model.Role"
+                               asp-route-page="@p">@p</a>
+                        }
+                    </div>
+                </nav>
+            }
+
+        </section>
+    </main>
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

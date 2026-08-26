@@ -1,0 +1,88 @@
+@model DentalSync.ViewModels.UserListItemViewModel
+@{ Layout = null; }
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <a asp-controller="Users" asp-action="Users" class="back-link">← Back to Users</a>
+
+        <div class="users-page-heading">
+            <div>
+                <h1>User Details</h1>
+                <p>Viewing account information for <strong>@Model.FullName</strong>.</p>
+            </div>
+        </div>
+
+        <section class="users-panel user-detail-card" aria-label="User details">
+
+            <!-- Avatar row -->
+            <div class="user-detail-avatar-row">
+                <div class="user-avatar user-avatar-lg">@GetInitials(Model.FullName)</div>
+                <div>
+                    <div class="user-detail-name">@Model.FullName</div>
+                    <span class="role-pill">@Model.Role</span>
+                    <span class="status-pill @(Model.IsActive ? "status-active" : "status-inactive")" style="margin-left:6px;">
+                        @(Model.IsActive ? "Active" : "Inactive")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Detail table -->
+            <table class="user-detail-table">
+                <tbody>
+                    <tr>
+                        <th>Email</th>
+                        <td>@Model.Email</td>
+                    </tr>
+                    <tr>
+                        <th>Role</th>
+                        <td><span class="role-pill">@Model.Role</span></td>
+                    </tr>
+                    <tr>
+                        <th>Account Status</th>
+                        <td>
+                            <span class="status-pill @(Model.IsActive ? "status-active" : "status-inactive")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                            @if (!Model.IsActive && Model.LockoutEnd.HasValue)
+                            {
+                                <small style="margin-left:8px; color:#6b7280; font-size:12px;">
+                                    Locked until @Model.LockoutEnd.Value.ToString("MMM dd, yyyy")
+                                </small>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Actions -->
+            <div class="user-detail-actions">
+                <form method="post"
+                      asp-controller="Users"
+                      asp-action="ToggleUserStatus"
+                      asp-route-id="@Model.Id">
+                    @Html.AntiForgeryToken()
+                    
+                </form>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
+
+@functions {
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant()
+            : $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+}

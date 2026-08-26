@@ -1,15 +1,158 @@
-﻿@{
-    Layout = null;
-}
+@model DentalSync.ViewModels.AuthenticationLogViewModel
+@{ Layout = null; }
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
-
+<link rel="stylesheet" href="~/css/users.css" />
 <link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/authentication.css" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Authentication Logs</h1>
+                <p>Monitor logins, logouts, session states, and lockouts.</p>
+            </div>
+            <div class="users-heading-actions">
+                <span class="users-total">@Model.TotalLogs entries</span>
+            </div>
+        </div>
 
-    <h2>Authentication Logs</h2>
+        @*-- KPI cards --*@
+        <div class="auth-kpi-grid">
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                </div>
+                <div class="auth-kpi-content">
+                    <div class="dc-kpi-value">@Model.ActiveSessions</div>
+                    <div class="dc-kpi-label">Active Sessions (Online)</div>
+                </div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                </div>
+                <div class="auth-kpi-content">
+                    <div class="dc-kpi-value">@Model.FailedLogins</div>
+                    <div class="dc-kpi-label">Failed Logins</div>
+                </div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </div>
+                </div>
+                <div class="auth-kpi-content">
+                    <div class="dc-kpi-value">@Model.LockedAccounts</div>
+                    <div class="dc-kpi-label">Locked Accounts</div>
+                </div>
+            </div>
+        </div>
+
+        <section class="users-panel" aria-label="Authentication log management">
+
+            @*-- Filter bar --*@
+            <form method="get" asp-controller="Home" asp-action="Authentication" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search auth logs</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by user or description" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by role</span>
+                    <select name="role">
+                        <option value="">All Roles</option>
+                        @foreach (var r in Model.Roles)
+                        {
+                            <option value="@r" selected="@(Model.Role == r)">@r</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply Filters</button>
+                <a asp-controller="Home" asp-action="Authentication" class="users-clear-button">Clear</a>
+            </form>
+
+            @*-- Table --*@
+            <div class="users-table-wrap">
+                <table class="users-table auth-table">
+                    <colgroup>
+                        <col class="auth-col-datetime" />
+                        <col class="auth-col-user" />
+                        <col class="auth-col-event" />
+                        <col class="auth-col-status" />
+                        <col class="auth-col-ip" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Date &amp; Time</th>
+                            <th>User</th>
+                            <th>Event</th>
+                            <th>Status</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Logs.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="users-empty">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Role))
+                                    {
+                                        <span>No authentication logs match the selected filters.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>No authentication events recorded yet.</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.Logs)
+                            {
+                                <tr>
+                                    <td class="audit-datetime">@log.DateTime.ToString("MMM dd, h:mm tt")</td>
+                                    <td><strong>@log.User</strong></td>
+                                    <td><span class="auth-event-pill auth-event-@log.Event.ToLower()">@log.Event</span></td>
+                                    <td><span class="auth-status-pill auth-status-@log.Status.ToLower()">@log.Status</span></td>
+                                    <td class="audit-ip">@log.IpAddress</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @*-- Pagination --*@
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Authentication log pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalLogs == 0 ? 0 : 1))–@Math.Min(Model.Page * Model.PageSize, Model.TotalLogs) of @Model.TotalLogs</span>
+                    <div>
+                        @for (var p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <a class="@(p == Model.Page ? "current" : "")"
+                               asp-controller="Home" asp-action="Authentication"
+                               asp-route-search="@Model.Search"
+                               asp-route-role="@Model.Role"
+                               asp-route-page="@p">@p</a>
+                        }
+                    </div>
+                </nav>
+            }
+
+        </section>
+    </main>
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

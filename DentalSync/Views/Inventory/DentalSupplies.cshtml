@@ -1,0 +1,698 @@
+@model DentalSync.ViewModels.DentalSuppliesViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Dental Supplies";
+}
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/inventory.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+
+    <main class="inventory-page">
+        <!-- Heading -->
+        <div class="inventory-page-heading">
+            <div>
+                <h1>Dental Supplies</h1>
+                <p>Quick inventory monitoring, stock alerts, and supply replenishment.</p>
+            </div>
+            <div class="inventory-heading-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" id="openCategoryModalBtn">+ Add Category</button>
+                <button type="button" class="inv-btn inv-btn-primary" id="openCreateSupplyBtn">+ Add Supply</button>
+            </div>
+        </div>
+
+        <!-- Success & Error Alert Messages -->
+        @if (TempData["InventorySuccess"] != null)
+        {
+            <div class="modal-error" style="background: #e9f9ee; color: #158a3e; margin-bottom: 20px; border: 1px solid #c7f1d4; padding: 12px 16px; border-radius: 8px;">
+                @TempData["InventorySuccess"]
+            </div>
+        }
+        @if (TempData["InventoryError"] != null)
+        {
+            <div class="modal-error" style="background: #fceaea; color: #c22a2a; margin-bottom: 20px; border: 1px solid #fecaca; padding: 12px 16px; border-radius: 8px;">
+                @TempData["InventoryError"]
+            </div>
+        }
+
+        <!-- 4 KPIs Grid -->
+        <div class="inv-kpi-grid">
+            <!-- Total Items -->
+            <div class="inv-kpi-card">
+                <div class="inv-kpi-icon inv-icon-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <div class="inv-kpi-content">
+                    <span class="inv-kpi-value">@Model.TotalItems</span>
+                    <span class="inv-kpi-label">Total Items</span>
+                </div>
+            </div>
+
+            <!-- In Stock (Good) -->
+            <div class="inv-kpi-card">
+                <div class="inv-kpi-icon inv-icon-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="inv-kpi-content">
+                    <span class="inv-kpi-value" style="color: #158a3e;">@Model.InStockCount</span>
+                    <span class="inv-kpi-label">In Stock</span>
+                </div>
+            </div>
+
+            <!-- Low Stock -->
+            <div class="inv-kpi-card">
+                <div class="inv-kpi-icon inv-icon-yellow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="inv-kpi-content">
+                    <span class="inv-kpi-value" style="color: #d97706;">@Model.LowStockCount</span>
+                    <span class="inv-kpi-label">Low Stock</span>
+                </div>
+            </div>
+
+            <!-- Out of Stock -->
+            <div class="inv-kpi-card">
+                <div class="inv-kpi-icon inv-icon-red">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="inv-kpi-content">
+                    <span class="inv-kpi-value" style="color: #c22a2a;">@Model.OutOfStockCount</span>
+                    <span class="inv-kpi-label">Out of Stock</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Table Panel -->
+        <section class="inv-panel" aria-label="Dental Supplies Management">
+            <!-- Search & Filters -->
+            <form method="get" asp-controller="Inventory" asp-action="DentalSupplies" class="inv-filters">
+                <!-- Search -->
+                <label class="inv-search">
+                    <span class="sr-only">Search supplies</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search supplies, descriptions..." />
+                </label>
+
+                <!-- Category Filter -->
+                <label>
+                    <span class="sr-only">Category</span>
+                    <select name="categoryId">
+                        <option value="">All Categories</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat.Id" selected="@(Model.CategoryId == cat.Id)">@cat.CategoryName</option>
+                        }
+                    </select>
+                </label>
+
+                <!-- Status Filter -->
+                <label>
+                    <span class="sr-only">Status</span>
+                    <select name="status">
+                        <option value="">All Statuses</option>
+                        <option value="good" selected="@(Model.Status == "good")">In Stock (Good)</option>
+                        <option value="low" selected="@(Model.Status == "low")">Low Stock</option>
+                        <option value="out" selected="@(Model.Status == "out")">Out of Stock</option>
+                        <option value="archived" selected="@(Model.Status == "archived")">Archived</option>
+                    </select>
+                </label>
+
+                <!-- Sort Filter -->
+                <label>
+                    <span class="sr-only">Sort</span>
+                    <select name="sort">
+                        <option value="">Sort by Name (A-Z)</option>
+                        <option value="name_desc" selected="@(Model.Sort == "name_desc")">Name (Z-A)</option>
+                        <option value="stock_asc" selected="@(Model.Sort == "stock_asc")">Stock (Low to High)</option>
+                        <option value="stock_desc" selected="@(Model.Sort == "stock_desc")">Stock (High to Low)</option>
+                        <option value="exp_asc" selected="@(Model.Sort == "exp_asc")">Expiration (Soonest)</option>
+                    </select>
+                </label>
+
+                <button type="submit" class="inv-filter-btn">Apply</button>
+                @if (!string.IsNullOrEmpty(Model.Search) || Model.CategoryId.HasValue || !string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Sort))
+                {
+                    <a asp-controller="Inventory" asp-action="DentalSupplies" class="inv-clear-btn">Clear</a>
+                }
+            </form>
+
+            <!-- Supplies Table -->
+            <div class="inv-table-wrap">
+                <table class="inv-table">
+                    <colgroup>
+                        <col style="width: 20%;" />
+                        <col style="width: 13%;" />
+                        <col style="width: 7%;" />
+                        <col style="width: 7%;" />
+                        <col style="width: 9%;" />
+                        <col style="width: 11%;" />
+                        <col style="width: 9%;" />
+                        <col style="width: 24%;" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Supply</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Min. Stock</th>
+                            <th>Unit</th>
+                            <th>Expiration</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Supplies.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" style="padding: 48px; text-align: center; color: #64748b;">
+                                    No dental supplies found matching your criteria.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Supplies)
+                            {
+                                <tr>
+                                    <!-- Supply Name -->
+                                    <td class="supply-name-cell">
+                                        <strong>@item.SupplyName</strong>
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <small>@item.Description</small>
+                                        }
+                                    </td>
+
+                                    <!-- Category -->
+                                    <td>
+                                        <span class="category-tag">@item.CategoryName</span>
+                                    </td>
+
+                                    <!-- Stock Quantity -->
+                                    <td>
+                                        <strong style="font-size: 14px; @(item.ComputedStatus == "Out" ? "color: #c22a2a;" : (item.ComputedStatus == "Low" ? "color: #d97706;" : "color: #0f172a;"))">
+                                            @item.Quantity
+                                        </strong>
+                                    </td>
+
+                                    <!-- Min Stock -->
+                                    <td>
+                                        <span style="color: #64748b; font-weight: 500;">@item.MinimumStock</span>
+                                    </td>
+
+                                    <!-- Unit -->
+                                    <td>
+                                        <span style="color: #475569;">@item.Unit</span>
+                                    </td>
+
+                                    <!-- Expiration Date -->
+                                    <td>
+                                        @if (item.ExpirationDate.HasValue)
+                                        {
+                                            var isExpSoon = item.ExpirationDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(3));
+                                            <span style="@(isExpSoon ? "color: #c22a2a; font-weight: 600;" : "color: #475569;")">
+                                                @item.ExpirationDate.Value.ToString("MMM dd, yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #94a3b8;">N/A</span>
+                                        }
+                                    </td>
+
+                                    <!-- Status (Green = Good, Yellow = Low, Red = Out) -->
+                                    <td>
+                                        @if (item.ComputedStatus == "Archived")
+                                        {
+                                            <span class="status-pill status-archived">Archived</span>
+                                        }
+                                        else if (item.ComputedStatus == "Out")
+                                        {
+                                            <span class="status-pill status-out">Out</span>
+                                        }
+                                        else if (item.ComputedStatus == "Low")
+                                        {
+                                            <span class="status-pill status-low">Low</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-good">Good</span>
+                                        }
+                                    </td>
+
+                                    <!-- Actions: View, Edit, Stock In, Stock Out, Archive -->
+                                    <td>
+                                        <div class="inv-actions">
+                                            <!-- View Action -->
+                                            <button type="button" class="inv-action-btn btn-view btn-view-supply"
+                                                    data-id="@item.Id"
+                                                    data-name="@item.SupplyName"
+                                                    data-category="@item.CategoryName"
+                                                    data-desc="@(item.Description ?? "-")"
+                                                    data-unit="@item.Unit"
+                                                    data-stock="@item.Quantity"
+                                                    data-min="@item.MinimumStock"
+                                                    data-price="@(item.PurchasePrice.HasValue ? item.PurchasePrice.Value.ToString("N2") : "-")"
+                                                    data-exp="@(item.ExpirationDate.HasValue ? item.ExpirationDate.Value.ToString("MMM dd, yyyy") : "-")"
+                                                    data-status="@item.ComputedStatus"
+                                                    title="View Details">
+                                                View
+                                            </button>
+
+                                            <!-- Edit Action -->
+                                            <button type="button" class="inv-action-btn btn-edit btn-edit-supply"
+                                                    data-id="@item.Id"
+                                                    data-name="@item.SupplyName"
+                                                    data-catid="@item.CategoryId"
+                                                    data-desc="@item.Description"
+                                                    data-unit="@item.Unit"
+                                                    data-min="@item.MinimumStock"
+                                                    data-price="@item.PurchasePrice"
+                                                    data-exp="@(item.ExpirationDate.HasValue ? item.ExpirationDate.Value.ToString("yyyy-MM-dd") : "")"
+                                                    title="Edit Supply">
+                                                Edit
+                                            </button>
+
+                                            <!-- Stock In Action -->
+                                            <button type="button" class="inv-action-btn btn-stock-in btn-stockin-supply"
+                                                    data-id="@item.Id"
+                                                    data-name="@item.SupplyName"
+                                                    data-unit="@item.Unit"
+                                                    data-stock="@item.Quantity"
+                                                    title="Stock In (+)">
+                                                + In
+                                            </button>
+
+                                            <!-- Stock Out Action -->
+                                            <button type="button" class="inv-action-btn btn-stock-out btn-stockout-supply"
+                                                    data-id="@item.Id"
+                                                    data-name="@item.SupplyName"
+                                                    data-unit="@item.Unit"
+                                                    data-stock="@item.Quantity"
+                                                    title="Stock Out (-)">
+                                                - Out
+                                            </button>
+
+                                            <!-- Archive Action -->
+                                            <form method="post" asp-controller="Inventory" asp-action="ArchiveSupply" asp-route-id="@item.Id" onsubmit="return confirm('Are you sure you want to @(item.ComputedStatus == "Archived" ? "unarchive" : "archive") this supply?');" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="inv-action-btn btn-archive" title="Archive Supply">
+                                                    @(item.ComputedStatus == "Archived" ? "Restore" : "Archive")
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="inv-pagination" aria-label="Supplies pagination">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalCount == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalCount) of @Model.TotalCount items</span>
+                    <div>
+                        @for (var p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <a class="@(p == Model.Page ? "current" : "")"
+                               asp-controller="Inventory"
+                               asp-action="DentalSupplies"
+                               asp-route-search="@Model.Search"
+                               asp-route-categoryId="@Model.CategoryId"
+                               asp-route-status="@Model.Status"
+                               asp-route-sort="@Model.Sort"
+                               asp-route-page="@p">@p</a>
+                        }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
+
+<!-- ========================================================================= -->
+<!-- MODAL: Add New Supply                                                     -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="createSupplyModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2>Add Dental Supply</h2>
+                <p>Register a new clinical item into the inventory catalogue.</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <form method="post" asp-controller="Inventory" asp-action="CreateSupply" class="inv-form">
+            @Html.AntiForgeryToken()
+
+            <label for="createSupplyName">Supply Name *</label>
+            <input id="createSupplyName" name="SupplyName" required maxlength="150" placeholder="e.g. Composite Resin Capsule A2" />
+
+            <label for="createCategoryId">Category *</label>
+            <select id="createCategoryId" name="CategoryId" required>
+                <option value="">Select category...</option>
+                @foreach (var cat in Model.Categories)
+                {
+                    <option value="@cat.Id">@cat.CategoryName</option>
+                }
+            </select>
+
+            <label for="createDescription">Description</label>
+            <input id="createDescription" name="Description" maxlength="255" placeholder="Specs, shade, material..." />
+
+            <div class="inv-form-row">
+                <div>
+                    <label for="createUnit">Unit (e.g. Box, Pack, Bottle)</label>
+                    <input id="createUnit" name="Unit" value="Box (100s)" />
+                </div>
+                <div>
+                    <label for="createInitialQuantity">Initial Stock</label>
+                    <input id="createInitialQuantity" name="InitialQuantity" type="number" min="0" value="10" required />
+                </div>
+            </div>
+
+            <div class="inv-form-row">
+                <div>
+                    <label for="createMinimumStock">Min. Stock Alert Threshold</label>
+                    <input id="createMinimumStock" name="MinimumStock" type="number" min="0" value="5" required />
+                </div>
+                <div>
+                    <label for="createPurchasePrice">Purchase Price (₱)</label>
+                    <input id="createPurchasePrice" name="PurchasePrice" type="number" step="0.01" min="0" placeholder="0.00" />
+                </div>
+            </div>
+
+            <label for="createExpirationDate">Expiration Date</label>
+            <input id="createExpirationDate" name="ExpirationDate" type="date" />
+
+            <div class="inv-modal-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Cancel</button>
+                <button type="submit" class="inv-btn inv-btn-primary">Save Supply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Edit Supply                                                        -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="editSupplyModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2>Edit Supply</h2>
+                <p>Update specifications, category, and minimum stock threshold.</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <form method="post" asp-controller="Inventory" asp-action="EditSupply" class="inv-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="editSupplyId" name="Id" />
+
+            <label for="editSupplyName">Supply Name *</label>
+            <input id="editSupplyName" name="SupplyName" required maxlength="150" />
+
+            <label for="editCategoryId">Category *</label>
+            <select id="editCategoryId" name="CategoryId" required>
+                @foreach (var cat in Model.Categories)
+                {
+                    <option value="@cat.Id">@cat.CategoryName</option>
+                }
+            </select>
+
+            <label for="editDescription">Description</label>
+            <input id="editDescription" name="Description" maxlength="255" />
+
+            <div class="inv-form-row">
+                <div>
+                    <label for="editUnit">Unit</label>
+                    <input id="editUnit" name="Unit" />
+                </div>
+                <div>
+                    <label for="editMinimumStock">Min. Stock Alert Threshold</label>
+                    <input id="editMinimumStock" name="MinimumStock" type="number" min="0" required />
+                </div>
+            </div>
+
+            <div class="inv-form-row">
+                <div>
+                    <label for="editPurchasePrice">Purchase Price (₱)</label>
+                    <input id="editPurchasePrice" name="PurchasePrice" type="number" step="0.01" min="0" />
+                </div>
+                <div>
+                    <label for="editExpirationDate">Expiration Date</label>
+                    <input id="editExpirationDate" name="ExpirationDate" type="date" />
+                </div>
+            </div>
+
+            <div class="inv-modal-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Cancel</button>
+                <button type="submit" class="inv-btn inv-btn-primary">Update Supply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: View Supply Details                                                -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="viewSupplyModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2 id="viewSupplyNameTitle">Supply Details</h2>
+                <p id="viewSupplyCategorySubtitle">Category</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <dl class="inv-detail-grid">
+            <dt>Description:</dt>
+            <dd id="viewDesc">-</dd>
+            <dt>Current Stock:</dt>
+            <dd id="viewStock" style="font-size: 16px; color: #0b84ff;">-</dd>
+            <dt>Min. Stock:</dt>
+            <dd id="viewMin">-</dd>
+            <dt>Unit:</dt>
+            <dd id="viewUnit">-</dd>
+            <dt>Purchase Price:</dt>
+            <dd id="viewPrice">-</dd>
+            <dt>Expiration Date:</dt>
+            <dd id="viewExp">-</dd>
+            <dt>Status:</dt>
+            <dd id="viewStatus">-</dd>
+        </dl>
+        <div class="inv-modal-actions">
+            <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Stock In (+)                                                       -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="stockInModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2 style="color: #158a3e;">Stock In (+)</h2>
+                <p id="stockInItemTitle">Replenish item inventory.</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <form method="post" asp-controller="Inventory" asp-action="StockIn" class="inv-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="stockInSupplyId" name="SupplyId" />
+
+            <div style="background: #f8fafc; padding: 12px 14px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
+                <span style="font-size: 12px; color: #64748b;">Current Stock:</span>
+                <strong id="stockInCurrentCount" style="margin-left: 6px; font-size: 14px; color: #0f172a;">-</strong>
+            </div>
+
+            <label for="stockInQty">Quantity to Add *</label>
+            <input id="stockInQty" name="Quantity" type="number" min="1" value="10" required autofocus />
+
+            <label for="stockInRef">Reference / Invoice # (Optional)</label>
+            <input id="stockInRef" name="Reference" placeholder="e.g. PO-2026-08" />
+
+            <label for="stockInNotes">Notes / Supplier</label>
+            <input id="stockInNotes" name="Notes" placeholder="e.g. Delivered by MedSupply Corp" />
+
+            <div class="inv-modal-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Cancel</button>
+                <button type="submit" class="inv-btn inv-btn-primary" style="background: #16a34a;">Confirm Stock In</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Stock Out (-)                                                      -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="stockOutModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2 style="color: #ea580c;">Stock Out (-)</h2>
+                <p id="stockOutItemTitle">Record consumed or dispensed items.</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <form method="post" asp-controller="Inventory" asp-action="StockOut" class="inv-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="stockOutSupplyId" name="SupplyId" />
+
+            <div style="background: #f8fafc; padding: 12px 14px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
+                <span style="font-size: 12px; color: #64748b;">Available in Stock:</span>
+                <strong id="stockOutAvailableCount" style="margin-left: 6px; font-size: 14px; color: #0f172a;">-</strong>
+            </div>
+
+            <label for="stockOutQty">Quantity to Deduct *</label>
+            <input id="stockOutQty" name="Quantity" type="number" min="1" value="1" required autofocus />
+
+            <label for="stockOutRef">Reason / Department / Patient Reference</label>
+            <input id="stockOutRef" name="Reference" placeholder="e.g. Clinic Treatment Room 1" />
+
+            <label for="stockOutNotes">Notes</label>
+            <input id="stockOutNotes" name="Notes" placeholder="e.g. Used for root canal procedures" />
+
+            <div class="inv-modal-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Cancel</button>
+                <button type="submit" class="inv-btn inv-btn-primary" style="background: #ea580c;">Confirm Stock Out</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Add Category                                                       -->
+<!-- ========================================================================= -->
+<div class="inv-modal" id="categoryModal" aria-hidden="true" role="dialog">
+    <div class="inv-modal-backdrop" data-close-modal></div>
+    <div class="inv-modal-card">
+        <div class="inv-modal-header">
+            <div>
+                <h2>Add Category</h2>
+                <p>Organize dental supplies by clinical category.</p>
+            </div>
+            <button type="button" class="inv-modal-close" data-close-modal>&times;</button>
+        </div>
+        <form method="post" asp-controller="Inventory" asp-action="CreateCategory" class="inv-form">
+            @Html.AntiForgeryToken()
+
+            <label for="newCategoryName">Category Name *</label>
+            <input id="newCategoryName" name="categoryName" required maxlength="100" placeholder="e.g. Orthodontics, Surgery" />
+
+            <label for="newCategoryDesc">Description (Optional)</label>
+            <input id="newCategoryDesc" name="description" maxlength="255" placeholder="Brief details about category..." />
+
+            <div class="inv-modal-actions">
+                <button type="button" class="inv-btn inv-btn-secondary" data-close-modal>Cancel</button>
+                <button type="submit" class="inv-btn inv-btn-primary">Add Category</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Script for Interactive Modals -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var createSupplyModal = document.getElementById('createSupplyModal');
+        var editSupplyModal = document.getElementById('editSupplyModal');
+        var viewSupplyModal = document.getElementById('viewSupplyModal');
+        var stockInModal = document.getElementById('stockInModal');
+        var stockOutModal = document.getElementById('stockOutModal');
+        var categoryModal = document.getElementById('categoryModal');
+
+        var openCreateBtn = document.getElementById('openCreateSupplyBtn');
+        var openCategoryBtn = document.getElementById('openCategoryModalBtn');
+
+        if (openCreateBtn) openCreateBtn.addEventListener('click', function() { createSupplyModal.classList.add('is-open'); });
+        if (openCategoryBtn) openCategoryBtn.addEventListener('click', function() { categoryModal.classList.add('is-open'); });
+
+        // Close on backdrop or close button
+        document.querySelectorAll('[data-close-modal]').forEach(function(el) {
+            el.addEventListener('click', function() {
+                document.querySelectorAll('.inv-modal').forEach(function(m) { m.classList.remove('is-open'); });
+            });
+        });
+
+        // View Modal Populate
+        document.querySelectorAll('.btn-view-supply').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('viewSupplyNameTitle').textContent = this.getAttribute('data-name');
+                document.getElementById('viewSupplyCategorySubtitle').textContent = this.getAttribute('data-category');
+                document.getElementById('viewDesc').textContent = this.getAttribute('data-desc');
+                document.getElementById('viewStock').textContent = this.getAttribute('data-stock') + ' ' + this.getAttribute('data-unit');
+                document.getElementById('viewMin').textContent = this.getAttribute('data-min') + ' ' + this.getAttribute('data-unit');
+                document.getElementById('viewUnit').textContent = this.getAttribute('data-unit');
+                document.getElementById('viewPrice').textContent = this.getAttribute('data-price') !== '-' ? '₱' + this.getAttribute('data-price') : 'N/A';
+                document.getElementById('viewExp').textContent = this.getAttribute('data-exp');
+                document.getElementById('viewStatus').textContent = this.getAttribute('data-status');
+                viewSupplyModal.classList.add('is-open');
+            });
+        });
+
+        // Edit Modal Populate
+        document.querySelectorAll('.btn-edit-supply').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('editSupplyId').value = this.getAttribute('data-id');
+                document.getElementById('editSupplyName').value = this.getAttribute('data-name');
+                document.getElementById('editCategoryId').value = this.getAttribute('data-catid');
+                document.getElementById('editDescription').value = this.getAttribute('data-desc') || '';
+                document.getElementById('editUnit').value = this.getAttribute('data-unit');
+                document.getElementById('editMinimumStock').value = this.getAttribute('data-min');
+                document.getElementById('editPurchasePrice').value = this.getAttribute('data-price') || '';
+                document.getElementById('editExpirationDate').value = this.getAttribute('data-exp') || '';
+                editSupplyModal.classList.add('is-open');
+            });
+        });
+
+        // Stock In Modal Populate
+        document.querySelectorAll('.btn-stockin-supply').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('stockInSupplyId').value = this.getAttribute('data-id');
+                document.getElementById('stockInItemTitle').textContent = 'Stock In for: ' + this.getAttribute('data-name');
+                document.getElementById('stockInCurrentCount').textContent = this.getAttribute('data-stock') + ' ' + this.getAttribute('data-unit');
+                stockInModal.classList.add('is-open');
+            });
+        });
+
+        // Stock Out Modal Populate
+        document.querySelectorAll('.btn-stockout-supply').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('stockOutSupplyId').value = this.getAttribute('data-id');
+                document.getElementById('stockOutItemTitle').textContent = 'Stock Out for: ' + this.getAttribute('data-name');
+                document.getElementById('stockOutAvailableCount').textContent = this.getAttribute('data-stock') + ' ' + this.getAttribute('data-unit');
+                stockOutModal.classList.add('is-open');
+            });
+        });
+    });
+</script>

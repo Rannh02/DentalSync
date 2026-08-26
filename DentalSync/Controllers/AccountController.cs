@@ -1,7 +1,8 @@
-﻿using DentalSync.ViewModels;
+using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using DentalSync.Models;
+using DentalSync.Services;
 
 namespace DentalSync.Controllers
 {
@@ -9,12 +10,13 @@ namespace DentalSync.Controllers
     {
         private readonly SignInManager<Users> signInManager;
         private readonly UserManager<Users> userManager;
+        private readonly AuditService _audit;
 
-
-        public AccountController(SignInManager<Users> signInManager, UserManager<Users> userManager)
+        public AccountController(SignInManager<Users> signInManager, UserManager<Users> userManager, AuditService audit)
         {
             this.signInManager = signInManager;
             this.userManager = userManager;
+            _audit = audit;
         }
 
 
@@ -40,6 +42,12 @@ namespace DentalSync.Controllers
 
                 if (result.Succeeded)
                 {
+                    var roles = user != null ? await userManager.GetRolesAsync(user) : new List<string>();
+                    var roleName = roles.FirstOrDefault() ?? "Unknown";
+                    var displayName = user?.FullName ?? user?.UserName ?? model.Email;
+                    await _audit.LogAsync("Login", "Authentication", $"Successful login",
+                        overrideUser: displayName, overrideRole: roleName);
+
                     if (user != null && await userManager.IsInRoleAsync(user, "Receptionist"))
                     {
                         return RedirectToAction("Receptionist_Dashboard", "Receptionist");
@@ -67,6 +75,13 @@ namespace DentalSync.Controllers
                 }
                 else
                 {
+                    // Log failed login
+                    var userName = user?.FullName ?? user?.UserName ?? model.Email;
+                    var roles = user != null ? await userManager.GetRolesAsync(user) : new List<string>();
+                    var roleName = roles.FirstOrDefault() ?? "Unknown";
+                    await _audit.LogAsync("Failed Login", "Authentication", $"Failed login attempt for {userName}",
+                        overrideUser: userName, overrideRole: roleName);
+
                     ModelState.AddModelError("", "Email or password is incorrect");
                     return View(model);
                 }
@@ -90,37 +105,7 @@ namespace DentalSync.Controllers
         //==================================================================================
         public IActionResult Register()
         {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                Users users = new Users
-                {
-                    FullName = model.Name,
-                    Email = model.Email,
-                    UserName = model.Email,
-
-                };
-                var result = await userManager.CreateAsync(users, model.Password);
-
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Login", "Account");
-                }
-                else
-                {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                    return View(model);
-                }
-            }
-            return View(model);
+            return RedirectToAction("Login", "Account");
         }
         //==================================================================================
         //=====================================REGISTER=====================================
@@ -202,10 +187,16 @@ namespace DentalSync.Controllers
                 return View(model);
             }
         }
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            await _audit.LogAsync("Logout", "Authentication", "User signed out");
             await signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
         }

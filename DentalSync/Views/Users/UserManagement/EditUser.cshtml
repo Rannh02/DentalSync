@@ -1,0 +1,73 @@
+@model DentalSync.ViewModels.EditUserViewModel
+@{ Layout = null; }
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <a asp-controller="Users" asp-action="Users" class="back-link">
+            ← Back to Users
+        </a>
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Edit User</h1>
+                <p>Update account details and role for this user.</p>
+            </div>
+        </div>
+
+        <section class="users-panel user-form-card" aria-label="Edit user form">
+            <form method="post"
+                  asp-controller="Users"
+                  asp-action="EditUser"
+                  autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div asp-validation-summary="All" class="modal-error" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+                <div class="modal-section-title">Account Information</div>
+
+                <label for="editFullName">Full Name</label>
+                <input id="editFullName"
+                       asp-for="FullName"
+                       required
+                       autocomplete="name"
+                       placeholder="e.g. Juan dela Cruz" />
+                <span asp-validation-for="FullName" class="field-error"></span>
+
+                <label for="editEmail">Email Address</label>
+                <input id="editEmail"
+                       asp-for="Email"
+                       type="email"
+                       required
+                       autocomplete="off"
+                       placeholder="e.g. juan@clinic.com" />
+                <span asp-validation-for="Email" class="field-error"></span>
+
+                <label for="editRole">Role</label>
+                <select id="editRole" asp-for="Role" required>
+                    <option value="">Select Role</option>
+                    @foreach (var role in Model.Roles)
+                    {
+                        <option value="@role" selected="@(Model.Role == role)">@role</option>
+                    }
+                </select>
+                <span asp-validation-for="Role" class="field-error"></span>
+
+                <div class="user-modal-actions" style="margin-top:24px;">
+                    <a asp-controller="Users"
+                       asp-action="Users"
+                       class="users-clear-button">Cancel</a>
+                    <button type="submit" class="users-filter-button">Save Changes</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")

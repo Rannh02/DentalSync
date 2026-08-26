@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DentalSync.Models
 {
-    public class Patient
+    public class Dentist
     {
         [Key]
         public int Id { get; set; }
@@ -22,34 +22,19 @@ namespace DentalSync.Models
         public string LastName { get; set; } = string.Empty;
 
         [StringLength(100)]
-        public string? MiddleName { get; set; }
+        public string? Specialization { get; set; }
 
-        [StringLength(20)]
-        public string? Suffix { get; set; }
+        [StringLength(100)]
+        public string? LicenseNumber { get; set; }
 
-        public DateOnly? DateOfBirth { get; set; }
-
-        [StringLength(20)]
-        public string? Gender { get; set; }
-
-        [Required]
         [StringLength(30)]
-        public string ContactNumber { get; set; } = string.Empty;
+        public string? Phone { get; set; }
 
         [StringLength(150)]
         public string? Email { get; set; }
 
-        [Required]
-        [StringLength(255)]
-        public string Address { get; set; } = string.Empty;
-
-        [StringLength(150)]
-        public string? EmergencyContact { get; set; }
-
-        [StringLength(30)]
-        public string? EmergencyPhone { get; set; }
-
-        public string? MedicalNotes { get; set; }
+        [StringLength(20)]
+        public string Status { get; set; } = "Active";
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -58,7 +43,5 @@ namespace DentalSync.Models
         // Navigation properties
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<TreatmentRecord> TreatmentRecords { get; set; } = new List<TreatmentRecord>();
-        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-        public ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
     }
 }

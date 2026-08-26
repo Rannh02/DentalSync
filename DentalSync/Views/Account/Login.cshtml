@@ -1,55 +1,60 @@
-﻿@using DentalSync.ViewModels;
+@using DentalSync.ViewModels;
 @model LoginViewModel;
 
 @{
     ViewData["Title"] = "Login";
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
-
 }
 
 <div class="account-container">
     <div class="account-box">
-        <h2 class="text-center mb-4">Login</h2>
+        <div class="account-brand">
+            <h1 class="account-brand-title">Dental<span class="account-brand-accent">Sync</span></h1>
+            <p class="account-subtitle">Sign in to access your clinic portal</p>
+        </div>
+
         <form asp-action="Login" method="post">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
             <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
+
             <div class="mb-3">
-                <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" type="email" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+                <label asp-for="Email" class="form-label">Email Address</label>
+                <input asp-for="Email" class="form-control" type="email" placeholder="name@example.com" autofocus />
+                <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
+
             <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" type="password" />
-                <span asp-validation-for="Password" class="text-danger"></span> 
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label asp-for="Password" class="form-label mb-0">Password</label>
+                    <a asp-controller="Account" asp-action="VerifyEmail" class="account-link">
+                        Forgot password?
+                    </a>
+                </div>
+                <input asp-for="Password" class="form-control" type="password" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
-            <div class="float-end">
-                <a asp-controller="Account" asp-action="VerifyEmail" class="text-decoration-none">
-                    Forgot Password?
-                </a>
-            </div>
+
             <div class="form-check mb-3">
-                <label class="form-check-label">
-                    <input asp-for="RememberMe" class="form-check-input" />
-                    @Html.DisplayNameFor(a=> a.RememberMe)
+                <input asp-for="RememberMe" class="form-check-input" id="rememberMeCheck" />
+                <label class="form-check-label" for="rememberMeCheck">
+                    @Html.DisplayNameFor(a => a.RememberMe)
                 </label>
             </div>
-            <input type="submit" value="Login" class="btn btn-success w-100 p-2"/>
-            <p class="text-center mt-2">
-                Don't have an account? <a asp-controller="Account" asp-action="Register" class="text-decoration-none">Register</a>
-            </p>
+
+            <button type="submit" class="account-btn-primary">Sign In</button>
+
             <div class="text-center">
-                <a asp-controller="Home" asp-action="Index" class="text-decoration-none mt-3">Back</a>
+                <a asp-controller="Home" asp-action="Index" class="account-back-link">
+                    &larr; Back to Home
+                </a>
             </div>
         </form>
     </div>
 </div>
 
-@section Scripts{
+@section Scripts {
     @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml"); 
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
     }
 }
-
-

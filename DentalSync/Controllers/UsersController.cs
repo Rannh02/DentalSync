@@ -1,4 +1,6 @@
+using DentalSync.Attributes;
 using DentalSync.Models;
+using DentalSync.Services;
 using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -8,15 +10,18 @@ using Microsoft.EntityFrameworkCore;
 namespace DentalSync.Controllers
 {
     [Authorize]
+    [HasPermission("users.manage")]
     public class UsersController : Controller
     {
         private readonly UserManager<Users> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
+        private readonly AuditService _audit;
 
-        public UsersController(UserManager<Users> userManager, RoleManager<IdentityRole> roleManager)
+        public UsersController(UserManager<Users> userManager, RoleManager<IdentityRole> roleManager, AuditService audit)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
+            _audit = audit;
         }
 
         public async Task<IActionResult> Users(string search = "", string role = "", string status = "", int page = 1)
@@ -119,6 +124,7 @@ namespace DentalSync.Controllers
                 await roleManager.CreateAsync(new IdentityRole(model.Role));
             }
             await userManager.AddToRoleAsync(user, model.Role);
+            await _audit.LogAsync("Created", "User Management", $"Created user account for {model.FullName} ({model.Email}) with role {model.Role}");
             return RedirectToAction(nameof(Users));
         }
 
@@ -178,6 +184,7 @@ namespace DentalSync.Controllers
             if (currentRoles.Count > 0) await userManager.RemoveFromRolesAsync(user, currentRoles);
             if (!await roleManager.RoleExistsAsync(model.Role)) await roleManager.CreateAsync(new IdentityRole(model.Role));
             await userManager.AddToRoleAsync(user, model.Role);
+            await _audit.LogAsync("Updated", "User Management", $"Updated user account: {model.FullName} ({model.Email}), role set to {model.Role}");
             return RedirectToAction(nameof(Users));
         }
 
@@ -191,6 +198,8 @@ namespace DentalSync.Controllers
             var isInactive = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
             await userManager.SetLockoutEnabledAsync(user, true);
             await userManager.SetLockoutEndDateAsync(user, isInactive ? null : DateTimeOffset.UtcNow.AddYears(100));
+            var action = isInactive ? "Activated" : "Deactivated";
+            await _audit.LogAsync(action, "User Management", $"{action} user account: {user.FullName ?? user.Email}");
             return RedirectToLocal(returnUrl);
         }
 
@@ -218,6 +227,7 @@ namespace DentalSync.Controllers
                 return View("UserManagement/ResetUserPassword", model);
             }
 
+            await _audit.LogAsync("Updated", "User Management", $"Password reset for user: {user.FullName ?? user.Email}");
             return RedirectToAction(nameof(Users));
         }
 
