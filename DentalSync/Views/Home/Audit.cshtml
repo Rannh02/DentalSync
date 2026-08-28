@@ -52,6 +52,7 @@
                         <col class="audit-col-module" />
                         <col class="audit-col-desc" />
                         <col class="audit-col-ip" />
+                        <col class="audit-col-browser" />
                     </colgroup>
                     <thead>
                         <tr>
@@ -62,13 +63,14 @@
                             <th>Module</th>
                             <th>Description</th>
                             <th>IP Address</th>
+                            <th>Browser</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model.Logs.Count == 0)
                         {
                             <tr>
-                                <td colspan="7" class="users-empty">
+                                <td colspan="8" class="users-empty">
                                     @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Role))
                                     {
                                         <span>No audit logs match the selected filters.</span>
@@ -92,6 +94,23 @@
                                     <td>@log.Module</td>
                                     <td class="audit-desc">@log.Description</td>
                                     <td class="audit-ip">@log.IpAddress</td>
+                                    <td>
+                                        @{
+                                            var b = log.Browser;
+                                            var bClass = b switch {
+                                                "Chrome"           => "browser-chrome",
+                                                "Microsoft Edge"   => "browser-edge",
+                                                "Firefox"          => "browser-firefox",
+                                                "Safari"           => "browser-safari",
+                                                "Opera"            => "browser-opera",
+                                                "Internet Explorer"=> "browser-ie",
+                                                _                  => "browser-other"
+                                            };
+                                        }
+                                        <span class="browser-pill @bClass">
+                                            @(string.IsNullOrEmpty(b) ? "Unknown" : b)
+                                        </span>
+                                    </td>
                                 </tr>
                             }
                         }

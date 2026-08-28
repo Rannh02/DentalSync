@@ -11,10 +11,6 @@ namespace DentalSync.ViewModels
         public int PageSize { get; set; } = 5;
         public int TotalPages => (int)Math.Ceiling((double)TotalLogs / PageSize);
 
-        // KPI Metrics
-        public int ActiveSessions { get; set; }
-        public int FailedLogins { get; set; }
-        public int LockedAccounts { get; set; }
     }
 
     public class AuthenticationLogEntry

@@ -65,6 +65,7 @@ namespace DentalSync.Controllers
                     Module      = l.Module,
                     Description = l.Description,
                     IpAddress   = l.IpAddress,
+                    Browser     = l.Browser,
                 })
                 .ToListAsync();
 
@@ -87,22 +88,6 @@ namespace DentalSync.Controllers
 
             // Query base for authentication-related logs
             var query = _db.AuditLogs.AsNoTracking().Where(l => l.Module == "Authentication");
-
-            // Compute KPI Metrics
-            var activeTimeLimit = DateTime.Now.AddMinutes(-30);
-            var activeSessions = await _db.AuditLogs
-                .AsNoTracking()
-                .Where(l => l.Module == "Authentication" && l.Action == "Login" && l.DateTime >= activeTimeLimit)
-                .Select(l => l.User)
-                .Distinct()
-                .CountAsync();
-
-            var failedLogins = await _db.AuditLogs
-                .AsNoTracking()
-                .CountAsync(l => l.Module == "Authentication" && l.Action == "Failed Login");
-
-            var lockedAccounts = await userManager.Users
-                .CountAsync(u => u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow);
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(search))
@@ -142,10 +127,7 @@ namespace DentalSync.Controllers
                 Logs = logs,
                 TotalLogs = total,
                 Page = page,
-                PageSize = pageSize,
-                ActiveSessions = activeSessions,
-                FailedLogins = failedLogins,
-                LockedAccounts = lockedAccounts
+                PageSize = pageSize
             };
 
             return View(vm);
@@ -368,6 +350,74 @@ namespace DentalSync.Controllers
                 .ToListAsync();
 
             // ── Assemble VM ───────────────────────────────────────────────────
+            var activeTimeLimit = DateTime.Now.AddMinutes(-30);
+            var activeSessions = await _db.AuditLogs
+                .AsNoTracking()
+                .Where(l => l.Module == "Authentication" && l.Action == "Login" && l.DateTime >= activeTimeLimit)
+                .Select(l => l.User)
+                .Distinct()
+                .CountAsync();
+
+            var failedLogins = await _db.AuditLogs
+                .AsNoTracking()
+                .CountAsync(l => l.Module == "Authentication" && l.Action == "Failed Login");
+
+            var lockedAccounts = await userManager.Users
+                .CountAsync(u => u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow);
+
+            var loginsByMonth = (await _db.AuditLogs
+                .AsNoTracking()
+                .Where(l => l.Module == "Authentication" && l.Action == "Login" && l.DateTime >= sixMonthsAgo)
+                .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync())
+                .Select(g => new DentalSync.ViewModels.ChartPoint
+                {
+                    Label = $"{g.Year}-{g.Month:D2}",
+                    Count = g.Count
+                })
+                .OrderBy(c => c.Label)
+                .ToList();
+
+            var failedLoginsByMonth = (await _db.AuditLogs
+                .AsNoTracking()
+                .Where(l => l.Module == "Authentication" && l.Action == "Failed Login" && l.DateTime >= sixMonthsAgo)
+                .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync())
+                .Select(g => new DentalSync.ViewModels.ChartPoint
+                {
+                    Label = $"{g.Year}-{g.Month:D2}",
+                    Count = g.Count
+                })
+                .OrderBy(c => c.Label)
+                .ToList();
+
+            // ── Browser usage (all-time) ──────────────────────────────────────
+            var browserStats = (await _db.AuditLogs
+                .AsNoTracking()
+                .Where(l => !string.IsNullOrEmpty(l.Browser))
+                .GroupBy(l => l.Browser)
+                .Select(g => new { Browser = g.Key, Count = g.Count() })
+                .ToListAsync())
+                .Select(g => new DentalSync.ViewModels.ChartPoint
+                {
+                    Label = g.Browser,
+                    Count = g.Count
+                })
+                .OrderByDescending(c => c.Count)
+                .ToList();
+
             static double? Delta(decimal curr, decimal prev) =>
                 prev == 0 ? null : Math.Round((double)((curr - prev) / prev * 100), 1);
 
@@ -414,7 +464,13 @@ namespace DentalSync.Controllers
                 RecentInvoices = invoices,
                 InvoicePage    = invoicePage,
                 InvoicePageSize = invPageSize,
-                TotalInvoices  = totalInv
+                TotalInvoices  = totalInv,
+                ActiveSessions = activeSessions,
+                FailedLogins = failedLogins,
+                LockedAccounts = lockedAccounts,
+                LoginsByMonth = loginsByMonth,
+                FailedLoginsByMonth = failedLoginsByMonth,
+                BrowserStats = browserStats
             };
 
             return View(vm);

@@ -25,6 +25,8 @@ namespace DentalSync.Services
         {
             var ctx  = _httpContextAccessor.HttpContext;
             var ip   = ctx?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+            var ua   = ctx?.Request?.Headers["User-Agent"].ToString() ?? "";
+            var browser = ParseBrowser(ua);
 
             string userName = overrideUser ?? "Unknown";
             string roleName = overrideRole ?? "Unknown";
@@ -49,9 +51,34 @@ namespace DentalSync.Services
                 Module      = module,
                 Description = description,
                 IpAddress   = ip == "::1" ? "127.0.0.1" : ip,
+                Browser     = browser,
             });
 
             await _db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Parses a User-Agent string into a friendly browser name.
+        /// </summary>
+        private static string ParseBrowser(string userAgent)
+        {
+            if (string.IsNullOrWhiteSpace(userAgent)) return "Unknown";
+
+            // Order matters: Edge must be checked before Chrome (Edg token appears alongside Chrome)
+            if (userAgent.Contains("Edg/") || userAgent.Contains("Edge/"))
+                return "Microsoft Edge";
+            if (userAgent.Contains("OPR/") || userAgent.Contains("Opera"))
+                return "Opera";
+            if (userAgent.Contains("Chrome/"))
+                return "Chrome";
+            if (userAgent.Contains("Firefox/"))
+                return "Firefox";
+            if (userAgent.Contains("Safari/") && !userAgent.Contains("Chrome"))
+                return "Safari";
+            if (userAgent.Contains("Trident/") || userAgent.Contains("MSIE"))
+                return "Internet Explorer";
+
+            return "Other";
         }
     }
 }

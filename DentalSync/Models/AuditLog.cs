@@ -26,5 +26,8 @@ namespace DentalSync.Models
 
         [MaxLength(64)]
         public string IpAddress { get; set; } = "";
+
+        [MaxLength(100)]
+        public string Browser { get; set; } = "";
     }
 }

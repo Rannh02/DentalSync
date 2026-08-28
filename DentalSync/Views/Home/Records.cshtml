@@ -256,6 +256,65 @@
             </div>
         </div>
 
+        <!-- ── Security Overview ─────────────────────────────────────────── -->
+        <div class="rp-section-title-bar">
+            <h2>Security &amp; Session Analytics</h2>
+        </div>
+
+        <!-- Security KPIs -->
+        <div class="rp-security-kpis rp-section">
+            <div class="rp-kpi-card rp-kpi-active-sessions">
+                <div class="rp-kpi-label">Active Sessions (Online)</div>
+                <div class="rp-kpi-value">@Model.ActiveSessions</div>
+                <span class="rp-kpi-delta flat">Current online users</span>
+            </div>
+
+            <div class="rp-kpi-card rp-kpi-failed-logins">
+                <div class="rp-kpi-label">Failed Logins</div>
+                <div class="rp-kpi-value">@Model.FailedLogins</div>
+                <span class="rp-kpi-delta flat">Total recorded failures</span>
+            </div>
+
+            <div class="rp-kpi-card rp-kpi-locked-accounts">
+                <div class="rp-kpi-label">Locked Accounts</div>
+                <div class="rp-kpi-value">@Model.LockedAccounts</div>
+                <span class="rp-kpi-delta flat">Currently locked out</span>
+            </div>
+        </div>
+
+        <!-- Security Graphs Grid -->
+        <div class="rp-security-grid rp-section">
+            <!-- User Logins Over Time -->
+            <div class="rp-panel">
+                <div class="rp-panel-header">
+                    <div>
+                        <div class="rp-panel-title">User Logins</div>
+                        <div class="rp-panel-sub">Successful logins · last 6 months</div>
+                    </div>
+                </div>
+                <div class="rp-panel-body">
+                    <div class="rp-chart-wrap">
+                        <canvas id="loginsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failed Logins (Bruteforce attempts) -->
+            <div class="rp-panel">
+                <div class="rp-panel-header">
+                    <div>
+                        <div class="rp-panel-title">Failed Logins &amp; Bruteforce Attempts</div>
+                        <div class="rp-panel-sub">Failed authentication logs · last 6 months</div>
+                    </div>
+                </div>
+                <div class="rp-panel-body">
+                    <div class="rp-chart-wrap">
+                        <canvas id="failedLoginsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ── Inventory Analytics ────────────────────────────────────────── -->
         <div class="rp-section">
             <div class="rp-panel">
@@ -462,6 +521,78 @@
                 pointBackgroundColor: '#059669',
                 fill: true,
                 tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+
+    // ── User Logins Line Chart ──────────────────────────────────────────────
+    var loginsLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.LoginsByMonth.Select(c => {
+            var parts = c.Label.Split('-');
+            return System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat
+                .GetAbbreviatedMonthName(int.Parse(parts[1])) + " " + parts[0].Substring(2);
+        }).ToList()));
+
+    var loginsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.LoginsByMonth.Select(c => c.Count).ToList()));
+
+    new Chart(document.getElementById('loginsChart'), {
+        type: 'line',
+        data: {
+            labels: loginsLabels,
+            datasets: [{
+                label: 'Logins',
+                data: loginsData,
+                borderColor: '#0b84ff',
+                backgroundColor: 'rgba(11,132,255,0.08)',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#0b84ff',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+
+    // ── Failed Logins Bar Chart ─────────────────────────────────────────────
+    var failedLoginsLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.FailedLoginsByMonth.Select(c => {
+            var parts = c.Label.Split('-');
+            return System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat
+                .GetAbbreviatedMonthName(int.Parse(parts[1])) + " " + parts[0].Substring(2);
+        }).ToList()));
+
+    var failedLoginsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.FailedLoginsByMonth.Select(c => c.Count).ToList()));
+
+    new Chart(document.getElementById('failedLoginsChart'), {
+        type: 'bar',
+        data: {
+            labels: failedLoginsLabels,
+            datasets: [{
+                label: 'Failed Logins',
+                data: failedLoginsData,
+                backgroundColor: 'rgba(239,68,68,0.15)',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderRadius: 6,
+                borderSkipped: false,
             }]
         },
         options: {

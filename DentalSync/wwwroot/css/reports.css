@@ -444,11 +444,48 @@
 /* ── Section spacer ──────────────────────────────────────────────────────── */
 .rp-section { margin-bottom: 16px; }
 
+/* ── Security KPIs & Graphs ── */
+.rp-security-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.rp-kpi-active-sessions::before { background: #0b84ff; }
+.rp-kpi-failed-logins::before   { background: #ef4444; }
+.rp-kpi-locked-accounts::before { background: #f59e0b; }
+
+.rp-security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.rp-section-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 28px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e8ec;
+    padding-bottom: 8px;
+}
+
+.rp-section-title-bar h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0b1220;
+    margin: 0;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
     .rp-kpi-grid { grid-template-columns: repeat(3, 1fr); }
     .rp-analytics-grid { grid-template-columns: 1fr; }
     .rp-analytics-grid-3 { grid-template-columns: 1fr 1fr; }
+    .rp-security-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 700px) {
@@ -458,4 +495,5 @@
     .rp-inv-grid { grid-template-columns: 1fr 1fr; }
     .rp-heading { flex-direction: column; align-items: flex-start; }
     .rp-filter-bar { width: 100%; }
+    .rp-security-kpis { grid-template-columns: 1fr; }
 }

@@ -21,5 +21,6 @@ namespace DentalSync.ViewModels
         public string Module      { get; set; } = "";
         public string Description { get; set; } = "";
         public string IpAddress   { get; set; } = "";
+        public string Browser     { get; set; } = "";
     }
 }

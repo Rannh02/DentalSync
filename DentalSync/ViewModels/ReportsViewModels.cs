@@ -97,6 +97,14 @@ namespace DentalSync.ViewModels
         public List<ChartPoint> PatientGrowth { get; set; } = new();
         public List<TopServiceRow> TopServices { get; set; } = new();
 
+        // Security KPIs & Charts
+        public int ActiveSessions { get; set; }
+        public int FailedLogins { get; set; }
+        public int LockedAccounts { get; set; }
+        public List<ChartPoint> LoginsByMonth { get; set; } = new();
+        public List<ChartPoint> FailedLoginsByMonth { get; set; } = new();
+        public List<ChartPoint> BrowserStats { get; set; } = new();
+
         // Recent invoices table
         public List<RecentInvoiceRow> RecentInvoices { get; set; } = new();
         public int InvoicePage { get; set; } = 1;
