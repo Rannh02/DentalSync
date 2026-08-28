@@ -1,8 +1,18 @@
-﻿<aside class="ds-sidebar">
+@{
+    var ctrl   = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString()     ?? "";
+
+    string ActiveIf(string c, string a) =>
+        string.Equals(ctrl, c, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(action, a, StringComparison.OrdinalIgnoreCase)
+            ? " active" : "";
+}
+
+<aside class="ds-sidebar">
     <nav aria-label="PATIENT & FINANCIAL MANAGEMENT" class="ds-nav">
         <ul class="ds-list">
             <li class="ds-item">
-                <a asp-controller="Receptionist" asp-action="Receptionist_Dashboard" class="ds-link">
+                <a asp-controller="Receptionist" asp-action="Receptionist_Dashboard" class="ds-link@(ActiveIf("Receptionist","Receptionist_Dashboard"))">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="13" y="3" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="3" y="13" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /><rect x="13" y="13" width="8" height="8" rx="1" stroke="#0b1220" stroke-width="1.5" /></svg>
                     <span>Dashboard</span>
                 </a>
@@ -10,11 +20,9 @@
         </ul>
         <div class="ds-section-title">PATIENT MANAGEMENT</div>
         <ul class="ds-list">
-            <li class="ds-item"><a asp-controller="Receptionist" asp-action="Register_Patients" class="ds-link">Register Patient</a></li>
-            <li class="ds-item"><a asp-controller="Receptionist" asp-action="View_Patients" class="ds-link">Manage Appointments</a></li>
-            <li class="ds-item"><a asp-controller="Receptionist" asp-action="Bills_Patients" class="ds-link">Bills & Payments</a></li>
+            <li class="ds-item"><a asp-controller="Receptionist" asp-action="Register_Patients" class="ds-link@(ActiveIf("Receptionist","Register_Patients"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="#222" stroke-width="1.2" fill="none" /><path d="M4 20a8 8 0 0116 0" stroke="#222" stroke-width="1.2" fill="none" /></svg>Register Patient</a></li>
+            <li class="ds-item"><a asp-controller="Receptionist" asp-action="ManageAppointments" class="ds-link@(ActiveIf("Receptionist","ManageAppointments"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Manage Appointments</a></li>
+            <li class="ds-item"><a asp-controller="Receptionist" asp-action="BillsAndPayments" class="ds-link@(ActiveIf("Receptionist","BillsAndPayments"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Bills & Payments</a></li>
         </ul>
-
-
     </nav>
 </aside>

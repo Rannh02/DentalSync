@@ -292,29 +292,44 @@ namespace DentalSync.Controllers
 
             // ── Revenue by month (last 6 months) ─────────────────────────────
             var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
-            var revenueByMonth = await _db.Set<DentalSync.Models.Payment>()
+            var revenueByMonth = (await _db.Set<DentalSync.Models.Payment>()
                 .Where(p => p.PaymentDate >= sixMonthsAgo)
                 .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
-                .Select(g => new DentalSync.ViewModels.ChartPoint
+                .Select(g => new
                 {
-                    Label = g.Key.Year + "-" + g.Key.Month.ToString("D2"),
+                    g.Key.Year,
+                    g.Key.Month,
                     Value = g.Sum(p => p.Amount),
                     Count = g.Count()
                 })
-                .OrderBy(c => c.Label)
-                .ToListAsync();
-
-            // ── Patient growth (last 6 months) ────────────────────────────────
-            var patientGrowth = await _db.Set<DentalSync.Models.Patient>()
-                .Where(p => p.CreatedAt >= sixMonthsAgo)
-                .GroupBy(p => new { p.CreatedAt.Year, p.CreatedAt.Month })
+                .ToListAsync())
                 .Select(g => new DentalSync.ViewModels.ChartPoint
                 {
-                    Label = g.Key.Year + "-" + g.Key.Month.ToString("D2"),
-                    Count = g.Count()
+                    Label = $"{g.Year}-{g.Month:D2}",
+                    Value = g.Value,
+                    Count = g.Count
                 })
                 .OrderBy(c => c.Label)
-                .ToListAsync();
+                .ToList();
+
+            // ── Patient growth (last 6 months) ────────────────────────────────
+            var patientGrowth = (await _db.Set<DentalSync.Models.Patient>()
+                .Where(p => p.CreatedAt >= sixMonthsAgo)
+                .GroupBy(p => new { p.CreatedAt.Year, p.CreatedAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync())
+                .Select(g => new DentalSync.ViewModels.ChartPoint
+                {
+                    Label = $"{g.Year}-{g.Month:D2}",
+                    Count = g.Count
+                })
+                .OrderBy(c => c.Label)
+                .ToList();
 
             // ── Top services ──────────────────────────────────────────────────
             var topServices = await _db.Set<DentalSync.Models.TreatmentRecord>()

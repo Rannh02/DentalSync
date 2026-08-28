@@ -1,0 +1,199 @@
+@model DentalSync.ViewModels.ManageAppointmentsViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Manage Appointments";
+}
+
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+
+    <main class="receptionist-page">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1>Manage Appointments</h1>
+                <p>Schedule, update, and manage dentist-patient appointments.</p>
+            </div>
+            <div>
+                <button type="button" class="btn-primary-action" id="openAppointmentModal">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Book Appointment
+                </button>
+            </div>
+        </div>
+
+        <!-- Success & Error Alerts -->
+        @if (TempData["AppointmentSuccess"] != null)
+        {
+            <div class="alert-banner alert-success">
+                @TempData["AppointmentSuccess"]
+            </div>
+        }
+        @if (TempData["AppointmentError"] != null)
+        {
+            <div class="alert-banner alert-danger">
+                @TempData["AppointmentError"]
+            </div>
+        }
+
+        <!-- Appointments Table Card -->
+        <div class="layout-card">
+            <div class="ds-table-responsive">
+                <table class="ds-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>Dentist</th>
+                            <th>Service</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Appointments.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">
+                                    No appointments scheduled yet. Click "Book Appointment" to schedule one.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var app in Model.Appointments)
+                            {
+                                <tr>
+                                    <td style="font-weight: 500;">@app.AppointmentDate.ToString("MMMM dd, yyyy")</td>
+                                    <td>@app.StartTime.ToString("hh:mm tt")</td>
+                                    <td style="font-weight: 600; color: #1e293b;">@app.PatientName</td>
+                                    <td>@app.DentistName</td>
+                                    <td><span style="font-weight: 500; color: #4f46e5;">@app.ServiceName</span></td>
+                                    <td>
+                                        <span class="ds-badge ds-badge-@app.Status.ToLower()">@app.Status</span>
+                                    </td>
+                                    <td>
+                                        <form asp-controller="Receptionist" asp-action="UpdateAppointmentStatus" method="post" class="status-dropdown-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@app.Id" />
+                                            <select name="status" class="status-select-inline" onchange="this.form.submit()">
+                                                <option value="" disabled selected>Update Status</option>
+                                                <option value="Scheduled">Scheduled</option>
+                                                <option value="Confirmed">Confirmed</option>
+                                                <option value="Completed">Completed</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            </select>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Appointment Modal -->
+<div class="modal-overlay" id="appointmentModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Book New Appointment</h3>
+            <button type="button" class="modal-close" id="closeAppointmentModal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <form asp-controller="Receptionist" asp-action="CreateAppointment" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="NewAppointment.PatientId">Select Patient</label>
+                <select asp-for="NewAppointment.PatientId" class="form-select" required>
+                    <option value="" disabled selected>-- Choose Patient --</option>
+                    @foreach (var pat in Model.Patients)
+                    {
+                        <option value="@pat.Id">@pat.FirstName @pat.LastName (@pat.ContactNumber)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewAppointment.DentistId">Select Dentist</label>
+                <select asp-for="NewAppointment.DentistId" class="form-select" required>
+                    <option value="" disabled selected>-- Choose Dentist --</option>
+                    @foreach (var dent in Model.Dentists)
+                    {
+                        <option value="@dent.Id">Dr. @dent.FirstName @dent.LastName - @dent.Specialization</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewAppointment.ServiceId">Dental Service</label>
+                <select asp-for="NewAppointment.ServiceId" class="form-select" required>
+                    <option value="" disabled selected>-- Choose Service --</option>
+                    @foreach (var srv in Model.Services)
+                    {
+                        <option value="@srv.Id">@srv.Name (₱@srv.Cost.ToString("N2"))</option>
+                    }
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label asp-for="NewAppointment.AppointmentDate">Date</label>
+                    <input asp-for="NewAppointment.AppointmentDate" type="date" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label asp-for="NewAppointment.StartTime">Time</label>
+                    <input asp-for="NewAppointment.StartTime" type="time" class="form-control" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewAppointment.Notes">Notes / Symptoms</label>
+                <textarea asp-for="NewAppointment.Notes" class="form-control" style="min-height: 80px; resize: vertical;" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelAppointmentModal">Cancel</button>
+                <button type="submit" class="btn-primary-action">Confirm Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('appointmentModal');
+    const openBtn = document.getElementById('openAppointmentModal');
+    const closeBtn = document.getElementById('closeAppointmentModal');
+    const cancelBtn = document.getElementById('cancelAppointmentModal');
+
+    function openModal() {
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Close on click outside modal
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+</script>

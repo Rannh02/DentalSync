@@ -1,0 +1,273 @@
+@model DentalSync.ViewModels.BillsAndPaymentsViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Bills & Payments";
+}
+
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+
+    <main class="receptionist-page">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1>Bills & Payments</h1>
+                <p>Manage invoices, record patient payments, and track outstanding balances.</p>
+            </div>
+            <div>
+                <button type="button" class="btn-primary-action" id="openInvoiceModal">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Invoice
+                </button>
+            </div>
+        </div>
+
+        <!-- Success & Error Alerts -->
+        @if (TempData["InvoiceSuccess"] != null)
+        {
+            <div class="alert-banner alert-success">
+                @TempData["InvoiceSuccess"]
+            </div>
+        }
+        @if (TempData["InvoiceError"] != null)
+        {
+            <div class="alert-banner alert-danger">
+                @TempData["InvoiceError"]
+            </div>
+        }
+        @if (TempData["PaymentSuccess"] != null)
+        {
+            <div class="alert-banner alert-success">
+                @TempData["PaymentSuccess"]
+            </div>
+        }
+        @if (TempData["PaymentError"] != null)
+        {
+            <div class="alert-banner alert-danger">
+                @TempData["PaymentError"]
+            </div>
+        }
+
+        <!-- Bills & Invoices Table Card -->
+        <div class="layout-card">
+            <div class="ds-table-responsive">
+                <table class="ds-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice No.</th>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Services</th>
+                            <th>Total Amount</th>
+                            <th>Amount Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Invoices.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="9" style="text-align: center; color: #94a3b8; padding: 32px;">
+                                    No invoices generated yet. Click "New Invoice" to generate one.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var inv in Model.Invoices)
+                            {
+                                <tr>
+                                    <td style="font-weight: 600; color: #1e293b;">@inv.InvoiceNumber</td>
+                                    <td>@inv.InvoiceDate.ToString("yyyy-MM-dd")</td>
+                                    <td style="font-weight: 500;">@inv.PatientName</td>
+                                    <td>
+                                        <div style="font-size: 13px; color: #64748b; max-width: 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                            @string.Join(", ", inv.Items)
+                                        </div>
+                                    </td>
+                                    <td style="font-weight: 600;">₱@inv.TotalAmount.ToString("N2")</td>
+                                    <td style="color: #16a34a; font-weight: 500;">₱@inv.AmountPaid.ToString("N2")</td>
+                                    <td style="color: @(inv.Balance > 0 ? "#dc2626" : "#64748b"); font-weight: 600;">
+                                        ₱@inv.Balance.ToString("N2")
+                                    </td>
+                                    <td>
+                                        <span class="ds-badge ds-badge-@inv.Status.ToLower()">@inv.Status</span>
+                                    </td>
+                                    <td>
+                                        @if (inv.Balance > 0)
+                                        {
+                                            <button type="button" class="btn-secondary" style="height: 30px; padding: 0 10px; font-size: 12px; border-color: #4f46e5; color: #4f46e5;" 
+                                                    onclick="openPaymentModal(@inv.Id, '@inv.InvoiceNumber', @inv.Balance)">
+                                                Pay
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: #94a3b8; font-size: 12px; font-weight: 500;">Fully Paid</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal-overlay" id="invoiceModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Generate New Invoice</h3>
+            <button type="button" class="modal-close" id="closeInvoiceModal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <form asp-controller="Receptionist" asp-action="CreateInvoice" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="NewInvoice.PatientId">Select Patient</label>
+                <select asp-for="NewInvoice.PatientId" class="form-select" required>
+                    <option value="" disabled selected>-- Choose Patient --</option>
+                    @foreach (var pat in Model.Patients)
+                    {
+                        <option value="@pat.Id">@pat.FirstName @pat.LastName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Select Services</label>
+                <div class="services-select-list">
+                    @foreach (var srv in Model.Services)
+                    {
+                        <div class="service-select-item">
+                            <label>
+                                <input type="checkbox" name="NewInvoice.SelectedServiceIds" value="@srv.Id" />
+                                <span>@srv.Name</span>
+                            </label>
+                            <span class="service-cost">₱@srv.Cost.ToString("N2")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewInvoice.Discount">Discount Amount (₱)</label>
+                <input asp-for="NewInvoice.Discount" type="number" class="form-control" placeholder="0.00" step="0.01" min="0" />
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelInvoiceModal">Cancel</button>
+                <button type="submit" class="btn-primary-action">Generate Invoice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal-overlay" id="paymentModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Record Payment</h3>
+            <button type="button" class="modal-close" id="closePaymentModal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <form asp-controller="Receptionist" asp-action="RecordPayment" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="NewPayment.InvoiceId" id="payInvoiceId" />
+
+            <div class="form-group">
+                <label>Invoice Number</label>
+                <input type="text" class="form-control" id="payInvoiceNumber" readonly style="background: #f1f5f9; cursor: not-allowed;" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewPayment.Amount">Payment Amount (₱)</label>
+                <input asp-for="NewPayment.Amount" type="number" class="form-control" id="payAmount" required step="0.01" min="0.01" />
+                <span style="font-size: 12px; color: #64748b; margin-top: 4px; display: block;" id="maxPayNotice"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewPayment.PaymentMethod">Payment Method</label>
+                <select asp-for="NewPayment.PaymentMethod" class="form-select" required>
+                    <option value="Cash">Cash</option>
+                    <option value="Card">Card</option>
+                    <option value="GCash">GCash</option>
+                    <option value="BankTransfer">Bank Transfer</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewPayment.ReferenceNumber">Reference Number</label>
+                <input asp-for="NewPayment.ReferenceNumber" type="text" class="form-control" placeholder="GCash ref, Card Approval Code, etc. (Optional)" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NewPayment.Notes">Notes</label>
+                <textarea asp-for="NewPayment.Notes" class="form-control" style="min-height: 60px; resize: vertical;" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelPaymentModal">Cancel</button>
+                <button type="submit" class="btn-primary-action">Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Invoice Modal setup
+    const invModal = document.getElementById('invoiceModal');
+    const openInvBtn = document.getElementById('openInvoiceModal');
+    const closeInvBtn = document.getElementById('closeInvoiceModal');
+    const cancelInvBtn = document.getElementById('cancelInvoiceModal');
+
+    openInvBtn.addEventListener('click', () => invModal.classList.add('active'));
+    
+    function closeInvoice() {
+        invModal.classList.remove('active');
+    }
+    closeInvBtn.addEventListener('click', closeInvoice);
+    cancelInvBtn.addEventListener('click', closeInvoice);
+
+    // Payment Modal setup
+    const payModal = document.getElementById('paymentModal');
+    const closePayBtn = document.getElementById('closePaymentModal');
+    const cancelPayBtn = document.getElementById('cancelPaymentModal');
+
+    function openPaymentModal(invoiceId, invoiceNumber, balance) {
+        document.getElementById('payInvoiceId').value = invoiceId;
+        document.getElementById('payInvoiceNumber').value = invoiceNumber;
+        document.getElementById('payAmount').value = balance.toFixed(2);
+        document.getElementById('payAmount').max = balance.toFixed(2);
+        document.getElementById('maxPayNotice').innerText = `Maximum amount: ₱${balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        payModal.classList.add('active');
+    }
+
+    function closePayment() {
+        payModal.classList.remove('active');
+    }
+    closePayBtn.addEventListener('click', closePayment);
+    cancelPayBtn.addEventListener('click', closePayment);
+
+    // General close on click outside
+    window.addEventListener('click', (e) => {
+        if (e.target === invModal) closeInvoice();
+        if (e.target === payModal) closePayment();
+    });
+</script>

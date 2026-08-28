@@ -111,14 +111,241 @@ namespace DentalSync.Controllers
             return RedirectToAction(nameof(Register_Patients));
         }
 
-        public IActionResult View_Patients()
+        // =================== Appointments ===================
+        public async Task<IActionResult> ManageAppointments()
         {
-            return View("~/Views/Receptionists/View_Patients.cshtml");
+            var rawAppointments = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .Include(a => a.Service)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .ToListAsync();
+
+            var appointments = rawAppointments.Select(a => new AppointmentListItemViewModel
+            {
+                Id = a.Id,
+                PatientId = a.PatientId,
+                PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
+                DentistId = a.DentistId,
+                DentistName = $"Dr. {a.Dentist.FirstName} {a.Dentist.LastName}",
+                ServiceId = a.ServiceId,
+                ServiceName = a.Service.Name,
+                AppointmentDate = a.AppointmentDate,
+                StartTime = a.StartTime,
+                EndTime = a.EndTime,
+                Status = a.Status,
+                Notes = a.Notes
+            }).ToList();
+
+            var model = new ManageAppointmentsViewModel
+            {
+                Appointments = appointments,
+                Patients = await _context.Patients.OrderBy(p => p.LastName).ToListAsync(),
+                Dentists = await _context.Dentists.Where(d => d.Status == "Active").OrderBy(d => d.LastName).ToListAsync(),
+                Services = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(),
+                NewAppointment = new CreateAppointmentViewModel()
+            };
+
+            return View("~/Views/Receptionists/ManageAppointments.cshtml", model);
         }
 
-        public IActionResult Bills_Patients()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAppointment(CreateAppointmentViewModel model)
         {
-            return View("~/Views/Receptionists/Bills_Patients.cshtml");
+            if (!ModelState.IsValid)
+            {
+                TempData["AppointmentError"] = "Failed to create appointment. Please fill in all fields.";
+                return RedirectToAction(nameof(ManageAppointments));
+            }
+
+            var appointment = new Appointment
+            {
+                PatientId = model.PatientId,
+                DentistId = model.DentistId,
+                ServiceId = model.ServiceId,
+                AppointmentDate = model.AppointmentDate,
+                StartTime = model.StartTime,
+                Status = "Scheduled",
+                Notes = model.Notes,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Appointments.Add(appointment);
+            await _context.SaveChangesAsync();
+
+            TempData["AppointmentSuccess"] = "Appointment scheduled successfully!";
+            return RedirectToAction(nameof(ManageAppointments));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAppointmentStatus(int id, string status)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null)
+            {
+                return NotFound();
+            }
+
+            appointment.Status = status;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            TempData["AppointmentSuccess"] = $"Appointment status updated to '{status}'!";
+            return RedirectToAction(nameof(ManageAppointments));
+        }
+
+        // =================== Bills & Payments ===================
+        public async Task<IActionResult> BillsAndPayments()
+        {
+            var rawInvoices = await _context.Invoices
+                .Include(i => i.Patient)
+                .Include(i => i.InvoiceItems)
+                .Include(i => i.Payments)
+                .OrderByDescending(i => i.InvoiceDate)
+                .ToListAsync();
+
+            var invoices = rawInvoices.Select(i => new InvoiceListItemViewModel
+            {
+                Id = i.Id,
+                InvoiceNumber = i.InvoiceNumber,
+                PatientName = $"{i.Patient.FirstName} {i.Patient.LastName}",
+                InvoiceDate = i.InvoiceDate,
+                Subtotal = i.Subtotal,
+                Discount = i.Discount ?? 0,
+                TotalAmount = i.TotalAmount,
+                Status = i.Status,
+                AmountPaid = i.Payments.Sum(p => p.Amount),
+                Items = i.InvoiceItems.Select(item => item.Description ?? "Dental Service").ToList()
+            }).ToList();
+
+            var model = new BillsAndPaymentsViewModel
+            {
+                Invoices = invoices,
+                Patients = await _context.Patients.OrderBy(p => p.LastName).ToListAsync(),
+                Services = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(),
+                NewInvoice = new CreateInvoiceViewModel(),
+                NewPayment = new RecordPaymentViewModel()
+            };
+
+            return View("~/Views/Receptionists/BillsAndPayments.cshtml", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateInvoice(CreateInvoiceViewModel model)
+        {
+            if (!ModelState.IsValid || model.SelectedServiceIds.Count == 0)
+            {
+                TempData["InvoiceError"] = "Failed to create invoice. Select a patient and at least one service.";
+                return RedirectToAction(nameof(BillsAndPayments));
+            }
+
+            var services = await _context.Services
+                .Where(s => model.SelectedServiceIds.Contains(s.Id))
+                .ToListAsync();
+
+            decimal subtotal = services.Sum(s => s.Cost);
+            decimal total = Math.Max(0, subtotal - model.Discount);
+
+            var nextNum = await _context.Invoices.CountAsync() + 1;
+            string invoiceNumber = $"INV-{DateTime.Today:yyyyMMdd}-{nextNum:D4}";
+
+            var invoice = new Invoice
+            {
+                PatientId = model.PatientId,
+                InvoiceNumber = invoiceNumber,
+                InvoiceDate = DateTime.UtcNow,
+                Subtotal = subtotal,
+                Discount = model.Discount,
+                TotalAmount = total,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            foreach (var s in services)
+            {
+                var item = new InvoiceItem
+                {
+                    InvoiceId = invoice.Id,
+                    ServiceId = s.Id,
+                    Description = s.Name,
+                    Quantity = 1,
+                    UnitPrice = s.Cost,
+                    Amount = s.Cost
+                };
+                _context.InvoiceItems.Add(item);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["InvoiceSuccess"] = "Invoice created successfully!";
+            return RedirectToAction(nameof(BillsAndPayments));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordPayment(RecordPaymentViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["PaymentError"] = "Failed to record payment. Check your inputs.";
+                return RedirectToAction(nameof(BillsAndPayments));
+            }
+
+            var invoice = await _context.Invoices
+                .Include(i => i.Payments)
+                .FirstOrDefaultAsync(i => i.Id == model.InvoiceId);
+
+            if (invoice == null)
+            {
+                return NotFound();
+            }
+
+            var totalPaidBefore = invoice.Payments.Sum(p => p.Amount);
+            var remainingBalance = invoice.TotalAmount - totalPaidBefore;
+
+            if (model.Amount > remainingBalance)
+            {
+                TempData["PaymentError"] = $"Cannot record payment. Maximum amount allowed is ₱{remainingBalance:N2}.";
+                return RedirectToAction(nameof(BillsAndPayments));
+            }
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var payment = new Payment
+            {
+                InvoiceId = model.InvoiceId,
+                Amount = model.Amount,
+                ReceivedById = userId,
+                PaymentDate = DateTime.UtcNow,
+                PaymentMethod = model.PaymentMethod,
+                ReferenceNumber = model.ReferenceNumber,
+                Notes = model.Notes
+            };
+
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            var totalPaidAfter = totalPaidBefore + model.Amount;
+            if (totalPaidAfter >= invoice.TotalAmount)
+            {
+                invoice.Status = "Paid";
+            }
+            else if (totalPaidAfter > 0)
+            {
+                invoice.Status = "PartiallyPaid";
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["PaymentSuccess"] = "Payment recorded successfully!";
+            return RedirectToAction(nameof(BillsAndPayments));
         }
     }
 }
