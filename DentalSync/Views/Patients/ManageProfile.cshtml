@@ -1,0 +1,29 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Manage Profile";
+}
+
+@await Html.PartialAsync("~/Views/Shared/PatientSideBar/_HeaderPatient.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_SidebarPatient.cshtml")
+
+    <main class="receptionist-page">
+        <div class="page-header">
+            <div>
+                <h1>Manage Profile</h1>
+                <p>View and update your personal information and contact details.</p>
+            </div>
+        </div>
+
+        <div class="layout-card">
+            <p style="color: #64748b; text-align: center; padding: 40px 0;">
+                Profile management features will be available here.
+            </p>
+        </div>
+    </main>
+</div>

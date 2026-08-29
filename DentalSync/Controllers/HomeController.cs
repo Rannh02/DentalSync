@@ -132,10 +132,7 @@ namespace DentalSync.Controllers
 
             return View(vm);
         }
-        public IActionResult RolePerm()
-        {
-            return RedirectToAction("Index", "RolePermissions");
-        }
+
         //===================Inventory===================
         public IActionResult DentalSupplies()
         {
@@ -483,6 +480,15 @@ namespace DentalSync.Controllers
         [Authorize]
         public async Task<IActionResult> Dashboard()
         {
+            if (User.IsInRole("Patient"))
+            {
+                return RedirectToAction("Dashboard", "Patient");
+            }
+            if (User.IsInRole("Dentist"))
+            {
+                return RedirectToAction("Dashboard", "Dentist");
+            }
+
             var user = await userManager.GetUserAsync(User);
             ViewBag.UserFullName = user?.FullName ?? user?.UserName ?? "there";
             return View();

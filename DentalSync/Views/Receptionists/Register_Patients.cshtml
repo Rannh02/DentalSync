@@ -144,6 +144,19 @@
             <label for="createAddress">Address *</label>
             <input id="createAddress" name="Address" required placeholder="Enter complete address" />
 
+            <div class="modal-section-title">Account Information</div>
+
+            <label for="createEmail">Email *</label>
+            <input id="createEmail" name="Email" type="email" required placeholder="Enter email address" autocomplete="email" />
+
+            <label for="createPassword">Password *</label>
+            <input id="createPassword" name="Password" type="password" minlength="12" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{12,}" title="Use at least 12 characters with uppercase, lowercase, a number, and a special character." required placeholder="Enter password" autocomplete="new-password" />
+            <div class="password-strength" aria-live="polite">
+                <div class="password-strength-track"><span id="passwordStrengthBar"></span></div>
+                <strong id="passwordStrengthLabel">Enter a password</strong>
+            </div>
+            <small class="password-requirements">At least 12 characters, including uppercase, lowercase, a number, and a special character.</small>
+
             <div class="user-modal-actions">
                 <button type="button" class="users-clear-button" data-close-patient-modal>Cancel</button>
                 <button type="submit" class="users-filter-button">Add Patient</button>

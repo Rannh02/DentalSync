@@ -28,7 +28,7 @@
 
                 <div class="rp-separator"></div>
 
-                <form method="get" style="display:flex;align-items:center;gap:6px;">
+                <form method="get">
                     <input type="hidden" name="preset" value="custom" />
                     <input type="date" name="from" class="rp-date-input"
                            value="@(Model.Preset == "custom" ? Model.DateFrom.ToString("yyyy-MM-dd") : "")"
@@ -40,12 +40,7 @@
                     <button type="submit" class="rp-preset-btn @(Model.Preset == "custom" ? "active" : "")">Apply</button>
                 </form>
 
-                <div class="rp-separator"></div>
 
-                <button class="rp-action-btn" onclick="window.print()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/></svg>
-                    Print
-                </button>
             </div>
         </div>
 
@@ -311,6 +306,49 @@
                     <div class="rp-chart-wrap">
                         <canvas id="failedLoginsChart"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browser Usage Pie Chart -->
+        <div class="rp-section">
+            <div class="rp-panel">
+                <div class="rp-panel-header">
+                    <div>
+                        <div class="rp-panel-title">Browser Usage</div>
+                        <div class="rp-panel-sub">Top browsers by session activity · all-time</div>
+                    </div>
+                </div>
+                <div class="rp-panel-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                    @if (Model.BrowserStats.Count == 0)
+                    {
+                        <div class="rp-empty" style="width:100%;">No browser data recorded yet.</div>
+                    }
+                    else
+                    {
+                        <div style="width:220px;height:220px;flex-shrink:0;">
+                            <canvas id="browserChart"></canvas>
+                        </div>
+                        <div class="rp-browser-legend">
+                            @{
+                                var browserColors = new[] { "#0b84ff", "#7c3aed", "#059669", "#f59e0b", "#ef4444", "#06b6d4", "#64748b" };
+                                var totalBrowserCount = Model.BrowserStats.Sum(b => b.Count);
+                                int bIdx = 0;
+                            }
+                            @foreach (var b in Model.BrowserStats)
+                            {
+                                var pct = totalBrowserCount == 0 ? 0 : Math.Round((double)b.Count / totalBrowserCount * 100, 1);
+                                var color = browserColors[bIdx % browserColors.Length];
+                                bIdx++;
+                                <div class="rp-browser-row">
+                                    <span class="rp-browser-dot" style="background:@color;"></span>
+                                    <span class="rp-browser-name">@b.Label</span>
+                                    <span class="rp-browser-pct">@pct%</span>
+                                    <span class="rp-browser-count">@b.Count sessions</span>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -604,4 +642,44 @@
             }
         }
     });
+
+    // ── Browser Usage Pie Chart ─────────────────────────────────────────────
+    (function () {
+        var ctx = document.getElementById('browserChart');
+        if (!ctx) return;
+        var browserLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BrowserStats.Select(b => b.Label).ToList()));
+        var browserCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BrowserStats.Select(b => b.Count).ToList()));
+        var browserColors = ['#0b84ff','#7c3aed','#059669','#f59e0b','#ef4444','#06b6d4','#64748b'];
+        var sliceColors = browserLabels.map(function(_, i) { return browserColors[i % browserColors.length]; });
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: browserLabels,
+                datasets: [{
+                    data: browserCounts,
+                    backgroundColor: sliceColors,
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                var pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
+                                return ' ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })();
 </script>

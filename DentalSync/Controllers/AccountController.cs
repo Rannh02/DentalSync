@@ -52,6 +52,14 @@ namespace DentalSync.Controllers
                     {
                         return RedirectToAction("Receptionist_Dashboard", "Receptionist");
                     }
+                    if (user != null && await userManager.IsInRoleAsync(user, "Patient"))
+                    {
+                        return RedirectToAction("Dashboard", "Patient");
+                    }
+                    if (user != null && await userManager.IsInRoleAsync(user, "Dentist"))
+                    {
+                        return RedirectToAction("Dashboard", "Dentist");
+                    }
 
                     // Sanitize returnUrl: only redirect to local URLs and avoid suspicious values like trailing ':' or embedded scheme
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))

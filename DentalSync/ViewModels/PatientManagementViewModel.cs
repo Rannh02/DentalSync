@@ -45,6 +45,18 @@ namespace DentalSync.ViewModels
         [Display(Name = "Contact number")]
         public string ContactNumber { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email address format.")]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password is required.")]
+        [MinLength(12, ErrorMessage = "Password must be at least 12 characters and include uppercase, lowercase, number, and special character.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$", ErrorMessage = "Password must include uppercase, lowercase, number, and special character.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Address is required.")]
         [Display(Name = "Address")]
         public string Address { get; set; } = string.Empty;

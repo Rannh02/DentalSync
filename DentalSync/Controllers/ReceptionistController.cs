@@ -2,6 +2,7 @@ using DentalSync.Data;
 using DentalSync.Models;
 using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -12,10 +13,17 @@ namespace DentalSync.Controllers
     public class ReceptionistController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<Users> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public ReceptionistController(AppDbContext context)
+        public ReceptionistController(
+            AppDbContext context,
+            UserManager<Users> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public IActionResult Receptionist_Dashboard()
@@ -93,6 +101,39 @@ namespace DentalSync.Controllers
                 return RedirectToAction(nameof(Register_Patients));
             }
 
+            // Check if email already in use
+            var existingUser = await _userManager.FindByEmailAsync(model.Email.Trim());
+            if (existingUser != null)
+            {
+                TempData["PatientCreateError"] = $"Email '{model.Email.Trim()}' is already in use.";
+                return RedirectToAction(nameof(Register_Patients));
+            }
+
+            // 1. Create Identity User
+            var user = new Users
+            {
+                FullName = $"{model.FirstName.Trim()} {model.LastName.Trim()}",
+                UserName = model.Email.Trim(),
+                Email = model.Email.Trim(),
+                EmailConfirmed = true,
+                LockoutEnabled = true
+            };
+
+            var createResult = await _userManager.CreateAsync(user, model.Password);
+            if (!createResult.Succeeded)
+            {
+                TempData["PatientCreateError"] = string.Join(" ", createResult.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Register_Patients));
+            }
+
+            // 2. Add to role "Patient"
+            if (!await _roleManager.RoleExistsAsync("Patient"))
+            {
+                await _roleManager.CreateAsync(new IdentityRole("Patient"));
+            }
+            await _userManager.AddToRoleAsync(user, "Patient");
+
+            // 3. Create Patient
             var patient = new Patient
             {
                 FirstName = model.FirstName.Trim(),
@@ -101,6 +142,8 @@ namespace DentalSync.Controllers
                 Suffix = string.IsNullOrWhiteSpace(model.Suffix) ? null : model.Suffix.Trim(),
                 ContactNumber = model.ContactNumber.Trim(),
                 Address = model.Address.Trim(),
+                Email = model.Email.Trim(),
+                UserId = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -114,6 +157,35 @@ namespace DentalSync.Controllers
         // =================== Appointments ===================
         public async Task<IActionResult> ManageAppointments()
         {
+            // Sync: ensure every user with the Dentist role has a record in the Dentists table
+            var dentistUsers = await _userManager.GetUsersInRoleAsync("Dentist");
+            var dentistUserIds = dentistUsers.Select(u => u.Id).ToHashSet();
+
+            foreach (var du in dentistUsers)
+            {
+                var exists = await _context.Dentists.AnyAsync(d => d.UserId == du.Id);
+                if (!exists)
+                {
+                    var parts = (du.FullName ?? du.UserName ?? "Dentist User")
+                                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    _context.Dentists.Add(new Dentist
+                    {
+                        UserId         = du.Id,
+                        FirstName      = parts.Length > 0 ? parts[0] : "Dentist",
+                        LastName       = parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : "User",
+                        Email          = du.Email,
+                        Specialization = "General Dentistry",
+                        Status         = "Active",
+                        CreatedAt      = DateTime.UtcNow
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            // Only show patients linked to a real Patient-role user account
+            var patientUsers = await _userManager.GetUsersInRoleAsync("Patient");
+            var patientUserIds = patientUsers.Select(u => u.Id).ToHashSet();
+
             var rawAppointments = await _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Dentist)
@@ -141,8 +213,16 @@ namespace DentalSync.Controllers
             var model = new ManageAppointmentsViewModel
             {
                 Appointments = appointments,
-                Patients = await _context.Patients.OrderBy(p => p.LastName).ToListAsync(),
-                Dentists = await _context.Dentists.Where(d => d.Status == "Active").OrderBy(d => d.LastName).ToListAsync(),
+                // Only patients linked to a real user account
+                Patients = await _context.Patients
+                    .Where(p => p.UserId != null && patientUserIds.Contains(p.UserId))
+                    .OrderBy(p => p.LastName)
+                    .ToListAsync(),
+                // Only dentists linked to a real Dentist-role user account
+                Dentists = await _context.Dentists
+                    .Where(d => d.Status == "Active" && d.UserId != null && dentistUserIds.Contains(d.UserId))
+                    .OrderBy(d => d.LastName)
+                    .ToListAsync(),
                 Services = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(),
                 NewAppointment = new CreateAppointmentViewModel()
             };
@@ -152,7 +232,7 @@ namespace DentalSync.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAppointment(CreateAppointmentViewModel model)
+        public async Task<IActionResult> CreateAppointment([Bind(Prefix = "NewAppointment")] CreateAppointmentViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -235,7 +315,7 @@ namespace DentalSync.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateInvoice(CreateInvoiceViewModel model)
+        public async Task<IActionResult> CreateInvoice([Bind(Prefix = "NewInvoice")] CreateInvoiceViewModel model)
         {
             if (!ModelState.IsValid || model.SelectedServiceIds.Count == 0)
             {
@@ -290,7 +370,7 @@ namespace DentalSync.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RecordPayment(RecordPaymentViewModel model)
+        public async Task<IActionResult> RecordPayment([Bind(Prefix = "NewPayment")] RecordPaymentViewModel model)
         {
             if (!ModelState.IsValid)
             {

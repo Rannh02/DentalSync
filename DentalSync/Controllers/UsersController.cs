@@ -1,4 +1,4 @@
-using DentalSync.Attributes;
+using DentalSync.Data;
 using DentalSync.Models;
 using DentalSync.Services;
 using DentalSync.ViewModels;
@@ -9,19 +9,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DentalSync.Controllers
 {
-    [Authorize]
-    [HasPermission("users.manage")]
+    [Authorize(Roles = "Administrator")]
     public class UsersController : Controller
     {
         private readonly UserManager<Users> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly AuditService _audit;
+        private readonly AppDbContext _context;
 
-        public UsersController(UserManager<Users> userManager, RoleManager<IdentityRole> roleManager, AuditService audit)
+        public UsersController(
+            UserManager<Users> userManager,
+            RoleManager<IdentityRole> roleManager,
+            AuditService audit,
+            AppDbContext context)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             _audit = audit;
+            _context = context;
         }
 
         public async Task<IActionResult> Users(string search = "", string role = "", string status = "", int page = 1)
@@ -124,6 +129,27 @@ namespace DentalSync.Controllers
                 await roleManager.CreateAsync(new IdentityRole(model.Role));
             }
             await userManager.AddToRoleAsync(user, model.Role);
+
+            if (model.Role == "Dentist")
+            {
+                var nameParts = model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var fName = nameParts.Length > 0 ? nameParts[0] : "Dentist";
+                var lName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "User";
+
+                var dentist = new Dentist
+                {
+                    UserId = user.Id,
+                    FirstName = fName,
+                    LastName = lName,
+                    Email = model.Email,
+                    Specialization = "General Dentistry",
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Dentists.Add(dentist);
+                await _context.SaveChangesAsync();
+            }
+
             await _audit.LogAsync("Created", "User Management", $"Created user account for {model.FullName} ({model.Email}) with role {model.Role}");
             return RedirectToAction(nameof(Users));
         }

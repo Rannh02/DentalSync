@@ -1,5 +1,6 @@
 using DentalSync.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace DentalSync.Data
 {
@@ -9,12 +10,17 @@ namespace DentalSync.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<Users>>();
+            var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
 
-            // Ensure Administrator role exists
-            if (!await roleManager.RoleExistsAsync("Administrator"))
+            // Ensure roles exist
+            var roles = new[] { "Administrator", "Receptionist", "Dentist", "Patient" };
+            foreach (var role in roles)
             {
-                await roleManager.CreateAsync(new IdentityRole("Administrator"));
-                logger.LogInformation("Created 'Administrator' role.");
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                    logger.LogInformation("Created '{Role}' role.", role);
+                }
             }
 
             // Ensure default admin user exists
@@ -49,6 +55,53 @@ namespace DentalSync.Data
                 await userManager.AddToRoleAsync(adminUser, "Administrator");
                 logger.LogInformation("Assigned Administrator role to existing user {Email}.", adminEmail);
             }
+
+            // One-time cleanup: remove accidentally seeded dummy dentist account
+            const string dummyDentistEmail = "dentist@dentalsync.com";
+            var dummyDentist = await userManager.FindByEmailAsync(dummyDentistEmail);
+            if (dummyDentist != null)
+            {
+                // Deactivate + unlink the Dentist record instead of deleting it
+                // (deleting would violate FK from Appointments table)
+                var dummyRecord = await dbContext.Dentists.FirstOrDefaultAsync(d => d.UserId == dummyDentist.Id);
+                if (dummyRecord != null)
+                {
+                    dummyRecord.Status    = "Inactive";
+                    dummyRecord.UserId    = null;
+                    dummyRecord.UpdatedAt = DateTime.UtcNow;
+                    await dbContext.SaveChangesAsync();
+                }
+                // Remove the Identity user account
+                await userManager.DeleteAsync(dummyDentist);
+                logger.LogInformation("Cleaned up dummy dentist account: {Email}", dummyDentistEmail);
+            }
+
+            // Ensure all existing dentist users have matching Dentist records
+            var dentistUsers = await userManager.GetUsersInRoleAsync("Dentist");
+            foreach (var user in dentistUsers)
+            {
+                var hasRecord = await dbContext.Dentists.AnyAsync(d => d.UserId == user.Id);
+                if (!hasRecord)
+                {
+                    var nameParts = (user.FullName ?? "Dentist User").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var fName = nameParts.Length > 0 ? nameParts[0] : "Dentist";
+                    var lName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "User";
+
+                    var dentist = new Dentist
+                    {
+                        UserId = user.Id,
+                        FirstName = fName,
+                        LastName = lName,
+                        Email = user.Email,
+                        Specialization = "General Dentistry",
+                        Status = "Active",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    dbContext.Dentists.Add(dentist);
+                    logger.LogInformation("Automatically created Dentist record for existing user {Email}", user.Email);
+                }
+            }
+            await dbContext.SaveChangesAsync();
         }
     }
 }

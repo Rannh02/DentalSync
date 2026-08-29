@@ -1,0 +1,29 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Patient Records";
+}
+
+@await Html.PartialAsync("~/Views/Shared/DentistSideBars/_HeaderDentist.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
+
+    <main class="receptionist-page">
+        <div class="page-header">
+            <div>
+                <h1>Patient Records</h1>
+                <p>Access, search, and view comprehensive records for all registered patients.</p>
+            </div>
+        </div>
+
+        <div class="layout-card">
+            <p style="color: #64748b; text-align: center; padding: 40px 0;">
+                Patient files and medical records list will be loaded here.
+            </p>
+        </div>
+    </main>
+</div>
