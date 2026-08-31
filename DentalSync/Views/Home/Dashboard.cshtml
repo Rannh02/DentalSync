@@ -1,3 +1,4 @@
+@model DentalSync.ViewModels.AdminDashboardViewModel
 @{
     Layout = null;
 }
@@ -22,9 +23,9 @@
                     <div class="dc-kpi-icon dc-icon-blue">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                     </div>
-                    <span class="dc-kpi-delta dc-delta-up">▲ 8.2%</span>
+                    <span class="dc-kpi-delta dc-delta-up">Active</span>
                 </div>
-                <div class="dc-kpi-value">2,148</div>
+                <div class="dc-kpi-value">@(Model?.TotalPatients.ToString("N0") ?? "0")</div>
                 <div class="dc-kpi-label">Patients</div>
             </div>
 
@@ -35,7 +36,7 @@
                     </div>
                     <span class="dc-kpi-delta dc-delta-flat">Today</span>
                 </div>
-                <div class="dc-kpi-value">24</div>
+                <div class="dc-kpi-value">@(Model?.TodayAppointmentsCount.ToString("N0") ?? "0")</div>
                 <div class="dc-kpi-label">Appointments</div>
             </div>
 
@@ -44,9 +45,9 @@
                     <div class="dc-kpi-icon dc-icon-green">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
                     </div>
-                    <span class="dc-kpi-delta dc-delta-up">▲ 12.4%</span>
+                    <span class="dc-kpi-delta dc-delta-up">Total</span>
                 </div>
-                <div class="dc-kpi-value">₱386,250</div>
+                <div class="dc-kpi-value">₱@(Model?.TotalRevenue.ToString("N2") ?? "0.00")</div>
                 <div class="dc-kpi-label">Revenue</div>
             </div>
 
@@ -57,7 +58,7 @@
                     </div>
                     <span class="dc-kpi-delta dc-delta-down">Needs attention</span>
                 </div>
-                <div class="dc-kpi-value">₱24,500</div>
+                <div class="dc-kpi-value">₱@(Model?.PendingPayments.ToString("N2") ?? "0.00")</div>
                 <div class="dc-kpi-label">Pending Payments</div>
             </div>
 
@@ -69,33 +70,36 @@
                 <div class="dc-panel">
                     <div class="dc-panel-header">
                         <span class="dc-panel-title">Today's Appointments</span>
-                        <a href="#" class="dc-panel-link">View all</a>
+                        <a asp-controller="Receptionist" asp-action="ManageAppointments" class="dc-panel-link">View all</a>
                     </div>
                     <div class="dc-appt-list">
-                        <div class="dc-appt-row">
-                            <div class="dc-avatar">MR</div>
-                            <div class="dc-appt-info">
-                                <div class="dc-appt-name">Maria Reyes</div>
-                                <div class="dc-appt-service">Dental Cleaning · Dr. Santos</div>
+                        @if (Model?.TodayAppointments != null && Model.TodayAppointments.Any())
+                        {
+                            @foreach (var appt in Model.TodayAppointments)
+                            {
+                                var timeFormatted = DateTime.Today.Add(appt.StartTime.ToTimeSpan()).ToString("h:mm tt");
+                                <div class="dc-appt-row">
+                                    <div class="dc-avatar">@appt.Initials</div>
+                                    <div class="dc-appt-info">
+                                        <div class="dc-appt-name">@appt.PatientName</div>
+                                        <div class="dc-appt-service">@appt.ServiceName · @appt.DentistName</div>
+                                        <div class="dc-appt-booked" style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                            Booked: @appt.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
+                                        </div>
+                                    </div>
+                                    <div class="dc-appt-time">
+                                        @timeFormatted<br />
+                                        <span class="dc-status @appt.StatusCssClass">@appt.Status</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="dc-appt-row" style="justify-content: center; padding: 24px 0; color: #64748b;">
+                                No appointments scheduled for today.
                             </div>
-                            <div class="dc-appt-time">10:00 AM<br /><span class="dc-status dc-status-confirmed">Confirmed</span></div>
-                        </div>
-                        <div class="dc-appt-row">
-                            <div class="dc-avatar">JC</div>
-                            <div class="dc-appt-info">
-                                <div class="dc-appt-name">Jerome Cruz</div>
-                                <div class="dc-appt-service">Tooth Extraction · Dr. Lim</div>
-                            </div>
-                            <div class="dc-appt-time">10:45 AM<br /><span class="dc-status dc-status-confirmed">Confirmed</span></div>
-                        </div>
-                        <div class="dc-appt-row">
-                            <div class="dc-avatar">AS</div>
-                            <div class="dc-appt-info">
-                                <div class="dc-appt-name">Angela Santiago</div>
-                                <div class="dc-appt-service">Braces Adjustment · Dr. Santos</div>
-                            </div>
-                            <div class="dc-appt-time">11:30 AM<br /><span class="dc-status dc-status-pending">Pending</span></div>
-                        </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -103,24 +107,29 @@
                 <div class="dc-panel">
                     <div class="dc-panel-header">
                         <span class="dc-panel-title">Recent Activity</span>
-                        <a href="#" class="dc-panel-link">View all</a>
+                        <a asp-controller="Home" asp-action="Audit" class="dc-panel-link">View all</a>
                     </div>
                     <div class="dc-activity-list">
-                        <div class="dc-activity-row">
-                            <div class="dc-activity-icon dc-icon-blue">+</div>
-                            <div class="dc-activity-info"><strong>New patient registered</strong><span>Maria Reyes was added to the patient list</span></div>
-                            <time>10 min ago</time>
-                        </div>
-                        <div class="dc-activity-row">
-                            <div class="dc-activity-icon dc-icon-green">₱</div>
-                            <div class="dc-activity-info"><strong>Payment received</strong><span>Payment recorded for Jerome Cruz</span></div>
-                            <time>32 min ago</time>
-                        </div>
-                        <div class="dc-activity-row">
-                            <div class="dc-activity-icon dc-icon-teal">✓</div>
-                            <div class="dc-activity-info"><strong>Appointment completed</strong><span>Dental cleaning for Angela Santiago</span></div>
-                            <time>1 hr ago</time>
-                        </div>
+                        @if (Model?.RecentActivities != null && Model.RecentActivities.Any())
+                        {
+                            @foreach (var activity in Model.RecentActivities)
+                            {
+                                <div class="dc-activity-row">
+                                    <div class="dc-activity-icon @activity.IconCssClass">@activity.Icon</div>
+                                    <div class="dc-activity-info">
+                                        <strong>@activity.Action</strong>
+                                        <span>@activity.Description</span>
+                                    </div>
+                                    <time title="@activity.Timestamp.ToString("F")">@activity.RelativeTimeText</time>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="dc-activity-row" style="justify-content: center; padding: 24px 0; color: #64748b;">
+                                No recent activity logged.
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -129,3 +138,4 @@
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
+
