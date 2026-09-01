@@ -31,7 +31,7 @@ namespace DentalSync.Controllers
 
         public async Task<IActionResult> Users(string search = "", string role = "", string status = "", int page = 1)
         {
-            const int pageSize = 8;
+            const int pageSize = 5;
             var users = await userManager.Users
                 .OrderBy(user => user.FullName)
                 .ThenBy(user => user.Email)

@@ -1,5 +1,6 @@
 using DentalSync.Data;
 using DentalSync.Models;
+using DentalSync.Services;
 using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,15 +16,18 @@ namespace DentalSync.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly AuditService _audit;
 
         public ReceptionistController(
             AppDbContext context,
             UserManager<Users> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            AuditService audit)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _audit = audit;
         }
 
         public IActionResult Receptionist_Dashboard()
@@ -101,7 +105,6 @@ namespace DentalSync.Controllers
                 return RedirectToAction(nameof(Register_Patients));
             }
 
-            // Check if email already in use
             var existingUser = await _userManager.FindByEmailAsync(model.Email.Trim());
             if (existingUser != null)
             {
@@ -109,7 +112,6 @@ namespace DentalSync.Controllers
                 return RedirectToAction(nameof(Register_Patients));
             }
 
-            // 1. Create Identity User
             var user = new Users
             {
                 FullName = $"{model.FirstName.Trim()} {model.LastName.Trim()}",
@@ -126,14 +128,12 @@ namespace DentalSync.Controllers
                 return RedirectToAction(nameof(Register_Patients));
             }
 
-            // 2. Add to role "Patient"
             if (!await _roleManager.RoleExistsAsync("Patient"))
             {
                 await _roleManager.CreateAsync(new IdentityRole("Patient"));
             }
             await _userManager.AddToRoleAsync(user, "Patient");
 
-            // 3. Create Patient
             var patient = new Patient
             {
                 FirstName = model.FirstName.Trim(),
@@ -150,6 +150,8 @@ namespace DentalSync.Controllers
             _context.Patients.Add(patient);
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Register Patient", "Patient Management", $"Registered patient {patient.FirstName} {patient.LastName} ({patient.Email})");
+
             TempData["PatientSuccess"] = "Patient registered successfully!";
             return RedirectToAction(nameof(Register_Patients));
         }
@@ -157,7 +159,6 @@ namespace DentalSync.Controllers
         // =================== Appointments ===================
         public async Task<IActionResult> ManageAppointments()
         {
-            // Sync: ensure every user with the Dentist role has a record in the Dentists table
             var dentistUsers = await _userManager.GetUsersInRoleAsync("Dentist");
             var dentistUserIds = dentistUsers.Select(u => u.Id).ToHashSet();
 
@@ -182,7 +183,6 @@ namespace DentalSync.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // Only show patients linked to a real Patient-role user account
             var patientUsers = await _userManager.GetUsersInRoleAsync("Patient");
             var patientUserIds = patientUsers.Select(u => u.Id).ToHashSet();
 
@@ -198,11 +198,11 @@ namespace DentalSync.Controllers
             {
                 Id = a.Id,
                 PatientId = a.PatientId,
-                PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
+                PatientName = $"{a.Patient?.FirstName} {a.Patient?.LastName}",
                 DentistId = a.DentistId,
-                DentistName = $"Dr. {a.Dentist.FirstName} {a.Dentist.LastName}",
+                DentistName = $"Dr. {a.Dentist?.FirstName} {a.Dentist?.LastName}",
                 ServiceId = a.ServiceId,
-                ServiceName = a.Service.Name,
+                ServiceName = a.Service?.Name ?? "General Service",
                 AppointmentDate = a.AppointmentDate,
                 StartTime = a.StartTime,
                 EndTime = a.EndTime,
@@ -213,12 +213,10 @@ namespace DentalSync.Controllers
             var model = new ManageAppointmentsViewModel
             {
                 Appointments = appointments,
-                // Only patients linked to a real user account
                 Patients = await _context.Patients
                     .Where(p => p.UserId != null && patientUserIds.Contains(p.UserId))
                     .OrderBy(p => p.LastName)
                     .ToListAsync(),
-                // Only dentists linked to a real Dentist-role user account
                 Dentists = await _context.Dentists
                     .Where(d => d.Status == "Active" && d.UserId != null && dentistUserIds.Contains(d.UserId))
                     .OrderBy(d => d.LastName)
@@ -255,6 +253,11 @@ namespace DentalSync.Controllers
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
+            var patient = await _context.Patients.FindAsync(model.PatientId);
+            var pName = patient != null ? $"{patient.FirstName} {patient.LastName}" : $"Patient #{model.PatientId}";
+
+            await _audit.LogAsync("Schedule Appointment", "Appointments", $"Scheduled appointment for {pName} on {model.AppointmentDate:yyyy-MM-dd} at {model.StartTime}");
+
             TempData["AppointmentSuccess"] = "Appointment scheduled successfully!";
             return RedirectToAction(nameof(ManageAppointments));
         }
@@ -263,7 +266,10 @@ namespace DentalSync.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateAppointmentStatus(int id, string status)
         {
-            var appointment = await _context.Appointments.FindAsync(id);
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
             if (appointment == null)
             {
                 return NotFound();
@@ -272,6 +278,9 @@ namespace DentalSync.Controllers
             appointment.Status = status;
             appointment.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            var pName = appointment.Patient != null ? $"{appointment.Patient.FirstName} {appointment.Patient.LastName}" : $"Appointment #{id}";
+            await _audit.LogAsync("Update Appointment Status", "Appointments", $"Updated appointment for {pName} status to '{status}'");
 
             TempData["AppointmentSuccess"] = $"Appointment status updated to '{status}'!";
             return RedirectToAction(nameof(ManageAppointments));
@@ -291,7 +300,7 @@ namespace DentalSync.Controllers
             {
                 Id = i.Id,
                 InvoiceNumber = i.InvoiceNumber,
-                PatientName = $"{i.Patient.FirstName} {i.Patient.LastName}",
+                PatientName = $"{i.Patient?.FirstName} {i.Patient?.LastName}",
                 InvoiceDate = i.InvoiceDate,
                 Subtotal = i.Subtotal,
                 Discount = i.Discount ?? 0,
@@ -364,6 +373,11 @@ namespace DentalSync.Controllers
 
             await _context.SaveChangesAsync();
 
+            var patient = await _context.Patients.FindAsync(model.PatientId);
+            var pName = patient != null ? $"{patient.FirstName} {patient.LastName}" : $"Patient #{model.PatientId}";
+
+            await _audit.LogAsync("Create Invoice", "Billing", $"Created invoice {invoiceNumber} for {pName} (Total: ₱{total:N2})");
+
             TempData["InvoiceSuccess"] = "Invoice created successfully!";
             return RedirectToAction(nameof(BillsAndPayments));
         }
@@ -380,6 +394,7 @@ namespace DentalSync.Controllers
 
             var invoice = await _context.Invoices
                 .Include(i => i.Payments)
+                .Include(i => i.Patient)
                 .FirstOrDefaultAsync(i => i.Id == model.InvoiceId);
 
             if (invoice == null)
@@ -423,6 +438,9 @@ namespace DentalSync.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            var pName = invoice.Patient != null ? $"{invoice.Patient.FirstName} {invoice.Patient.LastName}" : "Patient";
+            await _audit.LogAsync("Record Payment", "Billing", $"Recorded payment of ₱{model.Amount:N2} via {model.PaymentMethod} for {pName} (Invoice #{invoice.InvoiceNumber})");
 
             TempData["PaymentSuccess"] = "Payment recorded successfully!";
             return RedirectToAction(nameof(BillsAndPayments));

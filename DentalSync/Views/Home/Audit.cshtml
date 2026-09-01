@@ -21,7 +21,7 @@
         <section class="users-panel" aria-label="Audit log management">
 
             @*-- Filter bar --*@
-            <form method="get" asp-controller="Home" asp-action="Audit" class="users-filters">
+            <form method="get" asp-controller="Audit" asp-action="Audit" class="users-filters">
                 <label class="users-search">
                     <span class="sr-only">Search audit logs</span>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
@@ -38,7 +38,7 @@
                     </select>
                 </label>
                 <button type="submit" class="users-filter-button">Apply Filters</button>
-                <a asp-controller="Home" asp-action="Audit" class="users-clear-button">Clear</a>
+                <a asp-controller="Audit" asp-action="Audit" class="users-clear-button">Clear</a>
             </form>
 
             @*-- Table --*@
@@ -127,7 +127,7 @@
                         @for (var p = 1; p <= Model.TotalPages; p++)
                         {
                             <a class="@(p == Model.Page ? "current" : "")"
-                               asp-controller="Home" asp-action="Audit"
+                               asp-controller="Audit" asp-action="Audit"
                                asp-route-search="@Model.Search"
                                asp-route-role="@Model.Role"
                                asp-route-page="@p">@p</a>

@@ -453,7 +453,7 @@
                             @for (var p = 1; p <= Model.TotalInvoicePages; p++)
                             {
                                 <a class="@(p == Model.InvoicePage ? "current" : "")"
-                                   asp-controller="Home" asp-action="Records"
+                                   asp-controller="Reports" asp-action="Records"
                                    asp-route-preset="@Model.Preset"
                                    asp-route-invoicePage="@p">@p</a>
                             }

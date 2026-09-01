@@ -1,25 +1,168 @@
-/* Minimal White Theme for Account / Login Pages */
-.account-container {
-    background-color: #f8fafc;
-    background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-    background-size: 24px 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 2rem 1rem;
+/* =========================================================
+   DENTALSYNC - ACCOUNT / LOGIN PAGE
+   ========================================================= */
+
+/* =========================
+   GLOBAL
+   ========================= */
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+* {
     box-sizing: border-box;
 }
 
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.main-content {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+
+    padding: 30px 6%;
+}
+
+
+/* =========================================================
+   PROMOTIONAL VIDEO
+   ========================================================= */
+
+.video-container {
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-wrapper iframe,
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+
+    border: none;
+    display: block;
+
+    object-fit: cover;
+}
+.video-content {
+    width: 90%;
+    max-width: 560px;
+}
+
+.video-text {
+    margin-bottom: 20px;
+}
+
+.video-text h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #0b396a;
+    margin-bottom: 8px;
+}
+
+.video-text p {
+    font-size: 1rem;
+    color: #64748b;
+}
+
+.video-wrapper {
+    width: 100%;
+    max-width: none;
+
+    aspect-ratio: 16 / 9;
+
+    overflow: hidden;
+    border-radius: 12px;
+
+    background-color: #000000;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.12);
+
+    position: relative;
+}
+
+/* =========================================================
+   LOGIN CONTAINER
+   ========================================================= */
+
+.login-container {
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* =========================================================
+   ACCOUNT CONTAINER
+   ========================================================= */
+
+/*
+   IMPORTANT:
+   Do NOT use min-height: 100vh here.
+   The .main-content controls the page height.
+*/
+
+.account-container {
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin: 0;
+    padding: 0;
+}
+
+
+/* =========================================================
+   LOGIN BOX
+   ========================================================= */
+
 .account-box {
     background-color: #ffffff;
+
     padding: 40px 36px;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-    max-width: 440px;
+
+    border-radius: 10px;
+    border: 1px solid #c4c3c3;
+
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.04),
+        0 8px 10px -6px rgba(0, 0, 0, 0.02);
+
     width: 100%;
+    max-width: 440px;
 }
+
+
+/* =========================================================
+   LOGIN BRAND
+   ========================================================= */
 
 .account-brand {
     text-align: center;
@@ -29,8 +172,11 @@
 .account-brand-title {
     font-size: 1.6rem;
     font-weight: 700;
+
     color: #0b1220;
+
     margin-bottom: 4px;
+
     letter-spacing: -0.02em;
 }
 
@@ -40,79 +186,139 @@
 
 .account-subtitle {
     color: #64748b;
+
     font-size: 0.875rem;
+
     margin-bottom: 0;
 }
 
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
 .form-label {
-    color: #334155;
+    color: #000000;
+
     font-weight: 500;
     font-size: 0.875rem;
+
     margin-bottom: 6px;
 }
 
 .form-control {
     border-radius: 8px;
+
     border: 1px solid #cbd5e1;
+
     padding: 0.65rem 0.85rem;
+
     font-size: 0.95rem;
+
     color: #1e293b;
+
     background-color: #ffffff;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out;
 }
 
 .form-control:focus {
     border-color: #0b84ff;
-    box-shadow: 0 0 0 3px rgba(11, 132, 255, 0.15);
+
+    box-shadow:
+        0 0 0 3px rgba(11, 132, 255, 0.15);
+
     background-color: #ffffff;
+
     color: #0f172a;
 }
 
+
+/* =========================================================
+   REMEMBER ME
+   ========================================================= */
+
 .form-check-label {
     color: #475569;
+
     font-size: 0.875rem;
+
     user-select: none;
 }
 
 .form-check-input {
     border-radius: 4px;
+
     border-color: #cbd5e1;
+
     cursor: pointer;
 }
 
 .form-check-input:checked {
     background-color: #0b84ff;
+
     border-color: #0b84ff;
 }
 
+
+/* =========================================================
+   TEXT
+   ========================================================= */
+
 p {
     color: #64748b;
+
     font-size: 0.875rem;
 }
 
+
+/* =========================================================
+   FORGOT PASSWORD LINK
+   ========================================================= */
+
 .account-link {
     color: #0b84ff;
+
     font-weight: 500;
     font-size: 0.875rem;
+
     text-decoration: none;
+
     transition: color 0.15s ease-in-out;
 }
 
 .account-link:hover {
     color: #0066cc;
+
     text-decoration: underline;
 }
 
+
+/* =========================================================
+   SIGN IN BUTTON
+   ========================================================= */
+
 .account-btn-primary {
     background-color: #0b84ff;
+
     border: none;
     border-radius: 8px;
+
     color: #ffffff;
+
     font-weight: 600;
     font-size: 0.95rem;
+
     padding: 0.7rem 1rem;
+
     width: 100%;
-    transition: background-color 0.15s ease-in-out, transform 0.1s ease;
+
+    transition:
+        background-color 0.15s ease-in-out,
+        transform 0.1s ease;
+
     cursor: pointer;
 }
 
@@ -124,19 +330,230 @@ p {
     transform: translateY(1px);
 }
 
+
+/* =========================================================
+   BACK LINK
+   ========================================================= */
+
 .account-back-link {
     display: inline-flex;
+
     align-items: center;
+
     gap: 4px;
+
     color: #64748b;
+
     font-size: 0.875rem;
+
     font-weight: 500;
+
     text-decoration: none;
+
     margin-top: 1.25rem;
+
     transition: color 0.15s ease-in-out;
 }
 
 .account-back-link:hover {
     color: #0f172a;
+
     text-decoration: none;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.footer {
+    flex-shrink: 0;
+
+    width: 100%;
+
+    background: #0b396a;
+
+    color: #ffffff;
+
+    margin: 0;
+
+    padding: 22px 4%;
+}
+
+.footer-container {
+    width: 100%;
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+        2fr
+        1.5fr
+        1fr;
+
+    gap: 30px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   FOOTER BRAND
+   ========================================================= */
+
+.footer-section h2 {
+    margin: 0 0 8px;
+
+    font-size: 28px;
+
+    font-weight: 700;
+}
+
+.footer-section h2 span {
+    color: #1685ff;
+}
+
+
+/* =========================================================
+   FOOTER HEADINGS
+   ========================================================= */
+
+.footer-section h3 {
+    margin: 0 0 10px;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    border-left: 3px solid #ffffff;
+
+    padding-left: 8px;
+}
+
+
+/* =========================================================
+   FOOTER TEXT
+   ========================================================= */
+
+.footer-section p {
+    color: #ffffff;
+
+    margin: 5px 0;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FOOTER LINKS
+   ========================================================= */
+
+.footer-section a {
+    display: block;
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    padding: 6px 0;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, 0.4);
+}
+
+.footer-section a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   FOOTER RIGHT
+   ========================================================= */
+
+.footer-right {
+    border-left:
+        1px solid rgba(255, 255, 255, 0.5);
+
+    padding-left: 25px;
+}
+
+
+/* =========================================================
+   TABLET / SMALL LAPTOP
+   ========================================================= */
+
+@media (max-width: 1000px) {
+
+    .main-content {
+        grid-template-columns: 1fr 1fr;
+
+        padding: 25px 4%;
+    }
+
+    .video-wrapper {
+        width: 95%;
+    }
+
+    .account-box {
+        max-width: 400px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    body {
+        overflow-y: auto;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr;
+
+        gap: 30px;
+
+        padding: 30px 20px;
+    }
+
+    .video-container {
+        order: 1;
+    }
+
+    .login-container {
+        order: 2;
+    }
+
+    .video-wrapper {
+        width: 100%;
+        max-width: 550px;
+    }
+
+    .account-box {
+        width: 100%;
+        max-width: 440px;
+
+        padding: 30px 25px;
+    }
+
+    .footer-container {
+        grid-template-columns: 1fr;
+
+        gap: 20px;
+    }
+
+    .footer-right {
+        border-left: none;
+
+        padding-left: 0;
+    }
 }

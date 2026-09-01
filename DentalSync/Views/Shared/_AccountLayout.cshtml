@@ -1,22 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport"
+    content="width=device-width, initial-scale=1.0" />
     <title>@ViewBag.Title</title>
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/Account.css" asp-append-version="true" />
+    <link rel="stylesheet"href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet"href="~/css/Account.css"asp-append-version="true" />
 </head>
-<body>
-    <div>
-        @RenderBody()
-    </div>
 
+<body>
     
+    <main class="main-content">
+
+        <div class="video-container">
+            <div class="video-content">
+
+                <div class="video-text">
+                    <h1>Dental<span>Sync</span></h1>
+                    <p>Best Dental Clinic in the Universe</p>
+                </div>
+
+                <div class="video-wrapper">
+                    <video autoplay muted loop playsinline controls>
+                        <source src="~/css/PromotionalVideos/Promotion-Vid.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+            </div>
+        </div>
+        <div class="login-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section footer-brand">
+                <h2>
+                    Dental<span>Sync</span>
+                </h2>
+                <p>
+                    DentalSync is a dental clinic management system
+                    designed to streamline clinic operations
+                    and patient care.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3>CONTACT US</h3>
+                <p>📍 Davao City, Philippines</p>
+                <p>☎ +63 (082) 221-0190</p>
+                <p>✉ dentalsync@gmail.com</p>
+            </div>
+
+
+            <!-- =========================
+                 COPYRIGHT
+                 ========================= -->
+
+            <div class="footer-section footer-right">
+
+                <h3>DentalSync</h3>
+                <p> © 2026 DentalSync.</p>
+                <p>All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- =====================================================
+         SCRIPTS
+         ===================================================== -->
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="~/js/site.js"
+            asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
+
 </html>

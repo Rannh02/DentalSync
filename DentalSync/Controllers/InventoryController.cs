@@ -1,5 +1,6 @@
 using DentalSync.Data;
 using DentalSync.Models;
+using DentalSync.Services;
 using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,11 +14,13 @@ namespace DentalSync.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
+        private readonly AuditService _audit;
 
-        public InventoryController(AppDbContext context, UserManager<Users> userManager)
+        public InventoryController(AppDbContext context, UserManager<Users> userManager, AuditService audit)
         {
             _context = context;
             _userManager = userManager;
+            _audit = audit;
         }
 
         // =========================================================================
@@ -38,19 +41,16 @@ namespace DentalSync.Controllers
                 .AsNoTracking()
                 .ToListAsync();
 
-            // All tracked active/non-deleted supplies for KPIs
             var allSupplies = await _context.Supplies
                 .Include(s => s.Category)
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Compute the 4 KPIs
             var totalItems = allSupplies.Count;
             var inStockCount = allSupplies.Count(s => s.Status != "Archived" && s.Quantity > (s.MinimumStock ?? 0));
             var lowStockCount = allSupplies.Count(s => s.Status != "Archived" && s.Quantity > 0 && s.Quantity <= (s.MinimumStock ?? 0));
             var outOfStockCount = allSupplies.Count(s => s.Status != "Archived" && s.Quantity <= 0);
 
-            // Filter Query
             var query = _context.Supplies
                 .Include(s => s.Category)
                 .AsNoTracking()
@@ -69,7 +69,6 @@ namespace DentalSync.Controllers
                 query = query.Where(s => s.CategoryId == categoryId.Value);
             }
 
-            // Status filter: "good", "low", "out", "archived"
             if (!string.IsNullOrWhiteSpace(status))
             {
                 var st = status.Trim().ToLower();
@@ -91,53 +90,47 @@ namespace DentalSync.Controllers
                 }
             }
 
-            // Sorting
             query = sort switch
             {
                 "name_asc" => query.OrderBy(s => s.SupplyName),
                 "name_desc" => query.OrderByDescending(s => s.SupplyName),
                 "stock_asc" => query.OrderBy(s => s.Quantity),
                 "stock_desc" => query.OrderByDescending(s => s.Quantity),
-                "exp_asc" => query.OrderBy(s => s.ExpirationDate ?? DateOnly.MaxValue),
                 _ => query.OrderBy(s => s.SupplyName)
             };
 
-            const int pageSize = 5;
+            const int pageSize = 8;
             var totalFiltered = await query.CountAsync();
             var currentPage = Math.Max(1, page);
 
-            var items = await query
+            var rawSupplies = await query
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
-                .Select(s => new SupplyItemViewModel
-                {
-                    Id = s.Id,
-                    SupplyName = s.SupplyName,
-                    Description = s.Description,
-                    CategoryId = s.CategoryId,
-                    CategoryName = s.Category.CategoryName,
-                    Unit = s.Unit ?? "pcs",
-                    Quantity = s.Quantity,
-                    MinimumStock = s.MinimumStock ?? 10,
-                    PurchasePrice = s.PurchasePrice,
-                    ExpirationDate = s.ExpirationDate,
-                    RawStatus = s.Status,
-                    ComputedStatus = s.Status == "Archived"
-                        ? "Archived"
-                        : (s.Quantity <= 0 ? "Out" : (s.Quantity <= (s.MinimumStock ?? 0) ? "Low" : "Good")),
-                    CreatedAt = s.CreatedAt,
-                    UpdatedAt = s.UpdatedAt
-                })
                 .ToListAsync();
+
+            var supplyList = rawSupplies.Select(s => new SupplyItemViewModel
+            {
+                Id = s.Id,
+                SupplyName = s.SupplyName,
+                CategoryId = s.CategoryId,
+                CategoryName = s.Category?.CategoryName ?? "Uncategorized",
+                Unit = s.Unit ?? "pcs",
+                Quantity = s.Quantity,
+                MinimumStock = s.MinimumStock ?? 0,
+                PurchasePrice = s.PurchasePrice,
+                ExpirationDate = s.ExpirationDate,
+                RawStatus = s.Status,
+                ComputedStatus = GetComputedStatus(s.Status, s.Quantity, s.MinimumStock ?? 0)
+            }).ToList();
 
             var viewModel = new DentalSuppliesViewModel
             {
-                Supplies = items,
-                Categories = categories,
                 TotalItems = totalItems,
                 InStockCount = inStockCount,
                 LowStockCount = lowStockCount,
                 OutOfStockCount = outOfStockCount,
+                Supplies = supplyList,
+                Categories = categories,
                 Search = search,
                 CategoryId = categoryId,
                 Status = status,
@@ -152,7 +145,7 @@ namespace DentalSync.Controllers
         }
 
         // =========================================================================
-        // 2. Stock Transactions Section (History of Stock Movement)
+        // 2. Stocks Page (Audit & Transaction History)
         // =========================================================================
         [HttpGet]
         public async Task<IActionResult> Stocks(
@@ -163,6 +156,7 @@ namespace DentalSync.Controllers
             int page = 1)
         {
             var supplies = await _context.Supplies
+                .Where(s => s.Status != "Archived")
                 .OrderBy(s => s.SupplyName)
                 .AsNoTracking()
                 .ToListAsync();
@@ -183,9 +177,9 @@ namespace DentalSync.Controllers
                     (st.Notes != null && EF.Functions.Like(st.Notes, $"%{term}%")));
             }
 
-            if (!string.IsNullOrWhiteSpace(type) && !type.Equals("all", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(type) && (type.Equals("In", StringComparison.OrdinalIgnoreCase) || type.Equals("Out", StringComparison.OrdinalIgnoreCase)))
             {
-                query = query.Where(st => st.TransactionType == type);
+                query = query.Where(st => st.TransactionType.ToLower() == type.Trim().ToLower());
             }
 
             if (supplyId.HasValue && supplyId.Value > 0)
@@ -193,10 +187,10 @@ namespace DentalSync.Controllers
                 query = query.Where(st => st.SupplyId == supplyId.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(date) && DateOnly.TryParse(date, out var parsedDate))
+            if (!string.IsNullOrWhiteSpace(date) && DateTime.TryParse(date, out var parsedDate))
             {
-                var start = parsedDate.ToDateTime(TimeOnly.MinValue);
-                var end = parsedDate.ToDateTime(TimeOnly.MaxValue);
+                var start = parsedDate.Date;
+                var end = start.AddDays(1).AddTicks(-1);
                 query = query.Where(st => st.TransactionDate >= start && st.TransactionDate <= end);
             }
 
@@ -271,7 +265,6 @@ namespace DentalSync.Controllers
             _context.Supplies.Add(supply);
             await _context.SaveChangesAsync();
 
-            // Record initial stock transaction if quantity > 0
             if (model.InitialQuantity > 0)
             {
                 var currentUser = await _userManager.GetUserAsync(User);
@@ -288,6 +281,8 @@ namespace DentalSync.Controllers
                 _context.StockTransactions.Add(transaction);
                 await _context.SaveChangesAsync();
             }
+
+            await _audit.LogAsync("Create Supply", "Inventory", $"Added new supply '{supply.SupplyName}' ({supply.Quantity} {supply.Unit})");
 
             TempData["InventorySuccess"] = $"Supply '{supply.SupplyName}' added successfully!";
             return RedirectToAction(nameof(DentalSupplies));
@@ -310,6 +305,9 @@ namespace DentalSync.Controllers
             supply.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Edit Supply", "Inventory", $"Updated supply '{supply.SupplyName}'");
+
             TempData["InventorySuccess"] = $"Supply '{supply.SupplyName}' updated successfully!";
             return RedirectToAction(nameof(DentalSupplies));
         }
@@ -348,6 +346,8 @@ namespace DentalSync.Controllers
 
             _context.StockTransactions.Add(transaction);
             await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Stock In", "Inventory", $"Replenished +{model.Quantity} {supply.Unit} for '{supply.SupplyName}'");
 
             TempData["InventorySuccess"] = $"Stock In: Added +{model.Quantity} {supply.Unit} to '{supply.SupplyName}'. (New Stock: {supply.Quantity})";
             return RedirectToAction(nameof(DentalSupplies));
@@ -394,6 +394,8 @@ namespace DentalSync.Controllers
             _context.StockTransactions.Add(transaction);
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Stock Out", "Inventory", $"Deducted -{model.Quantity} {supply.Unit} from '{supply.SupplyName}'");
+
             TempData["InventorySuccess"] = $"Stock Out: Deducted -{model.Quantity} {supply.Unit} from '{supply.SupplyName}'. (Remaining Stock: {supply.Quantity})";
             return RedirectToAction(nameof(DentalSupplies));
         }
@@ -418,6 +420,8 @@ namespace DentalSync.Controllers
 
             supply.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Archive Supply", "Inventory", $"Toggled archive state for supply '{supply.SupplyName}'");
 
             return RedirectToAction(nameof(DentalSupplies));
         }
@@ -450,13 +454,20 @@ namespace DentalSync.Controllers
             _context.InventoryCategories.Add(cat);
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Create Category", "Inventory", $"Added category '{cat.CategoryName}'");
+
             TempData["InventorySuccess"] = $"Category '{cat.CategoryName}' added successfully!";
             return RedirectToAction(nameof(DentalSupplies));
         }
 
-        // =========================================================================
-        // Seed Initial Categories & Supplies if database is fresh
-        // =========================================================================
+        private static string GetComputedStatus(string status, int qty, int min)
+        {
+            if (status == "Archived") return "Archived";
+            if (qty <= 0) return "Out";
+            if (qty <= min) return "Low";
+            return "Good";
+        }
+
         private async Task SeedInitialInventoryIfEmptyAsync()
         {
             if (!await _context.InventoryCategories.AnyAsync())
@@ -485,7 +496,6 @@ namespace DentalSync.Controllers
                 _context.Supplies.AddRange(supplies);
                 await _context.SaveChangesAsync();
 
-                // Add initial stock transactions
                 foreach (var sup in supplies.Where(s => s.Quantity > 0))
                 {
                     _context.StockTransactions.Add(new StockTransaction

@@ -62,9 +62,15 @@
 .notif-count{color:#7b8491;font-weight:500}
 .dd-mark{padding:0;border:0;background:transparent;color:#0b84ff;font-size:12px;cursor:pointer;white-space:nowrap}
 .dd-mark:hover{text-decoration:underline}
+.notif-list{max-height:360px;overflow-y:auto}
 .notif-item{display:flex;align-items:center;gap:12px;padding:14px 16px}
 .notif-item.unread{background:#f7fbff}
-.notif-avatar{display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;border-radius:50%;background:#ffe9e9;color:#c53030}
+.notif-avatar{display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;border-radius:50%;background:#ffe9e9;color:#c53030;font-size:14px;font-weight:700}
+.notif-avatar.avatar-security{background:#ffe9e9;color:#c53030}
+.notif-avatar.avatar-billing{background:#e6f4ea;color:#137333}
+.notif-avatar.avatar-patient{background:#e8f0fe;color:#1a73e8}
+.notif-avatar.avatar-appointment{background:#e6f4f1;color:#0d9488}
+.notif-avatar.avatar-info{background:#fef3c7;color:#d97706}
 .notif-content{min-width:0;flex:1}
 .notif-text{margin:0 0 3px;color:#273142;font-size:13px;line-height:1.35}
 .notif-time{color:#8a94a3;font-size:12px}

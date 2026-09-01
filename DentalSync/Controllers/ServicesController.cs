@@ -1,5 +1,6 @@
 using DentalSync.Data;
 using DentalSync.Models;
+using DentalSync.Services;
 using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,15 +12,17 @@ namespace DentalSync.Controllers
     public class ServicesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly AuditService _audit;
 
-        public ServicesController(AppDbContext context)
+        public ServicesController(AppDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
 
         public async Task<IActionResult> Index(string search = "", string status = "", int page = 1)
         {
-            const int pageSize = 8;
+            const int pageSize = 5;
             var query = _context.Services.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -96,6 +99,8 @@ namespace DentalSync.Controllers
             _context.Services.Add(service);
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Create Service", "Services", $"Added dental service '{service.Name}' (₱{service.Cost:N2})");
+
             TempData["ServiceSuccess"] = "Dental Service created successfully!";
             return RedirectToAction(nameof(Index));
         }
@@ -125,6 +130,8 @@ namespace DentalSync.Controllers
 
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Edit Service", "Services", $"Updated dental service '{service.Name}'");
+
             TempData["ServiceSuccess"] = "Service updated successfully!";
             return RedirectToAction(nameof(Index));
         }
@@ -142,6 +149,8 @@ namespace DentalSync.Controllers
             service.IsActive = !service.IsActive;
             await _context.SaveChangesAsync();
 
+            await _audit.LogAsync("Toggle Service Status", "Services", $"Toggled status of service '{service.Name}' to {(service.IsActive ? "Active" : "Inactive")}");
+
             TempData["ServiceSuccess"] = $"Service '{service.Name}' updated to {(service.IsActive ? "Active" : "Inactive")}.";
             return RedirectToAction(nameof(Index));
         }
@@ -158,6 +167,8 @@ namespace DentalSync.Controllers
 
             _context.Services.Remove(service);
             await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Delete Service", "Services", $"Deleted dental service '{service.Name}'");
 
             TempData["ServiceSuccess"] = $"Service '{service.Name}' deleted successfully.";
             return RedirectToAction(nameof(Index));
