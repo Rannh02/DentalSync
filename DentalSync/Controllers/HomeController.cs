@@ -52,6 +52,12 @@ namespace DentalSync.Controllers
         // =========================================================================
 
         [AllowAnonymous]
+        public IActionResult Promotionpage()
+        {
+            return View("~/Views/LandingPage/Promotionpage.cshtml");
+        }
+
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();

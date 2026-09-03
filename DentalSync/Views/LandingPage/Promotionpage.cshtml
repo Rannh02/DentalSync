@@ -1,0 +1,471 @@
+@{
+    ViewData["Title"] = "DentalSync - Dental Clinic Management";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"]</title>
+
+    <link rel="stylesheet" href="~/css/PromotionPage.css" asp-append-version="true" />
+</head>
+
+<body>
+
+    <!-- =========================
+         NAVIGATION
+    ========================== -->
+
+    <nav class="navbar">
+
+        <a href="#" class="logo">
+            Dental<span>Sync</span>
+        </a>
+
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+
+            <a asp-controller="Account"
+               asp-action="Login"
+               class="nav-login">
+                Sign In
+            </a>
+        </div>
+
+    </nav>
+
+
+    <!-- =========================
+         HERO
+    ========================== -->
+
+    <main style="flex: 1;">
+        <section class="hero" id="home">
+
+        <div class="hero-content">
+
+            <span class="hero-badge">
+                Modern Dental Clinic Management
+            </span>
+
+            <h1>
+                Smarter Care.
+                <br />
+                Better <span>Smiles.</span>
+            </h1>
+
+            <p class="hero-description">
+                DentalSync is an all-in-one dental clinic management
+                system designed to simplify patient care, appointments,
+                dental records, inventory, billing, and clinic operations.
+            </p>
+
+            <div class="hero-buttons">
+
+                <a asp-controller="Account"
+                   asp-action="Login"
+                   class="btn-primary">
+                    Get Started
+                </a>
+
+                <a href="#features"
+                   class="btn-secondary">
+                    Explore Features
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- Dashboard Preview -->
+
+        <div class="hero-visual">
+
+            <div class="dashboard-card">
+
+                <div class="dashboard-header">
+
+                    <div class="dashboard-title">
+                        Clinic Overview
+                    </div>
+
+                    <div class="dashboard-status">
+                        ● Must Remove
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-stats">
+
+                    <div class="stat">
+                        <span class="stat-number">128</span>
+                        <span class="stat-label">Patients</span>
+                    </div>
+
+                    <div class="stat">
+                        <span class="stat-number">24</span>
+                        <span class="stat-label">Appointments</span>
+                    </div>
+
+                    <div class="stat">
+                        <span class="stat-number">12</span>
+                        <span class="stat-label">Dentists</span>
+                    </div>
+
+                </div>
+
+
+                <div class="appointment">
+
+                    <div class="patient">
+
+                        <div class="patient-avatar">
+                            JD
+                        </div>
+
+                        <div>
+                            <div class="patient-name">
+                                John Doe
+                            </div>
+
+                            <div class="patient-service">
+                                Dental Cleaning
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="appointment-time">
+                        09:30 AM
+                    </div>
+
+                </div>
+
+
+                <div class="appointment">
+
+                    <div class="patient">
+
+                        <div class="patient-avatar">
+                            AS
+                        </div>
+
+                        <div>
+                            <div class="patient-name">
+                                Anna Smith
+                            </div>
+
+                            <div class="patient-service">
+                                Dental Checkup
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="appointment-time">
+                        10:30 AM
+                    </div>
+
+                </div>
+
+
+                <div class="appointment">
+
+                    <div class="patient">
+
+                        <div class="patient-avatar">
+                            MR
+                        </div>
+
+                        <div>
+                            <div class="patient-name">
+                                Mark Reyes
+                            </div>
+
+                            <div class="patient-service">
+                                Tooth Extraction
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="appointment-time">
+                        01:00 PM
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         FEATURES
+    ========================== -->
+
+    <section class="section section-light" id="features">
+
+        <div class="section-header">
+
+            <div class="section-label">
+                Powerful Features
+            </div>
+
+            <h2>
+                Everything Your Clinic Needs
+            </h2>
+
+            <p>
+                DentalSync brings your clinic's daily operations
+                together in one centralized platform.
+            </p>
+
+        </div>
+
+
+        <div class="features">
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    👨‍⚕️
+                </div>
+
+                <h3>
+                    Patient Management
+                </h3>
+
+                <p>
+                    Manage patient profiles, dental records,
+                    medical information, and treatment history
+                    from one centralized system.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    📅
+                </div>
+
+                <h3>
+                    Appointment Scheduling
+                </h3>
+
+                <p>
+                    Organize appointments, dentist schedules,
+                    and patient visits while reducing scheduling
+                    conflicts.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    🦷
+                </div>
+
+                <h3>
+                    Dental Records
+                </h3>
+
+                <p>
+                    Keep detailed treatment records and dental
+                    information accessible to authorized clinic
+                    staff.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    📦
+                </div>
+
+                <h3>
+                    Inventory Management
+                </h3>
+
+                <p>
+                    Monitor dental supplies, stock levels,
+                    inventory movements, and low-stock items.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    📊
+                </div>
+
+                <h3>
+                    Reports & Analytics
+                </h3>
+
+                <p>
+                    Gain useful insights into clinic operations,
+                    appointments, patients, inventory, and
+                    business performance.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    🔐
+                </div>
+
+                <h3>
+                    Secure Access
+                </h3>
+
+                <p>
+                    Role-based access helps ensure that sensitive
+                    clinic and patient information is available
+                    only to authorized users.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ABOUT
+    ========================== -->
+
+    <section class="section" id="about">
+
+        <div class="about">
+
+            <div class="about-box">
+
+                <div class="about-logo">
+                    Dental<span>Sync</span>
+                </div>
+
+            </div>
+
+
+            <div class="about-content">
+
+                <div class="section-label">
+                    About DentalSync
+                </div>
+
+                <h2>
+                    Designed for Modern Dental Clinics
+                </h2>
+
+                <p>
+                    DentalSync provides a centralized platform that
+                    helps dental clinics manage their everyday
+                    operations efficiently.
+                </p>
+
+                <p>
+                    From patient registration to appointments,
+                    dental records, supplies, reports, and
+                    administrative tasks, DentalSync helps
+                    connect the different parts of your clinic.
+                </p>
+
+                <ul class="check-list">
+
+                    <li>
+                        Centralized patient information
+                    </li>
+
+                    <li>
+                        Efficient appointment management
+                    </li>
+
+                    <li>
+                        Dental supplies and inventory tracking
+                    </li>
+
+                    <li>
+                        Reports and clinic analytics
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         CALL TO ACTION
+    ========================== -->
+
+    <section class="cta" id="contact">
+
+
+    </section>
+    </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section footer-brand">
+                <h2>
+                    Dental<span>Sync</span>
+                </h2>
+                <p>
+                    DentalSync is a dental clinic management system
+                    designed to streamline clinic operations
+                    and patient care.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3>CONTACT US</h3>
+                <p>📍 Davao City, Philippines</p>
+                <p>☎ +63 (082) 221-0190</p>
+                <p>✉ dentalsync@gmail.com</p>
+            </div>
+
+            <!-- =========================
+                 COPYRIGHT
+                 ========================= -->
+
+            <div class="footer-section footer-right">
+                <h3>DentalSync</h3>
+                <p> © 2026 DentalSync.</p>
+                <p>All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
