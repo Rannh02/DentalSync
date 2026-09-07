@@ -24,8 +24,8 @@
                 </div>
 
                 <div class="video-wrapper">
-                    <video autoplay muted loop playsinline controls>
-                        <source src="~/css/PromotionalVideos/Promotion-Vid.mp4" type="video/mp4">
+                    <video id="promoVideo" autoplay loop playsinline>
+                        <source src="@Url.Content("~/css/PromotionalVideos/Promotion-Vid.mp4")" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
@@ -87,6 +87,29 @@
             asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var video = document.getElementById("promoVideo");
+            if (video) {
+                video.muted = false;
+                var playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {
+                        // Browser policy blocked unmuted autoplay - unmute on first user interaction
+                        var unmuteOnClick = function () {
+                            video.muted = false;
+                            video.play();
+                            document.removeEventListener("click", unmuteOnClick);
+                            document.removeEventListener("keydown", unmuteOnClick);
+                        };
+                        document.addEventListener("click", unmuteOnClick);
+                        document.addEventListener("keydown", unmuteOnClick);
+                    });
+                }
+            }
+        });
+    </script>
 
 </body>
 

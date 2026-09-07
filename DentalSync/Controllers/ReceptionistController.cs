@@ -37,7 +37,7 @@ namespace DentalSync.Controllers
 
         public async Task<IActionResult> Register_Patients(string search = "", int page = 1)
         {
-            const int pageSize = 8;
+            const int pageSize = 4;
             var query = _context.Patients.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(search))

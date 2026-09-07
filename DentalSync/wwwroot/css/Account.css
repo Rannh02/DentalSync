@@ -62,9 +62,15 @@ body {
     border: none;
     display: block;
     object-fit: cover;
-    pointer-events:none;
-    user-select:none;
+    pointer-events: none;
+    user-select: none;
 }
+
+.video-wrapper {
+    pointer-events: none;
+    user-select: none;
+}
+
 .video-content {
     width: 90%;
     max-width: 560px;
@@ -492,9 +498,7 @@ p {
     display: grid;
 
     grid-template-columns:
-        2fr
-        1.5fr
-        1fr;
+        2fr 1.5fr 1fr;
 
     gap: 30px;
 

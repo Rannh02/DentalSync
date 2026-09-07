@@ -13,12 +13,14 @@ builder.Services.AddScoped<DentalSync.Services.AuditService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("Default"),
-        sqlOptions =>
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    options.UseMySql(
+        connectionString,
+        new MariaDbServerVersion(new Version(10, 4, 32)),
+        mySqlOptions =>
         {
-            sqlOptions.CommandTimeout(60);
-            sqlOptions.EnableRetryOnFailure(
+            mySqlOptions.CommandTimeout(60);
+            mySqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 5,
                 maxRetryDelay: TimeSpan.FromSeconds(10),
                 errorNumbersToAdd: null);
@@ -50,7 +52,7 @@ using (var scope = app.Services.CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    // Apply migrations
+    
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -61,7 +63,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogWarning(ex, "Database migration skipped or encountered an issue during startup.");
     }
 
-    // Seed default roles and admin user
+    
     try
     {
         await DatabaseSeeder.SeedAsync(scope.ServiceProvider, logger);
@@ -72,7 +74,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -83,16 +85,13 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Enable authentication (required when using ASP.NET Core Identity)
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    // Start the app at Account/Login by default
     pattern: "{controller=Account}/{action=Login}/{id?}")
     .WithStaticAssets();
 
