@@ -99,7 +99,7 @@ namespace DentalSync.Controllers
                 _ => query.OrderBy(s => s.SupplyName)
             };
 
-            const int pageSize = 8;
+            const int pageSize = 5;
             var totalFiltered = await query.CountAsync();
             var currentPage = Math.Max(1, page);
 
@@ -194,7 +194,7 @@ namespace DentalSync.Controllers
                 query = query.Where(st => st.TransactionDate >= start && st.TransactionDate <= end);
             }
 
-            const int pageSize = 6;
+            const int pageSize = 5;
             var totalFiltered = await query.CountAsync();
             var currentPage = Math.Max(1, page);
 

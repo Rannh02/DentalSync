@@ -39,428 +39,482 @@
                            title="To date" />
                     <button type="submit" class="rp-preset-btn @(Model.Preset == "custom" ? "active" : "")">Apply</button>
                 </form>
-
-
             </div>
         </div>
 
-        <!-- ── KPI Cards ────────────────────────────────────────────────── -->
-        <div class="rp-kpi-grid rp-section">
+        <!-- ── Tab Navigation ────────────────────────────────────────────── -->
+        <div class="rp-tab-bar">
+            <button type="button" class="rp-tab-btn active" data-tab="overview">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+                Overview
+            </button>
+            <button type="button" class="rp-tab-btn" data-tab="financials">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Financials &amp; Invoices
+            </button>
+            <button type="button" class="rp-tab-btn" data-tab="inventory">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Operations &amp; Inventory
+            </button>
+            <button type="button" class="rp-tab-btn" data-tab="security">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Security &amp; Audit
+            </button>
+        </div>
 
-            @{
-                string DeltaHtml(double? d)
-                {
-                    if (!d.HasValue) return "<span class=\"rp-kpi-delta flat\">–</span>";
-                    var cls = d > 0 ? "up" : d < 0 ? "down" : "flat";
-                    var arrow = d > 0 ? "▲" : d < 0 ? "▼" : "–";
-                    return $"<span class=\"rp-kpi-delta {cls}\">{arrow} {Math.Abs(d.Value):0.#}%</span>";
-                }
+        @{
+            string DeltaHtml(double? d)
+            {
+                if (!d.HasValue) return "<span class=\"rp-kpi-delta flat\">–</span>";
+                var cls = d > 0 ? "up" : d < 0 ? "down" : "flat";
+                var arrow = d > 0 ? "▲" : d < 0 ? "▼" : "–";
+                return $"<span class=\"rp-kpi-delta {cls}\">{arrow} {Math.Abs(d.Value):0.#}%</span>";
             }
+        }
 
-            <div class="rp-kpi-card rp-kpi-revenue">
-                <div class="rp-kpi-label">Total Revenue</div>
-                <div class="rp-kpi-value">₱@Model.Kpi.TotalRevenue.ToString("N0")</div>
-                @Html.Raw(DeltaHtml(Model.Kpi.RevenueDelta))
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-appts">
-                <div class="rp-kpi-label">Appointments</div>
-                <div class="rp-kpi-value">@Model.Kpi.TotalAppointments</div>
-                @Html.Raw(DeltaHtml(Model.Kpi.AppointmentsDelta))
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-patients">
-                <div class="rp-kpi-label">New Patients</div>
-                <div class="rp-kpi-value">@Model.Kpi.NewPatients</div>
-                @Html.Raw(DeltaHtml(Model.Kpi.PatientsDelta))
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-treats">
-                <div class="rp-kpi-label">Treatments Done</div>
-                <div class="rp-kpi-value">@Model.Kpi.CompletedTreatments</div>
-                @Html.Raw(DeltaHtml(Model.Kpi.TreatmentsDelta))
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-outstanding">
-                <div class="rp-kpi-label">Outstanding</div>
-                <div class="rp-kpi-value">₱@Model.Kpi.OutstandingPayments.ToString("N0")</div>
-                <span class="rp-kpi-delta flat">Unpaid balance</span>
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-alerts">
-                <div class="rp-kpi-label">Inventory Alerts</div>
-                <div class="rp-kpi-value">@Model.Kpi.InventoryAlerts</div>
-                <span class="rp-kpi-delta @(Model.Kpi.InventoryAlerts > 0 ? "down" : "up")">
-                    @(Model.Kpi.InventoryAlerts > 0 ? "Needs attention" : "All good")
-                </span>
-            </div>
-        </div>
-
-        <!-- ── Revenue chart + Appointment status ────────────────────────── -->
-        <div class="rp-analytics-grid rp-section">
-
-            <!-- Revenue Over Time -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Revenue Overview</div>
-                        <div class="rp-panel-sub">Monthly collections · last 6 months</div>
-                    </div>
+        <!-- ── TAB 1: OVERVIEW ───────────────────────────────────────────── -->
+        <div id="tab-overview" class="rp-tab-pane active">
+            <!-- Top KPI Cards -->
+            <div class="rp-kpi-grid rp-section">
+                <div class="rp-kpi-card rp-kpi-revenue">
+                    <div class="rp-kpi-label">Total Revenue</div>
+                    <div class="rp-kpi-value">₱@Model.Kpi.TotalRevenue.ToString("N0")</div>
+                    @Html.Raw(DeltaHtml(Model.Kpi.RevenueDelta))
                 </div>
-                <div class="rp-panel-body">
-                    <div class="rp-chart-wrap">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
+
+                <div class="rp-kpi-card rp-kpi-appts">
+                    <div class="rp-kpi-label">Appointments</div>
+                    <div class="rp-kpi-value">@Model.Kpi.TotalAppointments</div>
+                    @Html.Raw(DeltaHtml(Model.Kpi.AppointmentsDelta))
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-patients">
+                    <div class="rp-kpi-label">New Patients</div>
+                    <div class="rp-kpi-value">@Model.Kpi.NewPatients</div>
+                    @Html.Raw(DeltaHtml(Model.Kpi.PatientsDelta))
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-treats">
+                    <div class="rp-kpi-label">Treatments Done</div>
+                    <div class="rp-kpi-value">@Model.Kpi.CompletedTreatments</div>
+                    @Html.Raw(DeltaHtml(Model.Kpi.TreatmentsDelta))
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-outstanding">
+                    <div class="rp-kpi-label">Outstanding</div>
+                    <div class="rp-kpi-value">₱@Model.Kpi.OutstandingPayments.ToString("N0")</div>
+                    <span class="rp-kpi-delta flat">Unpaid balance</span>
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-alerts">
+                    <div class="rp-kpi-label">Inventory Alerts</div>
+                    <div class="rp-kpi-value">@Model.Kpi.InventoryAlerts</div>
+                    <span class="rp-kpi-delta @(Model.Kpi.InventoryAlerts > 0 ? "down" : "up")">
+                        @(Model.Kpi.InventoryAlerts > 0 ? "Needs attention" : "All good")
+                    </span>
                 </div>
             </div>
 
-            <!-- Appointment Status Breakdown -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Appointment Status</div>
-                        <div class="rp-panel-sub">Distribution for current period</div>
+            <!-- Main Charts (Revenue + Appointment Status) -->
+            <div class="rp-analytics-grid rp-section">
+                <!-- Revenue Over Time -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Revenue Overview</div>
+                            <div class="rp-panel-sub">Monthly collections · last 6 months</div>
+                        </div>
                     </div>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-chart-wrap" style="height:160px;margin-bottom:12px;">
-                        <canvas id="apptChart"></canvas>
-                    </div>
-                    <div class="rp-appt-list">
-                        <div class="rp-appt-row">
-                            <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#0b84ff;"></span>Scheduled</span>
-                            <span class="rp-appt-count">@Model.AppointmentStats.Scheduled</span>
-                        </div>
-                        <div class="rp-appt-row">
-                            <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#7c3aed;"></span>Confirmed</span>
-                            <span class="rp-appt-count">@Model.AppointmentStats.Confirmed</span>
-                        </div>
-                        <div class="rp-appt-row">
-                            <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#059669;"></span>Completed</span>
-                            <span class="rp-appt-count">@Model.AppointmentStats.Completed</span>
-                        </div>
-                        <div class="rp-appt-row">
-                            <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#f59e0b;"></span>Cancelled</span>
-                            <span class="rp-appt-count">@Model.AppointmentStats.Cancelled</span>
-                        </div>
-                        <div class="rp-appt-row">
-                            <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#ef4444;"></span>No-show</span>
-                            <span class="rp-appt-count">@Model.AppointmentStats.NoShow</span>
+                    <div class="rp-panel-body">
+                        <div class="rp-chart-wrap">
+                            <canvas id="revenueChart"></canvas>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- ── Patient Growth + Top Services + Financial ─────────────────── -->
-        <div class="rp-analytics-grid-3 rp-section">
-
-            <!-- Patient Growth -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Patient Growth</div>
-                        <div class="rp-panel-sub">New registrations · last 6 months</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-chart-wrap">
-                        <canvas id="patientChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Dental Services -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Top Services</div>
-                        <div class="rp-panel-sub">By treatment count</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body" style="padding-top:10px;">
-                    @if (Model.TopServices.Count == 0)
-                    {
-                        <div class="rp-empty">No treatment data for this period.</div>
-                    }
-                    else
-                    {
-                        <div class="rp-service-list">
-                            @foreach (var svc in Model.TopServices)
-                            {
-                                <div class="rp-service-row">
-                                    <span class="rp-service-name">@svc.ServiceName</span>
-                                    <span class="rp-service-count">@svc.Count×</span>
-                                    <span class="rp-service-rev">₱@svc.Revenue.ToString("N0")</span>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Financial Breakdown -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Financial Summary</div>
-                        <div class="rp-panel-sub">Invoice &amp; payment breakdown</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-stats-grid" style="margin-bottom:16px;">
-                        <div class="rp-stat-item">
-                            <div class="rp-stat-item-label">Paid</div>
-                            <div class="rp-stat-item-value green">₱@Model.Financial.PaidInvoices.ToString("N0")</div>
-                        </div>
-                        <div class="rp-stat-item">
-                            <div class="rp-stat-item-label">Unpaid</div>
-                            <div class="rp-stat-item-value red">₱@Model.Financial.UnpaidInvoices.ToString("N0")</div>
-                        </div>
-                        <div class="rp-stat-item">
-                            <div class="rp-stat-item-label">Partial</div>
-                            <div class="rp-stat-item-value amber">₱@Model.Financial.PartiallyPaid.ToString("N0")</div>
-                        </div>
-                        <div class="rp-stat-item">
-                            <div class="rp-stat-item-label">Collected</div>
-                            <div class="rp-stat-item-value" style="color:#0b84ff;">₱@Model.Financial.TotalRevenue.ToString("N0")</div>
+                <!-- Appointment Status Breakdown -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Appointment Status</div>
+                            <div class="rp-panel-sub">Distribution for current period</div>
                         </div>
                     </div>
-
-                    @if (Model.Financial.PaymentMethods.Count > 0)
-                    {
-                        var maxAmt = Model.Financial.PaymentMethods.Max(m => m.Value);
-                        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;">Payment Methods</div>
-                        <div class="rp-method-list">
-                            @foreach (var m in Model.Financial.PaymentMethods.OrderByDescending(x => x.Value))
-                            {
-                                var pct = maxAmt == 0 ? 0 : (int)(m.Value / maxAmt * 100);
-                                <div class="rp-method-row">
-                                    <div class="rp-method-label-row">
-                                        <span>@m.Label</span>
-                                        <span style="font-weight:600;color:#0b1220;">₱@m.Value.ToString("N0")</span>
-                                    </div>
-                                    <div class="rp-method-bar-track">
-                                        <div class="rp-method-bar-fill" style="width:@pct%;"></div>
-                                    </div>
-                                </div>
-                            }
+                    <div class="rp-panel-body">
+                        <div class="rp-chart-wrap" style="height:160px;margin-bottom:12px;">
+                            <canvas id="apptChart"></canvas>
                         </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Security Overview ─────────────────────────────────────────── -->
-        <div class="rp-section-title-bar">
-            <h2>Security &amp; Session Analytics</h2>
-        </div>
-
-        <!-- Security KPIs -->
-        <div class="rp-security-kpis rp-section">
-            <div class="rp-kpi-card rp-kpi-active-sessions">
-                <div class="rp-kpi-label">Active Sessions (Online)</div>
-                <div class="rp-kpi-value">@Model.ActiveSessions</div>
-                <span class="rp-kpi-delta flat">Current online users</span>
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-failed-logins">
-                <div class="rp-kpi-label">Failed Logins</div>
-                <div class="rp-kpi-value">@Model.FailedLogins</div>
-                <span class="rp-kpi-delta flat">Total recorded failures</span>
-            </div>
-
-            <div class="rp-kpi-card rp-kpi-locked-accounts">
-                <div class="rp-kpi-label">Locked Accounts</div>
-                <div class="rp-kpi-value">@Model.LockedAccounts</div>
-                <span class="rp-kpi-delta flat">Currently locked out</span>
-            </div>
-        </div>
-
-        <!-- Security Graphs Grid -->
-        <div class="rp-security-grid rp-section">
-            <!-- User Logins Over Time -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">User Logins</div>
-                        <div class="rp-panel-sub">Successful logins · last 6 months</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-chart-wrap">
-                        <canvas id="loginsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Failed Logins (Bruteforce attempts) -->
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Failed Logins &amp; Bruteforce Attempts</div>
-                        <div class="rp-panel-sub">Failed authentication logs · last 6 months</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-chart-wrap">
-                        <canvas id="failedLoginsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Browser Usage Pie Chart -->
-        <div class="rp-section">
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Browser Usage</div>
-                        <div class="rp-panel-sub">Top browsers by session activity · all-time</div>
-                    </div>
-                </div>
-                <div class="rp-panel-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
-                    @if (Model.BrowserStats.Count == 0)
-                    {
-                        <div class="rp-empty" style="width:100%;">No browser data recorded yet.</div>
-                    }
-                    else
-                    {
-                        <div style="width:220px;height:220px;flex-shrink:0;">
-                            <canvas id="browserChart"></canvas>
-                        </div>
-                        <div class="rp-browser-legend">
-                            @{
-                                var browserColors = new[] { "#0b84ff", "#7c3aed", "#059669", "#f59e0b", "#ef4444", "#06b6d4", "#64748b" };
-                                var totalBrowserCount = Model.BrowserStats.Sum(b => b.Count);
-                                int bIdx = 0;
-                            }
-                            @foreach (var b in Model.BrowserStats)
-                            {
-                                var pct = totalBrowserCount == 0 ? 0 : Math.Round((double)b.Count / totalBrowserCount * 100, 1);
-                                var color = browserColors[bIdx % browserColors.Length];
-                                bIdx++;
-                                <div class="rp-browser-row">
-                                    <span class="rp-browser-dot" style="background:@color;"></span>
-                                    <span class="rp-browser-name">@b.Label</span>
-                                    <span class="rp-browser-pct">@pct%</span>
-                                    <span class="rp-browser-count">@b.Count sessions</span>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Inventory Analytics ────────────────────────────────────────── -->
-        <div class="rp-section">
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Inventory Analytics</div>
-                        <div class="rp-panel-sub">Current supply status overview</div>
-                    </div>
-                    <a asp-controller="Inventory" asp-action="DentalSupplies" class="rp-preset-btn">
-                        View Supplies →
-                    </a>
-                </div>
-                <div class="rp-panel-body">
-                    <div class="rp-inv-grid">
-                        <div class="rp-inv-card rp-inv-total">
-                            <div class="rp-inv-card-label">Total Supplies</div>
-                            <div class="rp-inv-card-value">@Model.InventoryStats.TotalSupplies</div>
-                        </div>
-                        <div class="rp-inv-card rp-inv-low">
-                            <div class="rp-inv-card-label">Low Stock</div>
-                            <div class="rp-inv-card-value">@Model.InventoryStats.LowStock</div>
-                        </div>
-                        <div class="rp-inv-card rp-inv-out">
-                            <div class="rp-inv-card-label">Out of Stock</div>
-                            <div class="rp-inv-card-value">@Model.InventoryStats.OutOfStock</div>
-                        </div>
-                        <div class="rp-inv-card rp-inv-expiring">
-                            <div class="rp-inv-card-label">Expiring (30d)</div>
-                            <div class="rp-inv-card-value">@Model.InventoryStats.ExpiringIn30Days</div>
+                        <div class="rp-appt-list">
+                            <div class="rp-appt-row">
+                                <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#0b84ff;"></span>Scheduled</span>
+                                <span class="rp-appt-count">@Model.AppointmentStats.Scheduled</span>
+                            </div>
+                            <div class="rp-appt-row">
+                                <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#7c3aed;"></span>Confirmed</span>
+                                <span class="rp-appt-count">@Model.AppointmentStats.Confirmed</span>
+                            </div>
+                            <div class="rp-appt-row">
+                                <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#059669;"></span>Completed</span>
+                                <span class="rp-appt-count">@Model.AppointmentStats.Completed</span>
+                            </div>
+                            <div class="rp-appt-row">
+                                <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#f59e0b;"></span>Cancelled</span>
+                                <span class="rp-appt-count">@Model.AppointmentStats.Cancelled</span>
+                            </div>
+                            <div class="rp-appt-row">
+                                <span class="rp-appt-label"><span class="rp-appt-dot" style="background:#ef4444;"></span>No-show</span>
+                                <span class="rp-appt-count">@Model.AppointmentStats.NoShow</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ── Recent Invoices Table ──────────────────────────────────────── -->
-        <div class="rp-section">
-            <div class="rp-panel">
-                <div class="rp-panel-header">
-                    <div>
-                        <div class="rp-panel-title">Recent Invoices</div>
-                        <div class="rp-panel-sub">@Model.TotalInvoices invoice(s) in current period</div>
+            <!-- Patient Growth + Top Services Overview -->
+            <div class="rp-analytics-grid rp-section">
+                <!-- Patient Growth -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Patient Growth</div>
+                            <div class="rp-panel-sub">New registrations · last 6 months</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body">
+                        <div class="rp-chart-wrap">
+                            <canvas id="patientChart"></canvas>
+                        </div>
                     </div>
                 </div>
 
-                <div class="rp-table-wrap">
-                    <table class="rp-table">
-                        <thead>
-                            <tr>
-                                <th>Invoice #</th>
-                                <th>Patient</th>
-                                <th>Date</th>
-                                <th style="text-align:right;">Total</th>
-                                <th style="text-align:right;">Paid</th>
-                                <th style="text-align:center;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.RecentInvoices.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="6" class="rp-empty">No invoices found for this period.</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var inv in Model.RecentInvoices)
+                <!-- Top Dental Services -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Top Services</div>
+                            <div class="rp-panel-sub">By treatment count</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body" style="padding-top:10px;">
+                        @if (Model.TopServices.Count == 0)
+                        {
+                            <div class="rp-empty">No treatment data for this period.</div>
+                        }
+                        else
+                        {
+                            <div class="rp-service-list">
+                                @foreach (var svc in Model.TopServices)
                                 {
-                                    var statusClass = inv.Status switch
-                                    {
-                                        "Paid"          => "rp-inv-paid",
-                                        "PartiallyPaid" => "rp-inv-partial",
-                                        "Cancelled"     => "rp-inv-cancelled",
-                                        _               => "rp-inv-pending"
-                                    };
-                                    var statusLabel = inv.Status == "PartiallyPaid" ? "Partial" : inv.Status;
+                                    <div class="rp-service-row">
+                                        <span class="rp-service-name">@svc.ServiceName</span>
+                                        <span class="rp-service-count">@svc.Count×</span>
+                                        <span class="rp-service-rev">₱@svc.Revenue.ToString("N0")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 2: FINANCIALS & INVOICES ──────────────────────────────── -->
+        <div id="tab-financials" class="rp-tab-pane">
+            <!-- Financial Breakdown Panel -->
+            <div class="rp-section">
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Financial Summary</div>
+                            <div class="rp-panel-sub">Invoice &amp; payment breakdown for selected period</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body">
+                        <div class="rp-stats-grid" style="margin-bottom:20px;">
+                            <div class="rp-stat-item">
+                                <div class="rp-stat-item-label">Paid Invoices</div>
+                                <div class="rp-stat-item-value green">₱@Model.Financial.PaidInvoices.ToString("N0")</div>
+                            </div>
+                            <div class="rp-stat-item">
+                                <div class="rp-stat-item-label">Unpaid Invoices</div>
+                                <div class="rp-stat-item-value red">₱@Model.Financial.UnpaidInvoices.ToString("N0")</div>
+                            </div>
+                            <div class="rp-stat-item">
+                                <div class="rp-stat-item-label">Partially Paid</div>
+                                <div class="rp-stat-item-value amber">₱@Model.Financial.PartiallyPaid.ToString("N0")</div>
+                            </div>
+                            <div class="rp-stat-item">
+                                <div class="rp-stat-item-label">Total Revenue Collected</div>
+                                <div class="rp-stat-item-value" style="color:#0b84ff;">₱@Model.Financial.TotalRevenue.ToString("N0")</div>
+                            </div>
+                        </div>
+
+                        @if (Model.Financial.PaymentMethods.Count > 0)
+                        {
+                            var maxAmt = Model.Financial.PaymentMethods.Max(m => m.Value);
+                            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;">Payment Methods Breakdown</div>
+                            <div class="rp-method-list">
+                                @foreach (var m in Model.Financial.PaymentMethods.OrderByDescending(x => x.Value))
+                                {
+                                    var pct = maxAmt == 0 ? 0 : (int)(m.Value / maxAmt * 100);
+                                    <div class="rp-method-row">
+                                        <div class="rp-method-label-row">
+                                            <span>@m.Label</span>
+                                            <span style="font-weight:600;color:#0b1220;">₱@m.Value.ToString("N0")</span>
+                                        </div>
+                                        <div class="rp-method-bar-track">
+                                            <div class="rp-method-bar-fill" style="width:@pct%;"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Invoices Table -->
+            <div class="rp-section">
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Recent Invoices</div>
+                            <div class="rp-panel-sub">@Model.TotalInvoices invoice(s) in current period</div>
+                        </div>
+                    </div>
+
+                    <div class="rp-table-wrap">
+                        <table class="rp-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Patient</th>
+                                    <th>Date</th>
+                                    <th style="text-align:right;">Total</th>
+                                    <th style="text-align:right;">Paid</th>
+                                    <th style="text-align:center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentInvoices.Count == 0)
+                                {
                                     <tr>
-                                        <td style="font-weight:600;color:#0b84ff;">#@inv.InvoiceNumber</td>
-                                        <td>@inv.PatientName</td>
-                                        <td style="white-space:nowrap;color:#64748b;">@inv.InvoiceDate.ToString("MMM dd, yyyy")</td>
-                                        <td style="text-align:right;font-weight:600;">₱@inv.TotalAmount.ToString("N2")</td>
-                                        <td style="text-align:right;color:#158a3e;font-weight:600;">₱@inv.PaidAmount.ToString("N2")</td>
-                                        <td style="text-align:center;">
-                                            <span class="rp-inv-status @statusClass">@statusLabel</span>
-                                        </td>
+                                        <td colspan="6" class="rp-empty">No invoices found for this period.</td>
                                     </tr>
                                 }
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                                else
+                                {
+                                    @foreach (var inv in Model.RecentInvoices)
+                                    {
+                                        var statusClass = inv.Status switch
+                                        {
+                                            "Paid"          => "rp-inv-paid",
+                                            "PartiallyPaid" => "rp-inv-partial",
+                                            "Cancelled"     => "rp-inv-cancelled",
+                                            _               => "rp-inv-pending"
+                                        };
+                                        var statusLabel = inv.Status == "PartiallyPaid" ? "Partial" : inv.Status;
+                                        <tr>
+                                            <td style="font-weight:600;color:#0b84ff;">#@inv.InvoiceNumber</td>
+                                            <td>@inv.PatientName</td>
+                                            <td style="white-space:nowrap;color:#64748b;">@inv.InvoiceDate.ToString("MMM dd, yyyy")</td>
+                                            <td style="text-align:right;font-weight:600;">₱@inv.TotalAmount.ToString("N2")</td>
+                                            <td style="text-align:right;color:#158a3e;font-weight:600;">₱@inv.PaidAmount.ToString("N2")</td>
+                                            <td style="text-align:center;">
+                                                <span class="rp-inv-status @statusClass">@statusLabel</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
 
-                @if (Model.TotalInvoicePages > 1)
-                {
-                    <div class="rp-pagination">
-                        <span>Showing @((Model.InvoicePage - 1) * Model.InvoicePageSize + (Model.TotalInvoices == 0 ? 0 : 1))–@Math.Min(Model.InvoicePage * Model.InvoicePageSize, Model.TotalInvoices) of @Model.TotalInvoices</span>
+                    @if (Model.TotalInvoicePages > 1)
+                    {
+                        <div class="rp-pagination">
+                            <span>Showing @((Model.InvoicePage - 1) * Model.InvoicePageSize + (Model.TotalInvoices == 0 ? 0 : 1))–@Math.Min(Model.InvoicePage * Model.InvoicePageSize, Model.TotalInvoices) of @Model.TotalInvoices</span>
+                            <div>
+                                @for (var p = 1; p <= Model.TotalInvoicePages; p++)
+                                {
+                                    <a class="@(p == Model.InvoicePage ? "current" : "")"
+                                       asp-controller="Reports" asp-action="Records"
+                                       asp-route-preset="@Model.Preset"
+                                       asp-route-invoicePage="@p">@p</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 3: OPERATIONS & INVENTORY ────────────────────────────── -->
+        <div id="tab-inventory" class="rp-tab-pane">
+            <!-- Inventory Analytics -->
+            <div class="rp-section">
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
                         <div>
-                            @for (var p = 1; p <= Model.TotalInvoicePages; p++)
-                            {
-                                <a class="@(p == Model.InvoicePage ? "current" : "")"
-                                   asp-controller="Reports" asp-action="Records"
-                                   asp-route-preset="@Model.Preset"
-                                   asp-route-invoicePage="@p">@p</a>
-                            }
+                            <div class="rp-panel-title">Inventory Analytics</div>
+                            <div class="rp-panel-sub">Current supply status overview</div>
+                        </div>
+                        <a asp-controller="Inventory" asp-action="DentalSupplies" class="rp-preset-btn">
+                            View Supplies →
+                        </a>
+                    </div>
+                    <div class="rp-panel-body">
+                        <div class="rp-inv-grid">
+                            <div class="rp-inv-card rp-inv-total">
+                                <div class="rp-inv-card-label">Total Supplies</div>
+                                <div class="rp-inv-card-value">@Model.InventoryStats.TotalSupplies</div>
+                            </div>
+                            <div class="rp-inv-card rp-inv-low">
+                                <div class="rp-inv-card-label">Low Stock</div>
+                                <div class="rp-inv-card-value">@Model.InventoryStats.LowStock</div>
+                            </div>
+                            <div class="rp-inv-card rp-inv-out">
+                                <div class="rp-inv-card-label">Out of Stock</div>
+                                <div class="rp-inv-card-value">@Model.InventoryStats.OutOfStock</div>
+                            </div>
+                            <div class="rp-inv-card rp-inv-expiring">
+                                <div class="rp-inv-card-label">Expiring (30d)</div>
+                                <div class="rp-inv-card-value">@Model.InventoryStats.ExpiringIn30Days</div>
+                            </div>
                         </div>
                     </div>
-                }
+                </div>
+            </div>
 
+            <!-- Top Dental Services Detailed -->
+            <div class="rp-section">
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Top Dental Services</div>
+                            <div class="rp-panel-sub">Most requested procedures and generated revenue</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body">
+                        @if (Model.TopServices.Count == 0)
+                        {
+                            <div class="rp-empty">No treatment data for this period.</div>
+                        }
+                        else
+                        {
+                            <div class="rp-service-list">
+                                @foreach (var svc in Model.TopServices)
+                                {
+                                    <div class="rp-service-row">
+                                        <span class="rp-service-name">@svc.ServiceName</span>
+                                        <span class="rp-service-count">@svc.Count treatments performed</span>
+                                        <span class="rp-service-rev">₱@svc.Revenue.ToString("N0")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TAB 4: SECURITY & SYSTEM AUDIT ───────────────────────────── -->
+        <div id="tab-security" class="rp-tab-pane">
+            <!-- Security KPIs -->
+            <div class="rp-security-kpis rp-section">
+                <div class="rp-kpi-card rp-kpi-active-sessions">
+                    <div class="rp-kpi-label">Active Sessions (Online)</div>
+                    <div class="rp-kpi-value">@Model.ActiveSessions</div>
+                    <span class="rp-kpi-delta flat">Current online users</span>
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-failed-logins">
+                    <div class="rp-kpi-label">Failed Logins</div>
+                    <div class="rp-kpi-value">@Model.FailedLogins</div>
+                    <span class="rp-kpi-delta flat">Total recorded failures</span>
+                </div>
+
+                <div class="rp-kpi-card rp-kpi-locked-accounts">
+                    <div class="rp-kpi-label">Locked Accounts</div>
+                    <div class="rp-kpi-value">@Model.LockedAccounts</div>
+                    <span class="rp-kpi-delta flat">Currently locked out</span>
+                </div>
+            </div>
+
+            <!-- Security Graphs Grid -->
+            <div class="rp-security-grid rp-section">
+                <!-- User Logins Over Time -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">User Logins</div>
+                            <div class="rp-panel-sub">Successful logins · last 6 months</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body">
+                        <div class="rp-chart-wrap">
+                            <canvas id="loginsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Failed Logins (Bruteforce attempts) -->
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Failed Logins &amp; Bruteforce Attempts</div>
+                            <div class="rp-panel-sub">Failed authentication logs · last 6 months</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body">
+                        <div class="rp-chart-wrap">
+                            <canvas id="failedLoginsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browser Usage Pie Chart -->
+            <div class="rp-section">
+                <div class="rp-panel">
+                    <div class="rp-panel-header">
+                        <div>
+                            <div class="rp-panel-title">Browser Usage</div>
+                            <div class="rp-panel-sub">Top browsers by session activity · all-time</div>
+                        </div>
+                    </div>
+                    <div class="rp-panel-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+                        @if (Model.BrowserStats.Count == 0)
+                        {
+                            <div class="rp-empty" style="width:100%;">No browser data recorded yet.</div>
+                        }
+                        else
+                        {
+                            <div style="width:220px;height:220px;flex-shrink:0;">
+                                <canvas id="browserChart"></canvas>
+                            </div>
+                            <div class="rp-browser-legend">
+                                @{
+                                    var browserColors = new[] { "#0b84ff", "#7c3aed", "#059669", "#f59e0b", "#ef4444", "#06b6d4", "#64748b" };
+                                    var totalBrowserCount = Model.BrowserStats.Sum(b => b.Count);
+                                    int bIdx = 0;
+                                }
+                                @foreach (var b in Model.BrowserStats)
+                                {
+                                    var pct = totalBrowserCount == 0 ? 0 : Math.Round((double)b.Count / totalBrowserCount * 100, 1);
+                                    var color = browserColors[bIdx % browserColors.Length];
+                                    bIdx++;
+                                    <div class="rp-browser-row">
+                                        <span class="rp-browser-dot" style="background:@color;"></span>
+                                        <span class="rp-browser-name">@b.Label</span>
+                                        <span class="rp-browser-pct">@pct%</span>
+                                        <span class="rp-browser-count">@b.Count sessions</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -470,6 +524,59 @@
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
 
 <script>
+    // ── Tab Switching Logic with URL Hash Support & Chart Resizing ───────────
+    (function() {
+        var tabBtns = document.querySelectorAll('.rp-tab-btn');
+        var tabPanes = document.querySelectorAll('.rp-tab-pane');
+
+        function switchTab(targetTabId, updateHash) {
+            tabBtns.forEach(function(btn) {
+                if (btn.getAttribute('data-tab') === targetTabId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            tabPanes.forEach(function(pane) {
+                if (pane.id === 'tab-' + targetTabId) {
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                }
+            });
+
+            if (updateHash) {
+                history.replaceState(null, null, '#tab=' + targetTabId);
+            }
+
+            // Trigger chart resize after tab display switch so hidden canvas re-renders cleanly
+            setTimeout(function() {
+                if (window.Chart && window.Chart.instances) {
+                    Object.values(window.Chart.instances).forEach(function(chart) {
+                        chart.resize();
+                    });
+                }
+            }, 60);
+        }
+
+        tabBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tab = this.getAttribute('data-tab');
+                switchTab(tab, true);
+            });
+        });
+
+        // Initialize tab based on URL hash if present
+        var initialTab = 'overview';
+        if (window.location.hash && window.location.hash.indexOf('#tab=') === 0) {
+            var hashTab = window.location.hash.replace('#tab=', '');
+            if (document.getElementById('tab-' + hashTab)) {
+                initialTab = hashTab;
+            }
+        }
+        switchTab(initialTab, false);
+    })();
+
     // ── Shared chart defaults ───────────────────────────────────────────────
     Chart.defaults.font.family = "Inter, -apple-system, sans-serif";
     Chart.defaults.font.size   = 11;
