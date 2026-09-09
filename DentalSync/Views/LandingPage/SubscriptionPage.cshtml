@@ -1,0 +1,480 @@
+@{
+    ViewData["Title"] = "DentalSync – Subscription Plans";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Choose the right DentalSync plan for your clinic. Flexible subscription plans with powerful dental management features." />
+    <title>@ViewData["Title"]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/SubscriptionPage.css" asp-append-version="true" />
+</head>
+<body>
+
+    <!-- ============================================================
+         NAV
+    ============================================================ -->
+    <nav class="sub-nav">
+        <a asp-controller="LandingPage" asp-action="Promotionpage" class="sub-nav-logo">
+            <span class="logo-text">Dental<span>Sync</span> Clinic</span>
+        </a>
+
+        <a asp-controller="LandingPage" asp-action="Promotionpage" class="sub-nav-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Back to Home
+        </a>
+    </nav>
+
+    <!-- ============================================================
+         HEADER
+    ============================================================ -->
+    <header class="sub-header">
+        <div class="sub-header-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Flexible Plans
+        </div>
+        <h1>Upgrade your clinic's plan</h1>
+        <p>Start for free and scale as your clinic grows. All plans include core dental management tools.</p>
+
+        <div>
+            <div class="billing-toggle" id="billingToggle">
+                <button class="toggle-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
+                <button class="toggle-btn" id="btn-annual" onclick="setBilling('annual')">Annual</button>
+            </div>
+            <span class="save-badge" id="save-badge" style="display:none;">Save 20%</span>
+        </div>
+    </header>
+
+    <!-- ============================================================
+         PLANS GRID
+    ============================================================ -->
+    <section class="plans-section">
+        <div class="plans-grid">
+
+            <!-- FREE TRIAL -->
+            <div class="plan-card">
+                <div class="plan-tier-row">
+                    <span class="plan-tier">Free</span>
+                </div>
+                <div class="plan-name">Free Trial</div>
+                <div class="plan-desc">Explore DentalSync risk-free. Perfect for evaluating the system before committing.</div>
+
+                <div class="plan-price-block">
+                    <span class="plan-currency">₱</span>
+                    <span class="plan-amount">0</span>
+                    <span class="plan-period">/ month</span>
+                </div>
+                <div class="plan-annual-note">&nbsp;</div>
+
+                <button type="button" onclick="selectPlan('Free Trial', 0, 0)" class="plan-btn btn-free" style="cursor:pointer; width:100%; border:none;">
+                    Start 14-Day Free Trial
+                </button>
+
+                <div class="plan-divider"></div>
+                <div class="plan-features-label">Start with the basics:</div>
+                <ul class="plan-features">
+                    <li>
+                        <span class="feat-icon check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Up to 20 patient records
+                    </li>
+                    <li>
+                        <span class="feat-icon check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Basic appointment scheduling
+                    </li>
+                    <li>
+                        <span class="feat-icon check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Limited inventory tracking
+                    </li>
+                    <li>
+                        <span class="feat-icon check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        1 user account
+                    </li>
+                    <li>
+                        <span class="feat-icon check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Community support only
+                    </li>
+                </ul>
+            </div>
+
+            <!-- BASIC -->
+            <div class="plan-card">
+                <div class="plan-tier-row">
+                    <span class="plan-tier">Basic</span>
+                </div>
+                <div class="plan-name">Starter Clinic</div>
+                <div class="plan-desc">Everything you need to run a small clinic smoothly, with core management tools.</div>
+
+                <div class="plan-price-block">
+                    <span class="plan-currency">₱</span>
+                    <span class="plan-amount" data-monthly="799" data-annual="639">799</span>
+                    <span class="plan-period">/ month</span>
+                </div>
+                <div class="plan-annual-note" id="note-basic">&nbsp;</div>
+
+                <button type="button" onclick="selectPlan('Starter Clinic', 799, 639)" class="plan-btn btn-outline" style="cursor:pointer; width:100%;">
+                    Get Started
+                </button>
+
+                <div class="plan-divider"></div>
+                <div class="plan-features-label">Everything in Free, and:</div>
+                <ul class="plan-features">
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Unlimited patient records
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Full appointment management
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Basic inventory & services
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Up to 3 staff accounts
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Email support
+                    </li>
+                </ul>
+            </div>
+
+            <!-- PROFESSIONAL (FEATURED) -->
+            <div class="plan-card featured">
+                <div class="plan-tier-row">
+                    <span class="plan-tier">Professional</span>
+                    <span class="plan-badge badge-recommended">Recommended</span>
+                </div>
+                <div class="plan-name">Growing Clinic</div>
+                <div class="plan-desc">Unlock advanced tools to manage a growing practice. Trusted by busy dental teams.</div>
+
+                <div class="plan-price-block">
+                    <span class="plan-currency">₱</span>
+                    <span class="plan-amount" data-monthly="1999" data-annual="1599">1,999</span>
+                    <span class="plan-period">/ month</span>
+                </div>
+                <div class="plan-annual-note" id="note-pro">&nbsp;</div>
+
+                <button type="button" onclick="selectPlan('Growing Clinic', 1999, 1599)" class="plan-btn btn-filled" style="cursor:pointer; width:100%;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Upgrade to Professional
+                </button>
+
+                <div class="plan-divider"></div>
+                <div class="plan-features-label">Everything in Starter, and:</div>
+                <ul class="plan-features">
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Advanced dental records & history
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Full reports & analytics dashboard
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        SMS / email patient reminders
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Up to 10 staff accounts
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Billing & invoice generation
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Priority email &amp; chat support
+                    </li>
+                </ul>
+            </div>
+
+            <!-- ENTERPRISE -->
+            <div class="plan-card">
+                <div class="plan-tier-row">
+                    <span class="plan-tier">Enterprise</span>
+                    <span class="plan-badge badge-enterprise">Multi-Branch</span>
+                </div>
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-desc">For large clinics and multi-branch operations that need maximum power and control.</div>
+
+                <div class="plan-price-block">
+                    <span class="plan-currency">₱</span>
+                    <span class="plan-amount" data-monthly="4999" data-annual="3999">4,999</span>
+                    <span class="plan-period">/ month</span>
+                </div>
+                <div class="plan-annual-note" id="note-ent">&nbsp;</div>
+
+                <button type="button" onclick="selectPlan('Enterprise', 4999, 3999)" class="plan-btn btn-gold" style="cursor:pointer; width:100%;">
+                    Select Enterprise
+                </button>
+
+
+                <div class="plan-divider"></div>
+                <div class="plan-features-label">Everything in Professional, and:</div>
+                <ul class="plan-features">
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Unlimited staff accounts
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Multi-branch management
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Custom role permissions
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Dedicated account manager
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        Custom onboarding &amp; training
+                    </li>
+                    <li class="highlighted-feat">
+                        <span class="feat-icon check-gold">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        24/7 priority phone support
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ============================================================
+         COMPARISON TABLE
+    ============================================================ -->
+    <section class="compare-section">
+        <h2 class="compare-title">Compare all features</h2>
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Free Trial</th>
+                    <th>Starter</th>
+                    <th class="col-featured">Professional</th>
+                    <th>Enterprise</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Patient Records</td>
+                    <td>Up to 20</td>
+                    <td>Unlimited</td>
+                    <td><span class="yes-icon">✓</span> Unlimited</td>
+                    <td><span class="yes-icon">✓</span> Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Staff Accounts</td>
+                    <td>1</td>
+                    <td>Up to 3</td>
+                    <td>Up to 10</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Appointment Management</td>
+                    <td><span class="partial">Basic</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Inventory Tracking</td>
+                    <td><span class="partial">Limited</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Reports &amp; Analytics</td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="partial">Basic</span></td>
+                    <td><span class="yes-icon">✓</span> Full</td>
+                    <td><span class="yes-icon">✓</span> Full</td>
+                </tr>
+                <tr>
+                    <td>Patient Reminders (SMS/Email)</td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Billing &amp; Invoicing</td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Multi-Branch Management</td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Custom Role Permissions</td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="no-icon">—</span></td>
+                    <td><span class="yes-icon">✓</span></td>
+                </tr>
+                <tr>
+                    <td>Support Level</td>
+                    <td>Community</td>
+                    <td>Email</td>
+                    <td>Priority Chat &amp; Email</td>
+                    <td>24/7 Dedicated</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ============================================================
+         TRUST / BOTTOM SECTION
+    ============================================================ -->
+    <section class="trust-section" id="contact">
+        <h2 class="trust-title">Why clinics trust DentalSync</h2>
+        <div class="trust-grid">
+            <div class="trust-item">
+                <div class="trust-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <div class="trust-label">Secure &amp; Private</div>
+                <div class="trust-sub">All patient data encrypted end-to-end</div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="trust-label">Cancel Anytime</div>
+                <div class="trust-sub">No contracts, no lock-in commitments</div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="trust-label">Quick Setup</div>
+                <div class="trust-sub">Go live in under 30 minutes</div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div class="trust-label">Dedicated Support</div>
+                <div class="trust-sub">Real humans ready to help you</div>
+            </div>
+        </div>
+        <p class="contact-cta">
+            Have questions about our plans?
+            <a href="mailto:support@dentalsync.ph">Contact our sales team</a>
+            or call us at <a href="tel:+63000000000">+63 (0) 000-0000</a>.
+        </p>
+    </section>
+
+    <script>
+        let billing = 'monthly';
+
+        function setBilling(mode) {
+            billing = mode;
+            document.getElementById('btn-monthly').classList.toggle('active', mode === 'monthly');
+            document.getElementById('btn-annual').classList.toggle('active', mode === 'annual');
+            document.getElementById('save-badge').style.display = mode === 'annual' ? 'inline-flex' : 'none';
+
+            const amounts = document.querySelectorAll('.plan-amount[data-monthly]');
+            amounts.forEach(el => {
+                const val = mode === 'annual' ? el.dataset.annual : el.dataset.monthly;
+                el.textContent = parseInt(val).toLocaleString();
+            });
+
+            const noteBasic = document.getElementById('note-basic');
+            const notePro   = document.getElementById('note-pro');
+            const noteEnt   = document.getElementById('note-ent');
+
+            if (mode === 'annual') {
+                noteBasic.innerHTML = 'Billed as <span class="save-highlight">₱7,668/year</span>';
+                notePro.innerHTML   = 'Billed as <span class="save-highlight">₱19,188/year</span>';
+                noteEnt.innerHTML   = 'Billed as <span class="save-highlight">₱47,988/year</span>';
+            } else {
+                noteBasic.innerHTML = '&nbsp;';
+                notePro.innerHTML   = '&nbsp;';
+                noteEnt.innerHTML   = '&nbsp;';
+            }
+        }
+
+        function selectPlan(planName, monthlyPrice, annualPrice) {
+            const price = billing === 'annual' ? annualPrice : monthlyPrice;
+            window.location.href = `/LandingPage/CheckoutPage?plan=${encodeURIComponent(planName)}&billing=${billing}&price=${price}`;
+        }
+    </script>
+
+</body>
+</html>

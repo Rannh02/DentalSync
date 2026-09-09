@@ -54,8 +54,21 @@ namespace DentalSync.Controllers
         [AllowAnonymous]
         public IActionResult Promotionpage()
         {
-            return View("~/Views/LandingPage/Promotionpage.cshtml");
+            return RedirectToAction("Promotionpage", "LandingPage");
         }
+
+        [AllowAnonymous]
+        public IActionResult SubscriptionPage()
+        {
+            return RedirectToAction("SubscriptionPage", "LandingPage");
+        }
+
+        [AllowAnonymous]
+        public IActionResult CheckoutPage(string plan = "Starter Clinic", string billing = "monthly", string price = "799")
+        {
+            return RedirectToAction("CheckoutPage", "LandingPage", new { plan, billing, price });
+        }
+
 
         [AllowAnonymous]
         public IActionResult Privacy()

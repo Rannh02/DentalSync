@@ -1,0 +1,373 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Subscribe - DentalSync Clinic";
+    string plan = ViewBag.Plan as string ?? "Starter Clinic";
+    string billing = ViewBag.Billing as string ?? "monthly";
+    string priceStr = ViewBag.Price as string ?? "799";
+    decimal price = 0;
+    decimal.TryParse(priceStr, out price);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subscribe to @plan - DentalSync</title>
+    <link rel="stylesheet" href="~/css/CheckoutPage.css" asp-append-version="true" />
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="checkout-nav">
+        <a asp-controller="LandingPage" asp-action="Promotionpage" class="checkout-logo">
+            <span class="logo-text">Dental<span>Sync</span> Clinic</span>
+        </a>
+
+        <a asp-controller="LandingPage" asp-action="SubscriptionPage" class="checkout-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Change Plan
+        </a>
+    </nav>
+
+    <!-- CONTAINER -->
+    <div class="checkout-container">
+
+        <!-- STEP INDICATOR -->
+        <div class="checkout-steps">
+            <div class="step-item active" id="step-pill-1">
+                <span class="step-number" id="num-1">1</span>
+                <span>Admin Account</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-item" id="step-pill-2">
+                <span class="step-number" id="num-2">2</span>
+                <span>Payment &amp; Setup</span>
+            </div>
+        </div>
+
+        <div class="checkout-grid">
+
+            <!-- LEFT: FORM STEPS -->
+            <div class="checkout-main">
+                
+                <!-- STEP 1: ADMIN REGISTRATION -->
+                <div class="checkout-card" id="step-content-1">
+                    <h2 class="card-title">Register Admin Account</h2>
+                    <p class="card-subtitle">Set up the primary administrator account for your clinic management system.</p>
+
+                    <form id="admin-reg-form" onsubmit="handleStep1Submit(event)">
+                        <!-- FIRST NAME, MIDDLE NAME, LAST NAME -->
+                        <div class="form-group-row-3">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <input type="text" id="firstName" class="form-input" placeholder="Juan" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="middleName">Middle Name</label>
+                                <input type="text" id="middleName" class="form-input" placeholder="Santos" />
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <input type="text" id="lastName" class="form-input" placeholder="Dela Cruz" required />
+                            </div>
+                        </div>
+
+                        <!-- CURRENT ADDRESS -->
+                        <div class="form-group">
+                            <label for="currentAddress">Current Address *</label>
+                            <input type="text" id="currentAddress" class="form-input" placeholder="House/Bldg No., Street, Barangay, City, Province" required />
+                        </div>
+
+                        <!-- CONTACT NUMBER & EMAIL ADDRESS -->
+                        <div class="form-group-row">
+                            <div class="form-group">
+                                <label for="adminPhone">Contact / Mobile Number *</label>
+                                <input type="tel" id="adminPhone" class="form-input" placeholder="0917 123 4567" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="adminEmail">Email Address (Login Username) *</label>
+                                <input type="email" id="adminEmail" class="form-input" placeholder="admin@clinic.ph" required />
+                            </div>
+                        </div>
+
+                        <!-- PASSWORD & CONFIRM PASSWORD WITH STRENGTH BAR -->
+                        <div class="form-group-row">
+                            <div class="form-group">
+                                <label for="adminPassword">Password *</label>
+                                <input type="password" id="adminPassword" class="form-input" placeholder="At least 12 chars (A-z, 0-9, special)" minlength="8" required />
+                                <div class="password-strength" aria-live="polite">
+                                    <div class="password-strength-track"><span id="adminPasswordStrengthBar"></span></div>
+                                    <strong id="adminPasswordStrengthLabel">Enter a password</strong>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminConfirmPassword">Confirm Password *</label>
+                                <input type="password" id="adminConfirmPassword" class="form-input" placeholder="Re-enter password" required />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-checkout-primary">
+                            Continue to Payment
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </form>
+
+                </div>
+
+                <!-- STEP 2: PAYMENT METHOD -->
+                <div class="checkout-card" id="step-content-2" style="display: none;">
+                    <h2 class="card-title">Choose Payment Method</h2>
+                    <p class="card-subtitle">Select how you would like to complete your subscription payment.</p>
+
+                    <!-- METHOD SELECTOR -->
+                    <div class="payment-methods">
+                        <div class="payment-method-card selected" id="method-card" onclick="selectPaymentMethod('card')">
+                            <div class="payment-icon">💳</div>
+                            <div class="payment-info">
+                                <span class="payment-title">Credit / Debit Card</span>
+                                <span class="payment-sub">Visa, Mastercard, JCB</span>
+                            </div>
+                        </div>
+
+                        <div class="payment-method-card" id="method-gcash" onclick="selectPaymentMethod('gcash')">
+                            <div class="payment-icon">📱</div>
+                            <div class="payment-info">
+                                <span class="payment-title">GCash E-Wallet</span>
+                                <span class="payment-sub">Instant PH mobile payment</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD FORM -->
+                    <form id="payment-card-form" onsubmit="handleFinalSubmit(event)">
+                        
+                        <div id="card-fields">
+                            <div class="form-group">
+                                <label for="cardName">Cardholder Name *</label>
+                                <input type="text" id="cardName" class="form-input" placeholder="Name on card" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number *</label>
+                                <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456" maxlength="19" required />
+                            </div>
+
+                            <div class="form-group-row">
+                                <div class="form-group">
+                                    <label for="cardExpiry">Expiration Date *</label>
+                                    <input type="text" id="cardExpiry" class="form-input" placeholder="MM/YY" maxlength="5" required />
+                                </div>
+                                <div class="form-group">
+                                    <label for="cardCvv">CVV / CVC *</label>
+                                    <input type="password" id="cardCvv" class="form-input" placeholder="123" maxlength="4" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GCASH FIELDS -->
+                        <div id="gcash-fields" style="display: none;">
+                            <div class="form-group">
+                                <label for="gcashName">GCash Account Holder Name *</label>
+                                <input type="text" id="gcashName" class="form-input" placeholder="Juan Dela Cruz" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gcashNumber">Registered GCash Mobile Number *</label>
+                                <input type="tel" id="gcashNumber" class="form-input" placeholder="09171234567" maxlength="11" />
+                            </div>
+
+                            <div style="background: #eef6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e40af; margin-bottom: 20px;">
+                                ℹ️ You will receive an authorization prompt on your registered GCash app once you click subscribe.
+                            </div>
+                        </div>
+
+                        <div class="form-actions-inline">
+                            <button type="button" onclick="goToStep(1)" class="btn-checkout-secondary">
+                                ← Back
+                            </button>
+                            <button type="submit" class="btn-checkout-primary" style="margin-top:0;">
+                                Subscribe &amp; Complete Setup (₱@price.ToString("N0"))
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY -->
+            <div class="checkout-sidebar">
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <span>Order Summary</span>
+                        <span class="plan-badge-pill">@billing.ToUpper()</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Selected Plan</span>
+                        <strong style="color: var(--dark-blue);">@plan</strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Billing Cycle</span>
+                        <span>@(billing == "annual" ? "Annual (Save 20%)" : "Monthly")</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Setup & Admin License</span>
+                        <span style="color: #16a34a; font-weight: 600;">FREE</span>
+                    </div>
+
+                    <div class="summary-row total">
+                        <span>Total Due Today</span>
+                        <span class="summary-total-amount">₱@price.ToString("N0")</span>
+                    </div>
+
+                    <div class="summary-perks">
+                        <div class="summary-perk-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            Instant Admin Dashboard access
+                        </div>
+                        <div class="summary-perk-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            256-bit encrypted data protection
+                        </div>
+                        <div class="summary-perk-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            Cancel or change plan anytime
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-box">
+            <div class="modal-icon-success">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <h3 class="modal-title">Subscription Confirmed!</h3>
+            <p class="modal-desc">
+                Welcome to <strong>DentalSync Clinic</strong>. Your admin account has been successfully created and your subscription is active.
+            </p>
+            <a asp-controller="Account" asp-action="Login" class="btn-checkout-primary" style="text-decoration: none;">
+                Proceed to Login Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedMethod = 'card';
+
+        function goToStep(step) {
+            currentStep = step;
+
+            document.getElementById('step-content-1').style.display = step === 1 ? 'block' : 'none';
+            document.getElementById('step-content-2').style.display = step === 2 ? 'block' : 'none';
+
+            const pill1 = document.getElementById('step-pill-1');
+            const pill2 = document.getElementById('step-pill-2');
+
+            if (step === 1) {
+                pill1.className = 'step-item active';
+                pill2.className = 'step-item';
+            } else {
+                pill1.className = 'step-item completed';
+                pill2.className = 'step-item active';
+            }
+        }
+
+        function handleStep1Submit(e) {
+            e.preventDefault();
+
+            const pwd = document.getElementById('adminPassword').value;
+            const confirmPwd = document.getElementById('adminConfirmPassword').value;
+
+            if (pwd !== confirmPwd) {
+                alert('Passwords do not match. Please re-check your password.');
+                return;
+            }
+
+            goToStep(2);
+        }
+
+        function selectPaymentMethod(method) {
+            selectedMethod = method;
+            const cardPill = document.getElementById('method-card');
+            const gcashPill = document.getElementById('method-gcash');
+
+            const cardFields = document.getElementById('card-fields');
+            const gcashFields = document.getElementById('gcash-fields');
+
+            const cardInputs = cardFields.querySelectorAll('input');
+            const gcashInputs = gcashFields.querySelectorAll('input');
+
+            if (method === 'card') {
+                cardPill.classList.add('selected');
+                gcashPill.classList.remove('selected');
+                cardFields.style.display = 'block';
+                gcashFields.style.display = 'none';
+
+                cardInputs.forEach(i => i.required = true);
+                gcashInputs.forEach(i => i.required = false);
+            } else {
+                gcashPill.classList.add('selected');
+                cardPill.classList.remove('selected');
+                cardFields.style.display = 'none';
+                gcashFields.style.display = 'block';
+
+                cardInputs.forEach(i => i.required = false);
+                gcashInputs.forEach(i => i.required = true);
+            }
+        }
+
+        function handleFinalSubmit(e) {
+            e.preventDefault();
+            document.getElementById('successModal').classList.add('active');
+        }
+
+        // PASSWORD STRENGTH EVALUATOR
+        const passwordInput = document.getElementById('adminPassword');
+        const strengthBar = document.getElementById('adminPasswordStrengthBar');
+        const strengthLabel = document.getElementById('adminPasswordStrengthLabel');
+
+        if (passwordInput && strengthBar && strengthLabel) {
+            passwordInput.addEventListener('input', function () {
+                const password = passwordInput.value;
+                let score = 0;
+                if (password.length >= 12) score++;
+                if (/[a-z]/.test(password)) score++;
+                if (/[A-Z]/.test(password)) score++;
+                if (/[0-9]/.test(password)) score++;
+                if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+                const levels = [
+                    { label: 'Enter a password', className: '', width: '0%' },
+                    { label: 'Very weak', className: 'is-very-weak', width: '20%' },
+                    { label: 'Weak', className: 'is-weak', width: '40%' },
+                    { label: 'Fair', className: 'is-fair', width: '60%' },
+                    { label: 'Strong', className: 'is-strong', width: '80%' },
+                    { label: 'Very strong', className: 'is-very-strong', width: '100%' }
+                ];
+                const level = levels[password.length === 0 ? 0 : score];
+                strengthBar.className = level.className;
+                strengthBar.style.width = level.width;
+                strengthLabel.textContent = level.label;
+            });
+        }
+    </script>
+
+
+</body>
+</html>
