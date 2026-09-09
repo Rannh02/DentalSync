@@ -13,7 +13,7 @@ namespace DentalSync.Data
             var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
 
             // Ensure roles exist
-            var roles = new[] { "Administrator", "Receptionist", "Dentist", "Patient" };
+            var roles = new[] { "Superadmin", "Administrator", "Receptionist", "Dentist", "Patient" };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -23,37 +23,56 @@ namespace DentalSync.Data
                 }
             }
 
-            // Ensure default admin user exists
-            const string adminEmail    = "admin@dentalsync.com";
-            const string adminPassword = "Admin@123456";
+            // Ensure default Superadmin user exists
+            const string superadminEmail    = "superadmin@dentalsync.ph";
+            const string superadminPassword = "Superadmin@123";
 
-            var adminUser = await userManager.FindByEmailAsync(adminEmail);
-            if (adminUser == null)
+            var superadminUser = await userManager.FindByEmailAsync(superadminEmail)
+                ?? await userManager.FindByNameAsync(superadminEmail);
+
+            if (superadminUser == null)
             {
-                adminUser = new Users
+                superadminUser = new Users
                 {
-                    FullName       = "Administrator",
-                    UserName       = adminEmail,
-                    Email          = adminEmail,
+                    FullName       = "Super Admin",
+                    UserName       = superadminEmail,
+                    Email          = superadminEmail,
                     EmailConfirmed = true,
+                    LockoutEnabled = false
                 };
 
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
+                var result = await userManager.CreateAsync(superadminUser, superadminPassword);
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Administrator");
-                    logger.LogInformation("Default Administrator account created: {Email}", adminEmail);
+                    await userManager.AddToRoleAsync(superadminUser, "Superadmin");
+                    logger.LogInformation("Default Superadmin account created: {Email}", superadminEmail);
                 }
                 else
                 {
-                    logger.LogError("Failed to create admin user: {Errors}",
+                    logger.LogError("Failed to create superadmin user: {Errors}",
                         string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
             }
-            else if (!await userManager.IsInRoleAsync(adminUser, "Administrator"))
+            else
             {
-                await userManager.AddToRoleAsync(adminUser, "Administrator");
-                logger.LogInformation("Assigned Administrator role to existing user {Email}.", adminEmail);
+                superadminUser.EmailConfirmed = true;
+                superadminUser.LockoutEnd = null;
+                superadminUser.LockoutEnabled = false;
+                await userManager.UpdateAsync(superadminUser);
+
+                if (!await userManager.IsInRoleAsync(superadminUser, "Superadmin"))
+                {
+                    await userManager.AddToRoleAsync(superadminUser, "Superadmin");
+                    logger.LogInformation("Assigned Superadmin role to existing user {Email}.", superadminEmail);
+                }
+
+                // Reset password to guarantee credentials work
+                var token = await userManager.GeneratePasswordResetTokenAsync(superadminUser);
+                var resetResult = await userManager.ResetPasswordAsync(superadminUser, token, superadminPassword);
+                if (resetResult.Succeeded)
+                {
+                    logger.LogInformation("Superadmin password successfully updated.");
+                }
             }
 
             // One-time cleanup: remove accidentally seeded dummy dentist account

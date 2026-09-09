@@ -24,14 +24,17 @@ namespace DentalSync.Controllers
         //==================================================================================
         //=====================================LOGIN=======================================
         //==================================================================================
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
+            await EnsureSuperadminSeededAsync();
             return View();
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
+            await EnsureSuperadminSeededAsync();
             if (ModelState.IsValid)
             {
                 var user = await userManager.FindByEmailAsync(model.Email)
@@ -48,6 +51,10 @@ namespace DentalSync.Controllers
                     await _audit.LogAsync("Login", "Authentication", $"Successful login",
                         overrideUser: displayName, overrideRole: roleName);
 
+                    if (user != null && (await userManager.IsInRoleAsync(user, "Superadmin") || string.Equals(user.Email, "superadmin@dentalsync.ph", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return RedirectToAction("Index", "Superadmin");
+                    }
                     if (user != null && await userManager.IsInRoleAsync(user, "Receptionist"))
                     {
                         return RedirectToAction("Receptionist_Dashboard", "Receptionist");
@@ -207,6 +214,59 @@ namespace DentalSync.Controllers
             await _audit.LogAsync("Logout", "Authentication", "User signed out");
             await signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
+        }
+
+        private async Task EnsureSuperadminSeededAsync()
+        {
+            try
+            {
+                var roleManager = HttpContext.RequestServices.GetService<RoleManager<IdentityRole>>();
+                if (roleManager != null && !await roleManager.RoleExistsAsync("Superadmin"))
+                {
+                    await roleManager.CreateAsync(new IdentityRole("Superadmin"));
+                }
+
+                const string email = "superadmin@dentalsync.ph";
+                const string password = "Superadmin@123";
+
+                var user = await userManager.FindByEmailAsync(email) ?? await userManager.FindByNameAsync(email);
+                if (user == null)
+                {
+                    user = new Users
+                    {
+                        FullName = "Super Admin",
+                        UserName = email,
+                        Email = email,
+                        EmailConfirmed = true,
+                        LockoutEnabled = false
+                    };
+
+                    var res = await userManager.CreateAsync(user, password);
+                    if (res.Succeeded && roleManager != null)
+                    {
+                        await userManager.AddToRoleAsync(user, "Superadmin");
+                    }
+                }
+                else
+                {
+                    user.EmailConfirmed = true;
+                    user.LockoutEnd = null;
+                    user.LockoutEnabled = false;
+                    await userManager.UpdateAsync(user);
+
+                    if (roleManager != null && !await userManager.IsInRoleAsync(user, "Superadmin"))
+                    {
+                        await userManager.AddToRoleAsync(user, "Superadmin");
+                    }
+
+                    var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                    await userManager.ResetPasswordAsync(user, token, password);
+                }
+            }
+            catch
+            {
+                // Seeding exception handler
+            }
         }
     }
 }

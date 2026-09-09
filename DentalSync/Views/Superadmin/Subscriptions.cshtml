@@ -1,0 +1,110 @@
+@model IEnumerable<DentalSync.Controllers.SubscriptionViewModel>
+@{
+    ViewData["Title"] = "Subscriptions & Billing";
+    Layout = null;
+    var list = Model?.ToList() ?? new List<DentalSync.Controllers.SubscriptionViewModel>();
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Subscription &amp; Billing Monitor</h1>
+                <p>Track active clinic subscription plans, monthly/annual revenue, plan renewals, and billing invoices.</p>
+            </div>
+            <div class="users-heading-actions">
+                <a asp-controller="LandingPage" asp-action="SubscriptionPage" class="users-add-button" target="_blank">View Subscription Plans ↗</a>
+            </div>
+        </div>
+
+        <section class="users-panel" aria-label="Subscription plans list">
+
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">Clinic Subscriptions (@list.Count)</strong>
+                <form method="get" asp-controller="Superadmin" asp-action="Subscriptions" style="display:flex; gap:8px;">
+                    <input type="text" name="search" value="@ViewBag.Search" placeholder="Search clinic name or email..." class="users-search-input" style="padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
+                    <button type="submit" class="users-add-button" style="padding:6px 12px; font-size:13px;">Filter</button>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Clinic Administrator</th>
+                            <th>Email Address</th>
+                            <th>Subscription Plan</th>
+                            <th>Billing Cycle</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!list.Any())
+                        {
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:32px; color:#6b7280;">
+                                    No clinic subscriptions found in the database.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in list)
+                            {
+                                var initials = !string.IsNullOrWhiteSpace(item.ClinicName) && item.ClinicName.Length >= 2 
+                                    ? item.ClinicName.Substring(0, 2).ToUpper() 
+                                    : "CL";
+
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">@initials</span>
+                                            <span>
+                                                <strong>@item.ClinicName</strong>
+                                                <small>Clinic Account</small>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>@item.Email</td>
+                                    <td>
+                                        <span class="role-pill" style="background:#eef4ff; color:#2e6ff2; border:1px solid #cfe0ff;">
+                                            @item.Plan
+                                        </span>
+                                    </td>
+                                    <td>@item.Billing</td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <button type="button" class="action-button action-edit" onclick="alert('Viewing Subscription details for @item.ClinicName')">Manage</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

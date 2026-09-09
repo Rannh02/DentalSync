@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Multi-Branch & Clinic Settings";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Multi-Branch &amp; Clinic Settings</h1>
+                <p>Manage multi-branch operations, clinic profiles, location configurations, and system-wide settings.</p>
+            </div>
+            <div class="users-heading-actions">
+                <button type="button" class="users-add-button" onclick="alert('Add Branch modal opened.')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add New Branch
+                </button>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-bottom:28px;">
+
+            <!-- Branch 1 -->
+            <div class="users-panel" style="padding: 24px; margin-bottom: 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <span style="font-size:12px; font-weight:700; color:#0b84ff; text-transform:uppercase; letter-spacing:0.5px;">Main Branch</span>
+                    <span class="status-pill status-active">Operational</span>
+                </div>
+                <h3 style="font-size:18px; font-weight:700; color:#071a33; margin-bottom:6px;">DentalSync Main Clinic</h3>
+                <p style="font-size:13px; color:#5f7187; margin-bottom:16px;">📍 Davao City, Philippines</p>
+
+                <div style="border-top:1px solid #eef2f6; padding-top:14px; margin-top:14px; font-size:13px; color:#334155; display:grid; gap:8px;">
+                    <div><strong>Phone:</strong> +63 (082) 221-0190</div>
+                    <div><strong>Email:</strong> dentalsync@gmail.com</div>
+                    <div><strong>Staff Count:</strong> 8 Dentists &amp; Staff</div>
+                </div>
+
+                <div style="margin-top:20px; display:flex; gap:8px;">
+                    <button type="button" class="action-button action-edit" onclick="alert('Editing Main Clinic Settings')">Edit Profile</button>
+                    <button type="button" class="action-button action-view" onclick="alert('Viewing Branch Staff')">Manage Staff</button>
+                </div>
+            </div>
+
+            <!-- Branch 2 -->
+            <div class="users-panel" style="padding: 24px; margin-bottom: 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <span style="font-size:12px; font-weight:700; color:#7c3aed; text-transform:uppercase; letter-spacing:0.5px;">Branch #2</span>
+                    <span class="status-pill status-active">Operational</span>
+                </div>
+                <h3 style="font-size:18px; font-weight:700; color:#071a33; margin-bottom:6px;">Downtown Dental Care</h3>
+                <p style="font-size:13px; color:#5f7187; margin-bottom:16px;">📍 Downtown Plaza, Davao City</p>
+
+                <div style="border-top:1px solid #eef2f6; padding-top:14px; margin-top:14px; font-size:13px; color:#334155; display:grid; gap:8px;">
+                    <div><strong>Phone:</strong> +63 (082) 225-8890</div>
+                    <div><strong>Email:</strong> downtown@dentalsync.ph</div>
+                    <div><strong>Staff Count:</strong> 4 Dentists &amp; Staff</div>
+                </div>
+
+                <div style="margin-top:20px; display:flex; gap:8px;">
+                    <button type="button" class="action-button action-edit" onclick="alert('Editing Downtown Branch Settings')">Edit Profile</button>
+                    <button type="button" class="action-button action-view" onclick="alert('Viewing Branch Staff')">Manage Staff</button>
+                </div>
+            </div>
+
+            <!-- Branch 3 -->
+            <div class="users-panel" style="padding: 24px; margin-bottom: 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                    <span style="font-size:12px; font-weight:700; color:#d97706; text-transform:uppercase; letter-spacing:0.5px;">Branch #3</span>
+                    <span class="status-pill status-active">Operational</span>
+                </div>
+                <h3 style="font-size:18px; font-weight:700; color:#071a33; margin-bottom:6px;">Northside Dental Specialty</h3>
+                <p style="font-size:13px; color:#5f7187; margin-bottom:16px;">📍 North Highway, Davao City</p>
+
+                <div style="border-top:1px solid #eef2f6; padding-top:14px; margin-top:14px; font-size:13px; color:#334155; display:grid; gap:8px;">
+                    <div><strong>Phone:</strong> +63 (082) 300-4411</div>
+                    <div><strong>Email:</strong> northside@dentalsync.ph</div>
+                    <div><strong>Staff Count:</strong> 3 Dentists &amp; Staff</div>
+                </div>
+
+                <div style="margin-top:20px; display:flex; gap:8px;">
+                    <button type="button" class="action-button action-edit" onclick="alert('Editing Northside Branch Settings')">Edit Profile</button>
+                    <button type="button" class="action-button action-view" onclick="alert('Viewing Branch Staff')">Manage Staff</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Global System Configurations -->
+        <section class="users-panel">
+            <h2 style="font-size:16px; font-weight:700; color:#071a33; margin-bottom:16px;">System-Wide Configurations</h2>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:18px;">
+                    <strong style="color:#071a33; font-size:14px;">Automatic Data Backup</strong>
+                    <p style="font-size:13px; color:#5f7187; margin:6px 0 14px;">Daily automated database backup to secure cloud storage.</p>
+                    <span class="status-pill status-active">Enabled (Daily 02:00 AM)</span>
+                </div>
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:18px;">
+                    <strong style="color:#071a33; font-size:14px;">Multi-Branch Patient Data Sharing</strong>
+                    <p style="font-size:13px; color:#5f7187; margin:6px 0 14px;">Allow patient records to be accessible across authorized branches.</p>
+                    <span class="status-pill status-active">Enabled</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

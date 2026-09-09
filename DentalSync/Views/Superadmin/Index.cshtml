@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Superadmin Dashboard";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Superadmin Command Center</h1>
+                <p>Global system management, multi-branch operations, clinic subscriptions, and audit oversight.</p>
+            </div>
+            <div class="users-heading-actions">
+                <a asp-controller="Superadmin" asp-action="UserManagement" class="users-add-button">+ Manage Accounts</a>
+            </div>
+        </div>
+
+        <!-- Health & Metrics Overview Grid -->
+        <div class="dc-kpi-grid">
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Active</span>
+                </div>
+                <div class="dc-kpi-value">3 Branches</div>
+                <div class="dc-kpi-label">Active Clinics</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Registered</span>
+                </div>
+                <div class="dc-kpi-value">128 Users</div>
+                <div class="dc-kpi-label">Total Accounts</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Monthly</span>
+                </div>
+                <div class="dc-kpi-value">₱47,980</div>
+                <div class="dc-kpi-label">Subscriptions</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">Normal</span>
+                </div>
+                <div class="dc-kpi-value">99.98%</div>
+                <div class="dc-kpi-label">Platform Health</div>
+            </div>
+        </div>
+        
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

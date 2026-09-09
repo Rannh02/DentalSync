@@ -1,0 +1,187 @@
+@* Superadmin Header partial — mirrors Administrator header styling *@
+@using Microsoft.AspNetCore.Identity
+@using DentalSync.Models
+@inject UserManager<Users> _um
+@{
+    var currentUser = await _um.GetUserAsync(User);
+    var displayName = currentUser?.FullName ?? currentUser?.UserName ?? "Super Admin";
+    var initials = string.Concat(displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                       .Take(2).Select(w => w[0])).ToUpper();
+    var email = currentUser?.Email ?? "superadmin@dentalsync.ph";
+}
+<link rel="stylesheet" href="~/css/site.css" />
+<link rel="stylesheet" href="~/css/header.css" />
+<link rel="stylesheet" href="~/css/sidebar.css" />
+
+<header class="ds-header">
+    <div class="ds-header-inner">
+        <div class="ds-header-left">
+            <a class="ds-brand-link" asp-controller="Superadmin" asp-action="Index">
+                <h2 class="ds-brand-title">Dental<span class="ds-brand-accent">Sync</span></h2>
+            </a>
+        </div>
+        <div class="ds-header-right">
+
+            <div class="notification-container">
+                <button id="notifToggle" type="button" class="header-icon" title="Notifications"
+                        aria-label="Notifications" aria-haspopup="true" aria-expanded="false" aria-controls="notifDropdown">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#0b1220"/>
+                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="#0b1220" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    <div class="badge is-hidden" id="badgeDot"></div>
+                </button>
+                <div class="dropdown" id="notifDropdown" role="menu" aria-hidden="true">
+                    <div class="dd-header">
+                        <span class="dd-title">System Alerts <span class="notif-count" id="notifCountText">(0)</span></span>
+                        <button type="button" class="dd-mark" id="markAllRead">Mark all as read</button>
+                    </div>
+                    <div class="notif-list" id="notifListContainer">
+                        <div class="notif-item" style="justify-content: center; color: #8a94a3;">
+                            Loading notifications...
+                        </div>
+                    </div>
+                    <div class="dd-footer"><a asp-controller="Superadmin" asp-action="AuditLogs">View all audit logs</a></div>
+                </div>
+            </div>
+
+            <!--PROFILE DROPDOWN-->
+            <div class="profile-wrap">
+                <button id="profileToggle" type="button" class="profile-btn" aria-haspopup="true" aria-expanded="false">
+                    <span class="profile-avatar"></span>
+                </button>
+
+                <div id="profileMenu" class="profile-menu" role="menu">
+                    <div style="padding: 10px 16px; border-bottom: 1px solid #eef0f3;">
+                        <strong style="display:block; font-size:14px; color:#071a33;">@displayName</strong>
+                        <span style="font-size:12px; color:#5f7187;">@email</span>
+                    </div>
+                    <a class="profile-menu-item" asp-controller="Superadmin" asp-action="Index">System Dashboard</a>
+                    <a class="profile-menu-item" href="#" id="logoutLink">Logout</a>
+                    <form id="logoutFormMenu" asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<script>
+    (function() {
+        var notificationToggle = document.getElementById('notifToggle');
+        var notificationMenu   = document.getElementById('notifDropdown');
+        var notificationContainer = document.querySelector('.notification-container');
+        var markAllReadButton  = document.getElementById('markAllRead');
+        var notifListContainer = document.getElementById('notifListContainer');
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+        }
+
+        function loadNotifications() {
+            fetch('/Home/GetNotifications')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    var countEl = document.getElementById('notifCountText');
+                    var badge   = document.getElementById('badgeDot');
+                    if (!notifListContainer) return;
+
+                    var isRead = localStorage.getItem('superadmin_notif_read') === 'true';
+
+                    if (!data || data.length === 0) {
+                        notifListContainer.innerHTML = '<div class="notif-item" style="justify-content:center;color:#8a94a3;">No recent activity.</div>';
+                        if (countEl) countEl.textContent = '(0)';
+                        if (badge)   badge.classList.add('is-hidden');
+                        return;
+                    }
+
+                    if (countEl) countEl.textContent = isRead ? '(0)' : '(' + data.length + ')';
+                    if (badge) {
+                        if (isRead) badge.classList.add('is-hidden');
+                        else        badge.classList.remove('is-hidden');
+                    }
+
+                    var html = '';
+                    data.forEach(function(item) {
+                        var unreadClass = isRead ? '' : ' unread';
+                        var dotHtml    = isRead ? '' : '<div class="unread-dot"></div>';
+                        html += '<div class="notif-item' + unreadClass + '">' +
+                            '<div class="notif-avatar ' + (item.category || 'avatar-info') + '">' + (item.icon || 'i') + '</div>' +
+                            '<div class="notif-content">' +
+                                '<p class="notif-text"><strong>' + escapeHtml(item.title) + '</strong>: ' + escapeHtml(item.description) + '</p>' +
+                                '<span class="notif-time">' + escapeHtml(item.timeAgo) + '</span>' +
+                            '</div>' + dotHtml + '</div>';
+                    });
+                    notifListContainer.innerHTML = html;
+                })
+                .catch(function() {});
+        }
+
+        function closeNotifications() {
+            if (!notificationMenu) return;
+            notificationMenu.classList.remove('is-open');
+            if (notificationToggle) notificationToggle.setAttribute('aria-expanded', 'false');
+            notificationMenu.setAttribute('aria-hidden', 'true');
+        }
+
+        if (notificationToggle && notificationMenu && notificationContainer) {
+            notificationToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = notificationMenu.classList.toggle('is-open');
+                notificationToggle.setAttribute('aria-expanded', isOpen.toString());
+                notificationMenu.setAttribute('aria-hidden', (!isOpen).toString());
+                if (isOpen) loadNotifications();
+            });
+            notificationMenu.addEventListener('click', function(e) { e.stopPropagation(); });
+        }
+
+        if (markAllReadButton) {
+            markAllReadButton.addEventListener('click', function() {
+                localStorage.setItem('superadmin_notif_read', 'true');
+                document.querySelectorAll('.notif-item.unread').forEach(function(i) { i.classList.remove('unread'); });
+                document.querySelectorAll('.unread-dot').forEach(function(d) { d.remove(); });
+                var countEl = document.getElementById('notifCountText');
+                if (countEl) countEl.textContent = '(0)';
+                var badge = document.getElementById('badgeDot');
+                if (badge) badge.classList.add('is-hidden');
+            });
+        }
+
+        loadNotifications();
+
+        var btn  = document.getElementById('profileToggle');
+        var menu = document.getElementById('profileMenu');
+        if (btn && menu) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var shown = menu.style.display === 'block';
+                menu.style.display = shown ? 'none' : 'block';
+                btn.setAttribute('aria-expanded', (!shown).toString());
+                closeNotifications();
+            });
+        }
+
+        var logoutLink = document.getElementById('logoutLink');
+        var logoutForm = document.getElementById('logoutFormMenu');
+        if (logoutLink && logoutForm) {
+            logoutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                logoutForm.submit();
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (notificationContainer && !notificationContainer.contains(e.target)) closeNotifications();
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeNotifications();
+        });
+    })();
+</script>

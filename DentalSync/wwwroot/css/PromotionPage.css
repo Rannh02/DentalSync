@@ -123,7 +123,7 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 20px !important;
+    padding: 7px 18px !important;
     border-radius: var(--radius-sm);
     background: var(--white) !important;
     color: var(--dark-blue) !important;
@@ -140,7 +140,7 @@ img {
 }
 
 .nav-book-btn {
-    padding: 10px 20px !important;
+    padding: 7px 18px !important;
     font-size: 14px !important;
     color: var(--white) !important;
 }
@@ -395,7 +395,7 @@ img {
 
 .about-image-wrapper {
     position: relative;
-    border-radius: var(--radius-lg);
+    border-radius: 1%;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
 }
@@ -406,20 +406,7 @@ img {
     object-fit: cover;
 }
 
-.about-experience-badge {
-    position: absolute;
-    bottom: -20px;
-    right: -20px;
-    background: var(--dark-blue);
-    color: var(--white);
-    padding: 20px 24px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border: 3px solid var(--white);
-}
+
 
 .exp-number {
     font-size: 32px;
@@ -670,8 +657,9 @@ img {
 
 .dentist-img {
     width: 100%;
-    height: 100%;
+    height: 280px;
     object-fit: cover;
+    object-position: center 20%;
     transition: transform 0.4s ease;
 }
 
@@ -1156,7 +1144,7 @@ img {
 .footer {
     flex-shrink: 0;
     width: 100%;
-    background: var(--dark-blue);
+    background: #0b396a;
     color: var(--white);
     padding: 60px 7% 30px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -1179,7 +1167,7 @@ img {
 }
 
 .footer-section h2 span {
-    color: var(--primary-blue);
+    color: #1685ff;
 }
 
 .footer-section h3 {
@@ -1188,12 +1176,12 @@ img {
     letter-spacing: 1px;
     margin-bottom: 16px;
     color: var(--white);
-    border-left: 3px solid var(--primary-blue);
+    border-left: 3px solid #1685ff;
     padding-left: 10px;
 }
 
 .footer-section p {
-    color: #94a3b8;
+    color: #e2e8f0;
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 8px;
@@ -1206,13 +1194,13 @@ img {
 }
 
 .footer-links-grid a {
-    color: #94a3b8;
+    color: #e2e8f0;
     font-size: 14px;
     transition: var(--transition);
 }
 
 .footer-links-grid a:hover {
-    color: var(--primary-blue);
+    color: #38bdf8;
     padding-left: 4px;
 }
 
@@ -1258,11 +1246,6 @@ img {
     .about {
         grid-template-columns: 1fr;
         gap: 40px;
-    }
-
-    .about-experience-badge {
-        right: 10px;
-        bottom: 10px;
     }
 
     .services-grid {

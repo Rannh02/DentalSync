@@ -1,0 +1,460 @@
+@model DentalSync.Controllers.SuperadminUserManagementViewModel
+@{
+    ViewData["Title"] = "Superadmin Control Center";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="stylesheet" href="~/css/audit.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div style="background:#e9f9ee; border:1px solid #c9eee0; color:#158a3e; padding:12px 18px; border-radius:8px; margin-bottom:20px; font-size:13px; font-weight:600;">
+                ✓ @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Superadmin Command Center</h1>
+                <p>Global system management, multi-branch operations, clinic subscriptions, user account management, and security audit logs.</p>
+            </div>
+            <div class="users-heading-actions">
+                <a asp-controller="Superadmin" asp-action="UserManagement" class="users-add-button">+ Manage User Accounts</a>
+            </div>
+        </div>
+
+        <!-- Health & Metrics Overview Grid -->
+        <div class="dc-kpi-grid">
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Active</span>
+                </div>
+                <div class="dc-kpi-value">3 Branches</div>
+                <div class="dc-kpi-label">Active Clinics</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Registered</span>
+                </div>
+                <div class="dc-kpi-value">@(Model?.TotalCount ?? 11) Users</div>
+                <div class="dc-kpi-label">Total Accounts</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Monthly</span>
+                </div>
+                <div class="dc-kpi-value">₱47,980</div>
+                <div class="dc-kpi-label">Subscriptions</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">Normal</span>
+                </div>
+                <div class="dc-kpi-value">99.98%</div>
+                <div class="dc-kpi-label">Platform Health</div>
+            </div>
+        </div>
+
+        <!-- Role Filter Tabs -->
+        <div style="display:flex; gap:8px; margin:24px 0; flex-wrap:wrap;">
+            <button type="button" class="users-filter-button role-tab-btn" onclick="switchRoleTab('all', this)">
+                All Roles (@(Model?.TotalCount ?? 11))
+            </button>
+            <button type="button" class="users-clear-button role-tab-btn" onclick="switchRoleTab('superadmin', this)">
+                Superadmin (@(Model?.Superadmins.Count ?? 1))
+            </button>
+            <button type="button" class="users-clear-button role-tab-btn" onclick="switchRoleTab('administrator', this)">
+                Administrator (@(Model?.Administrators.Count ?? 2))
+            </button>
+            <button type="button" class="users-clear-button role-tab-btn" onclick="switchRoleTab('dentist', this)">
+                Dentist (@(Model?.Dentists.Count ?? 3))
+            </button>
+            <button type="button" class="users-clear-button role-tab-btn" onclick="switchRoleTab('receptionist', this)">
+                Receptionist (@(Model?.Receptionists.Count ?? 2))
+            </button>
+            <button type="button" class="users-clear-button role-tab-btn" onclick="switchRoleTab('patient', this)">
+                Patient (@(Model?.Patients.Count ?? 3))
+            </button>
+        </div>
+
+        <!-- 1. SUPERADMIN TABLE -->
+        <section class="users-panel role-section-panel" id="panel-superadmin" style="margin-bottom:24px;">
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">🛡️ Superadmin Accounts</strong>
+                <span class="users-total">@(Model?.Superadmins.Count ?? 1) Account(s)</span>
+            </div>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>Role / Access</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Superadmins != null && Model.Superadmins.Any())
+                        {
+                            @foreach (var item in Model.Superadmins)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">SA</span>
+                                            <span><strong>@item.FullName</strong></span>
+                                        </div>
+                                    </td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Phone</td>
+                                    <td><span class="role-pill">Superadmin</span></td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <span class="action-button" style="opacity:0.6; cursor:not-allowed;">Protected</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. ADMINISTRATOR TABLE -->
+        <section class="users-panel role-section-panel" id="panel-administrator" style="margin-bottom:24px;">
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">👑 Administrator Accounts</strong>
+                <span class="users-total">@(Model?.Administrators.Count ?? 2) Account(s)</span>
+            </div>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>Role / Scope</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Administrators != null && Model.Administrators.Any())
+                        {
+                            @foreach (var item in Model.Administrators)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">AD</span>
+                                            <span><strong>@item.FullName</strong></span>
+                                        </div>
+                                    </td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Phone</td>
+                                    <td><span class="role-pill">Administrator</span></td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@item.UserId" />
+                                                @if (item.IsSuspended)
+                                                {
+                                                    <button type="submit" class="action-button action-edit">Activate</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="action-button action-status">Suspend</button>
+                                                }
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. DENTIST TABLE -->
+        <section class="users-panel role-section-panel" id="panel-dentist" style="margin-bottom:24px;">
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">👨‍⚕️ Dentist Accounts</strong>
+                <span class="users-total">@(Model?.Dentists.Count ?? 3) Account(s)</span>
+            </div>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Specialization</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Dentists != null && Model.Dentists.Any())
+                        {
+                            @foreach (var item in Model.Dentists)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">DN</span>
+                                            <span><strong>@item.FullName</strong></span>
+                                        </div>
+                                    </td>
+                                    <td><span class="role-pill">@item.ExtraInfo</span></td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Phone</td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@item.UserId" />
+                                                @if (item.IsSuspended)
+                                                {
+                                                    <button type="submit" class="action-button action-edit">Activate</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="action-button action-status">Suspend</button>
+                                                }
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 4. RECEPTIONIST TABLE -->
+        <section class="users-panel role-section-panel" id="panel-receptionist" style="margin-bottom:24px;">
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">📋 Receptionist Accounts</strong>
+                <span class="users-total">@(Model?.Receptionists.Count ?? 2) Account(s)</span>
+            </div>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email Address</th>
+                            <th>Phone</th>
+                            <th>Assigned Desk</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Receptionists != null && Model.Receptionists.Any())
+                        {
+                            @foreach (var item in Model.Receptionists)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">RC</span>
+                                            <span><strong>@item.FullName</strong></span>
+                                        </div>
+                                    </td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Phone</td>
+                                    <td><span class="role-pill">@item.ExtraInfo</span></td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@item.UserId" />
+                                                @if (item.IsSuspended)
+                                                {
+                                                    <button type="submit" class="action-button action-edit">Activate</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="action-button action-status">Suspend</button>
+                                                }
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. PATIENT TABLE -->
+        <section class="users-panel role-section-panel" id="panel-patient" style="margin-bottom:24px;">
+            <div class="users-filters">
+                <strong style="font-size:15px; color:#14181f;">🩺 Patient Accounts</strong>
+                <span class="users-total">@(Model?.Patients.Count ?? 3) Account(s)</span>
+            </div>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email Address</th>
+                            <th>Contact Phone</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.Patients != null && Model.Patients.Any())
+                        {
+                            @foreach (var item in Model.Patients)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">PT</span>
+                                            <span><strong>@item.FullName</strong></span>
+                                        </div>
+                                    </td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Phone</td>
+                                    <td><span class="role-pill">@item.ExtraInfo</span></td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="status-pill status-inactive">Suspended</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-pill status-active">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@item.UserId" />
+                                                @if (item.IsSuspended)
+                                                {
+                                                    <button type="submit" class="action-button action-edit">Activate</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="action-button action-status">Suspend</button>
+                                                }
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Tab Switcher Script -->
+<script>
+    function switchRoleTab(role, btnEl) {
+        var btns = document.querySelectorAll('.role-tab-btn');
+        btns.forEach(function(b) {
+            b.classList.remove('users-filter-button');
+            b.classList.add('users-clear-button');
+        });
+        if (btnEl) {
+            btnEl.classList.remove('users-clear-button');
+            btnEl.classList.add('users-filter-button');
+        }
+
+        var panels = document.querySelectorAll('.role-section-panel');
+        panels.forEach(function(p) {
+            if (role === 'all') {
+                p.style.display = 'block';
+            } else {
+                p.style.display = (p.id === 'panel-' + role) ? 'block' : 'none';
+            }
+        });
+    }
+</script>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

@@ -20,7 +20,10 @@ namespace DentalSync.Controllers
         {
             var allRoles = new List<string> { "Administrator", "Receptionist", "Dentist", "Patient" };
 
-            var query = _db.AuditLogs.AsNoTracking().AsQueryable();
+            // Never expose Superadmin activity to Administrators
+            var query = _db.AuditLogs.AsNoTracking()
+                .Where(l => l.Role != "Superadmin")
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(l =>
@@ -69,7 +72,9 @@ namespace DentalSync.Controllers
         {
             var allRoles = new List<string> { "Administrator", "Receptionist", "Dentist", "Patient" };
 
-            var query = _db.AuditLogs.AsNoTracking().Where(l => l.Module == "Authentication");
+            // Never expose Superadmin activity to Administrators
+            var query = _db.AuditLogs.AsNoTracking()
+                .Where(l => l.Module == "Authentication" && l.Role != "Superadmin");
 
             if (!string.IsNullOrWhiteSpace(search))
             {

@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Global Analytics & Reports";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="stylesheet" href="~/css/reports.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Global Analytics &amp; Reports</h1>
+                <p>Access high-level system analytics, platform health, user activity, and overall clinic performance metrics.</p>
+            </div>
+            <div class="users-heading-actions">
+                <button type="button" class="users-add-button" onclick="alert('Exporting Analytics Summary...')">
+                    📊 Export Analytics Summary
+                </button>
+            </div>
+        </div>
+
+        <!-- Platform Health KPI Grid -->
+        <div class="dc-kpi-grid">
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Optimal</span>
+                </div>
+                <div class="dc-kpi-value">99.98%</div>
+                <div class="dc-kpi-label">Server Uptime</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Online</span>
+                </div>
+                <div class="dc-kpi-value">42 Active</div>
+                <div class="dc-kpi-label">Concurrent Users</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">Normal</span>
+                </div>
+                <div class="dc-kpi-value">1.2 GB / 16 GB</div>
+                <div class="dc-kpi-label">RAM Utilization</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Secure</span>
+                </div>
+                <div class="dc-kpi-value">0 Threats</div>
+                <div class="dc-kpi-label">System Security</div>
+            </div>
+        </div>
+
+        <!-- Global Performance Grid -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px; margin-top:24px;">
+
+            <section class="users-panel" style="padding:24px;">
+                <h3 style="font-size:16px; font-weight:700; color:#14181f; margin:0 0 16px;">Platform Usage &amp; Activity Overview</h3>
+                <div style="height:220px; background:#fafbfc; border:1px dashed #dfe3e8; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2e6ff2" stroke-width="2"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-3 3 2 5-6"/></svg>
+                    <strong style="color:#14181f;">Real-time User Activity &amp; API Traffic</strong>
+                    <span style="font-size:13px; color:#6b7280;">Average API Response Time: 42ms | Database Query Time: 12ms</span>
+                </div>
+            </section>
+
+            <section class="users-panel" style="padding:24px;">
+                <h3 style="font-size:16px; font-weight:700; color:#14181f; margin:0 0 16px;">Clinic Growth Stats</h3>
+                <div style="display:grid; gap:14px; font-size:13px;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
+                        <span style="color:#6b7280;">Total Patient Records:</span>
+                        <strong style="color:#14181f;">1,420 Patients</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
+                        <span style="color:#6b7280;">Completed Appointments:</span>
+                        <strong style="color:#14181f;">3,890 Total</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
+                        <span style="color:#6b7280;">Invoices Issued:</span>
+                        <strong style="color:#14181f;">₱184,500 Total</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#6b7280;">Active Dentists:</span>
+                        <strong style="color:#14181f;">15 Dentists</strong>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

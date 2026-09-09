@@ -17,6 +17,11 @@ namespace DentalSync.Controllers
             return RedirectToAction("Dashboard", "Dashboard");
         }
 
+        public IActionResult Superadmin()
+        {
+            return RedirectToAction("Index", "Superadmin");
+        }
+
         public IActionResult Users()
         {
             return RedirectToAction("Users", "Users");

@@ -1,11 +1,16 @@
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
 @{
     Layout = null;
     ViewData["Title"] = "Subscribe - DentalSync Clinic";
-    string plan = ViewBag.Plan as string ?? "Starter Clinic";
-    string billing = ViewBag.Billing as string ?? "monthly";
-    string priceStr = ViewBag.Price as string ?? "799";
+    string plan = (TempData["Plan"] as string) ?? (ViewBag.Plan as string) ?? "Starter Clinic";
+    string billing = (TempData["Billing"] as string) ?? (ViewBag.Billing as string) ?? "monthly";
+    string priceStr = (TempData["Price"] as string) ?? (ViewBag.Price as string) ?? "799";
     decimal price = 0;
     decimal.TryParse(priceStr, out price);
+    string registerError = TempData["RegisterError"] as string;
+    string registerSuccess = TempData["RegisterSuccess"] as string;
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
 }
 
 <!DOCTYPE html>
@@ -58,6 +63,13 @@
                     <h2 class="card-title">Register Admin Account</h2>
                     <p class="card-subtitle">Set up the primary administrator account for your clinic management system.</p>
 
+                    @if (!string.IsNullOrEmpty(registerError))
+                    {
+                        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px;font-size:13px;color:#991b1b;margin-bottom:18px;">
+                            ⚠️ @registerError
+                        </div>
+                    }
+
                     <form id="admin-reg-form" onsubmit="handleStep1Submit(event)">
                         <!-- FIRST NAME, MIDDLE NAME, LAST NAME -->
                         <div class="form-group-row-3">
@@ -97,7 +109,7 @@
                         <div class="form-group-row">
                             <div class="form-group">
                                 <label for="adminPassword">Password *</label>
-                                <input type="password" id="adminPassword" class="form-input" placeholder="At least 12 chars (A-z, 0-9, special)" minlength="8" required />
+                                <input type="password" id="adminPassword" class="form-input" placeholder="At least 12 chars (A-z, 0-9, special)" minlength="12" required />
                                 <div class="password-strength" aria-live="polite">
                                     <div class="password-strength-track"><span id="adminPasswordStrengthBar"></span></div>
                                     <strong id="adminPasswordStrengthLabel">Enter a password</strong>
@@ -144,8 +156,17 @@
                     </div>
 
                     <!-- CARD FORM -->
-                    <form id="payment-card-form" onsubmit="handleFinalSubmit(event)">
-                        
+                    <form id="payment-card-form" method="post" action="/LandingPage/RegisterAdmin">
+                        <input type="hidden" name="__RequestVerificationToken" value="@tokens.RequestToken" />
+
+                        <!-- Hidden fields populated from Step 1 -->
+                        <input type="hidden" id="h-fullName"  name="fullName"  />
+                        <input type="hidden" id="h-email"     name="email"     />
+                        <input type="hidden" id="h-password"  name="password"  />
+                        <input type="hidden" name="plan"      value="@plan"    />
+                        <input type="hidden" name="billing"   value="@billing" />
+                        <input type="hidden" name="price"     value="@priceStr" />
+
                         <div id="card-fields">
                             <div class="form-group">
                                 <label for="cardName">Cardholder Name *</label>
@@ -291,13 +312,23 @@
         function handleStep1Submit(e) {
             e.preventDefault();
 
-            const pwd = document.getElementById('adminPassword').value;
+            const firstName  = document.getElementById('firstName').value.trim();
+            const middleName = document.getElementById('middleName').value.trim();
+            const lastName   = document.getElementById('lastName').value.trim();
+            const pwd        = document.getElementById('adminPassword').value;
             const confirmPwd = document.getElementById('adminConfirmPassword').value;
+            const email      = document.getElementById('adminEmail').value.trim();
 
             if (pwd !== confirmPwd) {
                 alert('Passwords do not match. Please re-check your password.');
                 return;
             }
+
+            // Build full name and copy to hidden fields used by the real POST form
+            const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
+            document.getElementById('h-fullName').value = fullName;
+            document.getElementById('h-email').value    = email;
+            document.getElementById('h-password').value = pwd;
 
             goToStep(2);
         }
@@ -332,9 +363,10 @@
             }
         }
 
+        // The payment form now submits directly to the server — no JS override needed.
+        // We keep this stub in case it is called from elsewhere.
         function handleFinalSubmit(e) {
-            e.preventDefault();
-            document.getElementById('successModal').classList.add('active');
+            // real form submission handled by the browser (POST to /LandingPage/RegisterAdmin)
         }
 
         // PASSWORD STRENGTH EVALUATOR

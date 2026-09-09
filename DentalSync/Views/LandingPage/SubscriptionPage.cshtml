@@ -61,61 +61,6 @@
     <section class="plans-section">
         <div class="plans-grid">
 
-            <!-- FREE TRIAL -->
-            <div class="plan-card">
-                <div class="plan-tier-row">
-                    <span class="plan-tier">Free</span>
-                </div>
-                <div class="plan-name">Free Trial</div>
-                <div class="plan-desc">Explore DentalSync risk-free. Perfect for evaluating the system before committing.</div>
-
-                <div class="plan-price-block">
-                    <span class="plan-currency">₱</span>
-                    <span class="plan-amount">0</span>
-                    <span class="plan-period">/ month</span>
-                </div>
-                <div class="plan-annual-note">&nbsp;</div>
-
-                <button type="button" onclick="selectPlan('Free Trial', 0, 0)" class="plan-btn btn-free" style="cursor:pointer; width:100%; border:none;">
-                    Start 14-Day Free Trial
-                </button>
-
-                <div class="plan-divider"></div>
-                <div class="plan-features-label">Start with the basics:</div>
-                <ul class="plan-features">
-                    <li>
-                        <span class="feat-icon check">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        Up to 20 patient records
-                    </li>
-                    <li>
-                        <span class="feat-icon check">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        Basic appointment scheduling
-                    </li>
-                    <li>
-                        <span class="feat-icon check">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        Limited inventory tracking
-                    </li>
-                    <li>
-                        <span class="feat-icon check">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        1 user account
-                    </li>
-                    <li>
-                        <span class="feat-icon check">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        Community support only
-                    </li>
-                </ul>
-            </div>
-
             <!-- BASIC -->
             <div class="plan-card">
                 <div class="plan-tier-row">
@@ -136,7 +81,7 @@
                 </button>
 
                 <div class="plan-divider"></div>
-                <div class="plan-features-label">Everything in Free, and:</div>
+                <div class="plan-features-label">Core features included:</div>
                 <ul class="plan-features">
                     <li class="highlighted-feat">
                         <span class="feat-icon check-blue">
@@ -301,144 +246,43 @@
     </section>
 
     <!-- ============================================================
-         COMPARISON TABLE
+         FOOTER
     ============================================================ -->
-    <section class="compare-section">
-        <h2 class="compare-title">Compare all features</h2>
-        <table class="compare-table">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Free Trial</th>
-                    <th>Starter</th>
-                    <th class="col-featured">Professional</th>
-                    <th>Enterprise</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Patient Records</td>
-                    <td>Up to 20</td>
-                    <td>Unlimited</td>
-                    <td><span class="yes-icon">✓</span> Unlimited</td>
-                    <td><span class="yes-icon">✓</span> Unlimited</td>
-                </tr>
-                <tr>
-                    <td>Staff Accounts</td>
-                    <td>1</td>
-                    <td>Up to 3</td>
-                    <td>Up to 10</td>
-                    <td>Unlimited</td>
-                </tr>
-                <tr>
-                    <td>Appointment Management</td>
-                    <td><span class="partial">Basic</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Inventory Tracking</td>
-                    <td><span class="partial">Limited</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Reports &amp; Analytics</td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="partial">Basic</span></td>
-                    <td><span class="yes-icon">✓</span> Full</td>
-                    <td><span class="yes-icon">✓</span> Full</td>
-                </tr>
-                <tr>
-                    <td>Patient Reminders (SMS/Email)</td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Billing &amp; Invoicing</td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Multi-Branch Management</td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Custom Role Permissions</td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="no-icon">—</span></td>
-                    <td><span class="yes-icon">✓</span></td>
-                </tr>
-                <tr>
-                    <td>Support Level</td>
-                    <td>Community</td>
-                    <td>Email</td>
-                    <td>Priority Chat &amp; Email</td>
-                    <td>24/7 Dedicated</td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section footer-brand">
+                <h2>Dental<span>Sync</span> Clinic</h2>
+                <p>
+                    Modern dental care powered by smart technology. Providing comprehensive, comfortable, and personalized dental services.
+                </p>
+            </div>
 
-    <!-- ============================================================
-         TRUST / BOTTOM SECTION
-    ============================================================ -->
-    <section class="trust-section" id="contact">
-        <h2 class="trust-title">Why clinics trust DentalSync</h2>
-        <div class="trust-grid">
-            <div class="trust-item">
-                <div class="trust-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+            <div class="footer-section">
+                <h3>QUICK LINKS</h3>
+                <div class="footer-links-grid">
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="home">Home</a>
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="about">About</a>
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="services">Services</a>
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="dentists">Our Dentists</a>
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="dentalsync">DentalSync</a>
+                    <a asp-controller="LandingPage" asp-action="Promotionpage" asp-fragment="contact">Contact</a>
                 </div>
-                <div class="trust-label">Secure &amp; Private</div>
-                <div class="trust-sub">All patient data encrypted end-to-end</div>
             </div>
-            <div class="trust-item">
-                <div class="trust-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </div>
-                <div class="trust-label">Cancel Anytime</div>
-                <div class="trust-sub">No contracts, no lock-in commitments</div>
+
+            <div class="footer-section">
+                <h3>CONTACT US</h3>
+                <p>📍 Davao City, Philippines</p>
+                <p>☎ +63 (082) 221-0190</p>
+                <p>✉ dentalsync@gmail.com</p>
             </div>
-            <div class="trust-item">
-                <div class="trust-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                </div>
-                <div class="trust-label">Quick Setup</div>
-                <div class="trust-sub">Go live in under 30 minutes</div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div class="trust-label">Dedicated Support</div>
-                <div class="trust-sub">Real humans ready to help you</div>
+
+            <div class="footer-section footer-right">
+                <h3>DentalSync</h3>
+                <p>© 2026 DentalSync.</p>
+                <p>All rights reserved.</p>
             </div>
         </div>
-        <p class="contact-cta">
-            Have questions about our plans?
-            <a href="mailto:support@dentalsync.ph">Contact our sales team</a>
-            or call us at <a href="tel:+63000000000">+63 (0) 000-0000</a>.
-        </p>
-    </section>
+    </footer>
 
     <script>
         let billing = 'monthly';

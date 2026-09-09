@@ -41,6 +41,10 @@ namespace DentalSync.Controllers
             foreach (var user in users)
             {
                 var roles = await userManager.GetRolesAsync(user);
+
+                // Administrators must never see Superadmin accounts
+                if (roles.Contains("Superadmin")) continue;
+
                 var lockoutActive = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
                 userRows.Add(new UserListItemViewModel
                 {
@@ -160,6 +164,8 @@ namespace DentalSync.Controllers
             if (user == null) return NotFound();
 
             var roles = await userManager.GetRolesAsync(user);
+            if (roles.Contains("Superadmin")) return Forbid();
+
             return View("UserManagement/UserDetails", new UserListItemViewModel
             {
                 Id = user.Id,
@@ -178,6 +184,8 @@ namespace DentalSync.Controllers
             if (user == null) return NotFound();
 
             var roles = await userManager.GetRolesAsync(user);
+            if (roles.Contains("Superadmin")) return Forbid();
+
             return View("UserManagement/EditUser", new EditUserViewModel
             {
                 Id = user.Id,
@@ -221,6 +229,9 @@ namespace DentalSync.Controllers
             var user = await userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
+            var roles = await userManager.GetRolesAsync(user);
+            if (roles.Contains("Superadmin")) return Forbid();
+
             var isInactive = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
             await userManager.SetLockoutEnabledAsync(user, true);
             await userManager.SetLockoutEndDateAsync(user, isInactive ? null : DateTimeOffset.UtcNow.AddYears(100));
@@ -234,6 +245,10 @@ namespace DentalSync.Controllers
         {
             var user = await userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
+
+            var roles = await userManager.GetRolesAsync(user);
+            if (roles.Contains("Superadmin")) return Forbid();
+
             return View("UserManagement/ResetUserPassword", new ResetUserPasswordViewModel { Id = user.Id, UserName = user.Email ?? user.UserName ?? string.Empty });
         }
 

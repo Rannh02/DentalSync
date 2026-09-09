@@ -1,0 +1,130 @@
+@model DentalSync.Controllers.SuperadminUserManagementViewModel
+@{
+    ViewData["Title"] = "Users";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div style="background:#e9f9ee; border:1px solid #c9eee0; color:#158a3e; padding:12px 18px; border-radius:8px; margin-bottom:20px; font-size:13px; font-weight:600;">
+                ✓ @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Users</h1>
+                <p>Manage user accounts, roles, and access status.</p>
+            </div>
+            <div class="users-heading-actions">
+                <span class="users-total">@Model.Administrators.Count users</span>
+            </div>
+        </div>
+
+        <section class="users-panel" aria-label="User management">
+            <form method="get" asp-controller="Superadmin" asp-action="UserManagement" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search users</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@ViewBag.Search" placeholder="Search by name or email" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by role</span>
+                    <select name="role">
+                        <option value="">All roles</option>
+                        <option value="Administrator" selected>Administrator</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="status">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status))">All statuses</option>
+                        <option value="active" selected="@(ViewBag.Status == "active")">Active</option>
+                        <option value="inactive" selected="@(ViewBag.Status == "inactive" || ViewBag.Status == "suspended")">Inactive</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Superadmin" asp-action="UserManagement" class="users-clear-button">Clear</a>
+            </form>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <colgroup>
+                        <col class="users-col-user" />
+                        <col class="users-col-role" />
+                        <col class="users-col-status" />
+                        <col class="users-col-actions" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>USER</th>
+                            <th>ROLE</th>
+                            <th>STATUS</th>
+                            <th class="users-actions-heading">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Administrators.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="users-empty">No administrator accounts match the selected filters.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var user in Model.Administrators)
+                            {
+                                var initials = string.Concat(user.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpper();
+                                if (string.IsNullOrEmpty(initials)) { initials = "AD"; }
+                                <tr>
+                                    <td>
+                                        <div class="user-cell">
+                                            <span class="user-avatar">@initials</span>
+                                            <span>
+                                                <strong>@user.FullName</strong>
+                                                <small>@user.Email</small>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="role-pill">Administrator</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-pill @(user.IsSuspended ? "status-inactive" : "status-active")">
+                                            @(user.IsSuspended ? "Inactive" : "Active")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="user-actions">
+                                            <button type="button" class="action-button action-view" onclick="alert('Viewing Administrator: @user.FullName\nEmail: @user.Email\nPhone: @user.Phone')">View</button>
+                                            <button type="button" class="action-button action-edit" onclick="alert('Editing Administrator: @user.FullName')">Edit</button>
+                                            <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend" asp-route-userId="@user.UserId" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="action-button action-status">
+                                                    @(user.IsSuspended ? "Activate" : "Deactivate")
+                                                </button>
+                                            </form>
+                                            <button type="button" class="action-button action-reset" onclick="alert('Password reset link sent to @user.Email')">Reset password</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

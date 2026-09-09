@@ -13,6 +13,13 @@
             <p class="account-subtitle">Sign in to access your clinic portal</p>
         </div>
 
+        @if (TempData["RegisterSuccess"] as string == "true")
+        {
+            <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:14px;font-size:13px;color:#166534;margin-bottom:18px;">
+                ✅ <strong>Account created successfully!</strong> Your admin account is ready. Please sign in below.
+            </div>
+        }
+
         <form asp-action="Login" method="post">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>

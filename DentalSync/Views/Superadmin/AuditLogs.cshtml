@@ -1,0 +1,125 @@
+@{
+    ViewData["Title"] = "System Audit Logs & Security";
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+<link rel="stylesheet" href="~/css/audit.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <div class="users-page-heading">
+            <div>
+                <h1>System Audit Logs &amp; Security</h1>
+                <p>Track all system activity, user authentication events, security audit logs, and configuration changes.</p>
+            </div>
+        </div>
+
+        <section class="users-panel" aria-label="Audit log management">
+
+            <!-- Filter bar -->
+            <form method="get" asp-controller="Superadmin" asp-action="AuditLogs" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search audit logs</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@ViewBag.Search" placeholder="Search by user, action, or module" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by role</span>
+                    <select name="role">
+                        <option value="">All Roles</option>
+                        <option value="Superadmin">Superadmin</option>
+                        <option value="Administrator">Administrator</option>
+                        <option value="Dentist">Dentist</option>
+                        <option value="Receptionist">Receptionist</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply Filters</button>
+                <a asp-controller="Superadmin" asp-action="AuditLogs" class="users-clear-button">Clear</a>
+            </form>
+
+            <!-- Table -->
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Date &amp; Time</th>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Module</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Sep 09, 2026 21:50</td>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="user-avatar">SA</span>
+                                    <span><strong>Super Admin</strong></span>
+                                </div>
+                            </td>
+                            <td><span class="role-pill">Superadmin</span></td>
+                            <td><span class="audit-type-pill pill-update">Subscription Updated</span></td>
+                            <td><span class="audit-module-tag">Billing</span></td>
+                            <td>Updated Davao Main Clinic subscription plan</td>
+                            <td><code class="audit-meta-ip">127.0.0.1</code></td>
+                        </tr>
+                        <tr>
+                            <td>Sep 09, 2026 20:14</td>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="user-avatar">DN</span>
+                                    <span><strong>Dr. Maria Santos</strong></span>
+                                </div>
+                            </td>
+                            <td><span class="role-pill">Dentist</span></td>
+                            <td><span class="audit-type-pill pill-update">Patient Record</span></td>
+                            <td><span class="audit-module-tag">Patients</span></td>
+                            <td>Updated treatment history for patient #204</td>
+                            <td><code class="audit-meta-ip">192.168.1.45</code></td>
+                        </tr>
+                        <tr>
+                            <td>Sep 09, 2026 19:30</td>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="user-avatar">RC</span>
+                                    <span><strong>Juana Dela Cruz</strong></span>
+                                </div>
+                            </td>
+                            <td><span class="role-pill">Receptionist</span></td>
+                            <td><span class="audit-type-pill pill-create">Appointment</span></td>
+                            <td><span class="audit-module-tag">Appointments</span></td>
+                            <td>Confirmed appointment for José Rizal</td>
+                            <td><code class="audit-meta-ip">192.168.1.12</code></td>
+                        </tr>
+                        <tr>
+                            <td>Sep 09, 2026 18:05</td>
+                            <td>
+                                <div class="user-cell">
+                                    <span class="user-avatar">SA</span>
+                                    <span><strong>Super Admin</strong></span>
+                                </div>
+                            </td>
+                            <td><span class="role-pill">Superadmin</span></td>
+                            <td><span class="audit-type-pill pill-delete">User Suspended</span></td>
+                            <td><span class="audit-module-tag">User Management</span></td>
+                            <td>Suspended user account: jose.rizal@gmail.com</td>
+                            <td><code class="audit-meta-ip">127.0.0.1</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")
