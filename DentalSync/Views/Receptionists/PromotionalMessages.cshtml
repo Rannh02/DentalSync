@@ -1,0 +1,275 @@
+@model DentalSync.ViewModels.PromotionalMessagesViewModel
+@{
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+
+<style>
+    .msg-preview {
+        max-width: 260px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #4b5563;
+        font-size: 13px;
+    }
+</style>
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Booking Schedules</h1>
+                <p>View and manage inquiries sent by visitors through the Landing Page.</p>
+            </div>
+            <div class="users-heading-actions">
+                @if (Model.NewCount > 0)
+                {
+                    <span class="status-pill status-new" style="margin-right: 8px; font-size: 12px; padding: 5px 12px;">@Model.NewCount new unread</span>
+                }
+                <span class="users-total">@Model.TotalMessages messages</span>
+            </div>
+        </div>
+
+        @if (TempData["MessageSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="modal-success" style="margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #e9f9ee; color: #158a3e; font-size: 13px; font-weight: 500;">
+                @successMessage
+            </div>
+        }
+
+        <section class="users-panel" aria-label="Promotional messages management">
+            <form method="get" asp-controller="Receptionist" asp-action="PromotionalMessages" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search messages</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by name or email" />
+                </label>
+
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="statusFilter">
+                        <option value="">All statuses</option>
+                        <option value="New" selected="@(Model.StatusFilter == "New")">New</option>
+                        <option value="Read" selected="@(Model.StatusFilter == "Read")">Read</option>
+                        <option value="Replied" selected="@(Model.StatusFilter == "Replied")">Replied</option>
+                        <option value="Archived" selected="@(Model.StatusFilter == "Archived")">Archived</option>
+                    </select>
+                </label>
+
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Receptionist" asp-action="PromotionalMessages" class="users-clear-button">Clear</a>
+            </form>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <colgroup>
+                        <col class="users-col-user" />
+                        <col style="width: 14%;" />
+                        <col style="width: 26%;" />
+                        <col style="width: 16%;" />
+                        <col class="users-col-status" />
+                        <col class="users-col-actions" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Preferred Date</th>
+                            <th>Message</th>
+                            <th>Received At</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.Messages.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="users-empty">No messages match the selected filters.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var msg in Model.Messages)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <span class="user-avatar">@GetInitials(msg.Name)</span>
+                                        <span>
+                                            <strong>@msg.Name</strong>
+                                            <small>@msg.Email</small>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @(msg.PreferredDate.HasValue ? msg.PreferredDate.Value.ToString("MMM dd, yyyy") : "None specified")
+                                </td>
+                                <td>
+                                    <div class="msg-preview" title="@msg.Message">@msg.Message</div>
+                                </td>
+                                <td>
+                                    @msg.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")
+                                </td>
+                                <td>
+                                    @switch (msg.Status)
+                                    {
+                                        case "New":
+                                            <span class="status-pill status-new">New</span>
+                                            break;
+                                        case "Read":
+                                            <span class="status-pill status-read">Read</span>
+                                            break;
+                                        case "Replied":
+                                            <span class="status-pill status-replied">Replied</span>
+                                            break;
+                                        case "Archived":
+                                            <span class="status-pill status-archived">Archived</span>
+                                            break;
+                                        default:
+                                            <span class="status-pill status-read">@msg.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <div class="user-actions">
+                                        <button type="button" 
+                                                class="action-button action-view"
+                                                onclick="openViewModal(@msg.Id, '@Html.Raw(JavaScriptEncode(msg.Name))', '@Html.Raw(JavaScriptEncode(msg.Email))', '@Html.Raw(JavaScriptEncode(msg.Phone))', '@(msg.PreferredDate.HasValue ? msg.PreferredDate.Value.ToString("yyyy-MM-dd") : "Not specified")', '@msg.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")', '@Html.Raw(JavaScriptEncode(msg.Message))', '@msg.Status', '@Html.Raw(JavaScriptEncode(msg.ReceptionistNotes ?? ""))')">
+                                            View
+                                        </button>
+
+                                        <form method="post" asp-controller="Receptionist" asp-action="DeleteMessage" onsubmit="return confirm('Are you sure you want to delete this message?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@msg.Id" />
+                                            <button type="submit" class="action-button action-delete">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Messages pagination">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalMessages == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalMessages) of @Model.TotalMessages</span>
+                    <div>
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Page ? "current" : "")" asp-controller="Receptionist" asp-action="PromotionalMessages" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-page="@(p)">@(p)</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
+</div>
+
+<!-- Modal for Viewing / Updating Message -->
+<div class="user-modal" id="viewMessageModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="viewMessageTitle">
+    <div class="user-modal-backdrop" onclick="closeViewModal()"></div>
+    <section class="user-modal-card" style="max-width: 580px;">
+        <div class="user-modal-header">
+            <div>
+                <h2 id="viewMessageTitle">Message Details</h2>
+                <p>Inquiry received from Promotional Page</p>
+            </div>
+            <button type="button" class="user-modal-close" onclick="closeViewModal()" aria-label="Close">&times;</button>
+        </div>
+
+        <form method="post" asp-controller="Receptionist" asp-action="UpdateMessageStatus" class="create-user-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="modalMessageId" name="id" />
+
+            <div class="modal-section-title">Customer Details</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; font-size: 13px;">
+                <div>
+                    <strong>Name:</strong> <span id="modalName" style="color: #374151;"></span>
+                </div>
+                <div>
+                    <strong>Email:</strong> <span id="modalEmail" style="color: #2563eb;"></span>
+                </div>
+                <div>
+                    <strong>Phone:</strong> <span id="modalPhone" style="color: #374151;"></span>
+                </div>
+                <div>
+                    <strong>Preferred Date:</strong> <span id="modalPreferredDate" style="color: #374151;"></span>
+                </div>
+                <div style="grid-column: span 2;">
+                    <strong>Received:</strong> <span id="modalCreatedAt" style="color: #6b7280;"></span>
+                </div>
+            </div>
+
+            <div class="modal-section-title">Message Body</div>
+            <div id="modalMessageBody" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; font-size: 13.5px; line-height: 1.5; color: #111827; margin-bottom: 16px; white-space: pre-wrap;"></div>
+
+            <div class="modal-section-title">Receptionist Action & Notes</div>
+
+            <label for="modalStatus">Message Status</label>
+            <select id="modalStatus" name="status" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #d1d5db; margin-bottom: 12px;">
+                <option value="New">New</option>
+                <option value="Read">Read</option>
+                <option value="Replied">Replied</option>
+                <option value="Archived">Archived</option>
+            </select>
+
+            <label for="modalNotes">Internal Notes (Optional)</label>
+            <textarea id="modalNotes" name="notes" rows="3" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #d1d5db;" placeholder="Enter any receptionist follow-up notes or response details..."></textarea>
+
+            <div class="user-modal-actions" style="margin-top: 16px;">
+                <button type="button" class="users-clear-button" onclick="closeViewModal()">Close</button>
+                <button type="submit" class="users-filter-button">Save Changes</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+    function openViewModal(id, name, email, phone, prefDate, createdAt, message, status, notes) {
+        document.getElementById('modalMessageId').value = id;
+        document.getElementById('modalName').textContent = name;
+        document.getElementById('modalEmail').textContent = email;
+        document.getElementById('modalPhone').textContent = phone;
+        document.getElementById('modalPreferredDate').textContent = prefDate;
+        document.getElementById('modalCreatedAt').textContent = createdAt;
+        document.getElementById('modalMessageBody').textContent = message;
+        document.getElementById('modalStatus').value = status;
+        document.getElementById('modalNotes').value = notes;
+
+        const modal = document.getElementById('viewMessageModal');
+        modal.removeAttribute('aria-hidden');
+        modal.classList.add('is-open');
+    }
+
+    function closeViewModal() {
+        const modal = document.getElementById('viewMessageModal');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.classList.remove('is-open');
+    }
+</script>
+
+@functions {
+    private static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "C";
+        return parts.Length == 1 ? parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant() : $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+
+    private static string JavaScriptEncode(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return input.Replace("\\", "\\\\")
+                    .Replace("'", "\\'")
+                    .Replace("\"", "\\\"")
+                    .Replace("\r", "")
+                    .Replace("\n", "\\n");
+    }
+}

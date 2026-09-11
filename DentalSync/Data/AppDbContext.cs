@@ -34,6 +34,10 @@ namespace DentalSync.Data
 
         // CRM & Reminders
         public DbSet<Reminder> Reminders { get; set; }
+        public DbSet<PromotionalMessage> PromotionalMessages { get; set; }
+
+        // System Settings & Terms
+        public DbSet<TermsAndConditions> TermsAndConditions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

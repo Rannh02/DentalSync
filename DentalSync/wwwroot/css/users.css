@@ -42,6 +42,10 @@
 .role-pill { background: #f1f2f4; color: #4b5563; }
 .status-active { background: #e9f9ee; color: #158a3e; }
 .status-inactive { background: #fceaea; color: #c22a2a; }
+.status-new { background: #fef3c7; color: #92400e; }
+.status-read { background: #e0f2fe; color: #0369a1; }
+.status-replied { background: #e9f9ee; color: #158a3e; }
+.status-archived { background: #f1f2f4; color: #4b5563; }
 .user-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; white-space: nowrap; }
 .user-actions form { display: contents; }
 .action-button, .back-link { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 9px; border: 1px solid #dfe3e8; border-radius: 6px; background: #fff; color: #4b5563; font: inherit; font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -50,6 +54,8 @@
 .action-edit { border-color: #c9eee0; color: #158a3e; }
 .action-status { border-color: #f3d6aa; color: #b5730a; }
 .action-reset { border-color: #ead7f5; color: #8b4db1; }
+.action-delete { border-color: #fca5a5; color: #dc2626; }
+.action-delete:hover { border-color: #ef4444; color: #b91c1c; background: #fef2f2; }
 .user-actions .action-button { flex: 0 0 auto; }
 .back-link { border: 0; background: transparent; padding: 0; color: #2e6ff2; }
 .user-actions form { margin: 0; }

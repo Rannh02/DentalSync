@@ -59,14 +59,16 @@
             <div class="users-table-wrap">
                 <table class="users-table">
                     <colgroup>
+                        <col style="width: 15%;" />
                         <col style="width: 25%;" />
-                        <col style="width: 30%;" />
-                        <col style="width: 15%;" />
-                        <col style="width: 15%;" />
+                        <col style="width: 25%;" />
+                        <col style="width: 12%;" />
+                        <col style="width: 8%;" />
                         <col style="width: 15%;" />
                     </colgroup>
                     <thead>
                         <tr>
+                            <th>Category</th>
                             <th>Service Name</th>
                             <th>Description</th>
                             <th>Cost</th>
@@ -78,7 +80,7 @@
                         @if (Model.Services.Count == 0)
                         {
                             <tr>
-                                <td colspan="5" class="users-empty">No services match the selected criteria.</td>
+                                <td colspan="6" class="users-empty">No services match the selected criteria.</td>
                             </tr>
                         }
                         else
@@ -86,7 +88,8 @@
                             @foreach (var item in Model.Services)
                             {
                                 <tr>
-                                    <td><strong>@item.Name</strong><small style="color: #6b7280;">@item.EstimatedDurationMinutes mins</small></td>
+                                    <td><span class="role-pill">@item.Category</span></td>
+                                    <td><strong>@item.Name</strong><small style="display: block; color: #6b7280;">@item.EstimatedDurationMinutes mins</small></td>
                                     <td>@(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)</td>
                                     <td><strong style="color: #158a3e;">₱@item.Cost.ToString("N2")</strong></td>
                                     <td>
@@ -99,6 +102,7 @@
                                             <button type="button" class="action-button action-edit btn-edit-service"
                                                     data-id="@item.Id"
                                                     data-name="@item.Name"
+                                                    data-category="@item.Category"
                                                     data-description="@item.Description"
                                                     data-cost="@item.Cost"
                                                     data-duration="@item.EstimatedDurationMinutes">
@@ -148,16 +152,82 @@
         <div class="user-modal-header">
             <div>
                 <h2 id="createServiceTitle">Add new service</h2>
-                <p>Define procedure details, duration, and pricing.</p>
+                <p>Select a procedure from the predefined dentist service catalog.</p>
             </div>
             <button type="button" class="user-modal-close" data-close-service-modal aria-label="Close">&times;</button>
         </div>
         <form method="post" asp-controller="Services" asp-action="Create" class="create-user-form">
             @Html.AntiForgeryToken()
             <div class="modal-section-title">Service Details</div>
-            <label for="createServiceName">Service Name</label>
-            <input id="createServiceName" name="Name" required maxlength="100" placeholder="e.g. Tooth Extraction" />
             
+            <label for="createServiceName">Service Name *</label>
+            <select id="createServiceName" name="Name" required style="width: 100%; height: 40px; border: 1px solid #dfe3e8; border-radius: 7px; background: #fff; color: #14181f; font: inherit; font-size: 13px; outline: none; padding: 0 10px;">
+                <option value="">-- Select Dental Service --</option>
+                <optgroup label="Preventive">
+                    <option value="Dental Checkup" data-category="Preventive" data-cost="500">Dental Checkup (₱500)</option>
+                    <option value="Teeth Cleaning / Scaling" data-category="Preventive" data-cost="800">Teeth Cleaning / Scaling (₱800)</option>
+                    <option value="Fluoride Treatment" data-category="Preventive" data-cost="500">Fluoride Treatment (₱500)</option>
+                    <option value="Dental Sealants" data-category="Preventive" data-cost="700">Dental Sealants (₱700)</option>
+                    <option value="Oral Cancer Screening" data-category="Preventive" data-cost="500">Oral Cancer Screening (₱500)</option>
+                    <option value="Dental X-Ray" data-category="Preventive" data-cost="500">Dental X-Ray (₱500)</option>
+                </optgroup>
+                <optgroup label="Restorative">
+                    <option value="Tooth-Colored Filling" data-category="Restorative" data-cost="1000">Tooth-Colored Filling (₱1,000)</option>
+                    <option value="Dental Crown" data-category="Restorative" data-cost="8000">Dental Crown (₱8,000)</option>
+                    <option value="Dental Bridge" data-category="Restorative" data-cost="15000">Dental Bridge (₱15,000)</option>
+                    <option value="Full Dentures" data-category="Restorative" data-cost="15000">Full Dentures (₱15,000)</option>
+                    <option value="Partial Dentures" data-category="Restorative" data-cost="10000">Partial Dentures (₱10,000)</option>
+                    <option value="Root Canal Treatment" data-category="Restorative" data-cost="8000">Root Canal Treatment (₱8,000)</option>
+                    <option value="Inlay / Onlay" data-category="Restorative" data-cost="6000">Inlay / Onlay (₱6,000)</option>
+                </optgroup>
+                <optgroup label="Cosmetic">
+                    <option value="Teeth Whitening" data-category="Cosmetic" data-cost="8000">Teeth Whitening (₱8,000)</option>
+                    <option value="Dental Veneers" data-category="Cosmetic" data-cost="10000">Dental Veneers (₱10,000)</option>
+                    <option value="Cosmetic Bonding" data-category="Cosmetic" data-cost="2500">Cosmetic Bonding (₱2,500)</option>
+                    <option value="Tooth Reshaping" data-category="Cosmetic" data-cost="2000">Tooth Reshaping (₱2,000)</option>
+                    <option value="Smile Makeover" data-category="Cosmetic" data-cost="30000">Smile Makeover (₱30,000)</option>
+                </optgroup>
+                <optgroup label="Orthodontics">
+                    <option value="Traditional Braces" data-category="Orthodontics" data-cost="50000">Traditional Braces (₱50,000)</option>
+                    <option value="Ceramic Braces" data-category="Orthodontics" data-cost="60000">Ceramic Braces (₱60,000)</option>
+                    <option value="Clear Aligners" data-category="Orthodontics" data-cost="80000">Clear Aligners (₱80,000)</option>
+                    <option value="Retainers" data-category="Orthodontics" data-cost="5000">Retainers (₱5,000)</option>
+                </optgroup>
+                <optgroup label="Oral Surgery">
+                    <option value="Simple Tooth Extraction" data-category="Oral Surgery" data-cost="1500">Simple Tooth Extraction (₱1,500)</option>
+                    <option value="Wisdom Tooth Extraction" data-category="Oral Surgery" data-cost="5000">Wisdom Tooth Extraction (₱5,000)</option>
+                    <option value="Dental Implant" data-category="Oral Surgery" data-cost="60000">Dental Implant (₱60,000)</option>
+                    <option value="Bone Grafting" data-category="Oral Surgery" data-cost="15000">Bone Grafting (₱15,000)</option>
+                </optgroup>
+                <optgroup label="Gum Care">
+                    <option value="Deep Cleaning" data-category="Gum Care" data-cost="2500">Deep Cleaning (₱2,500)</option>
+                    <option value="Scaling & Root Planing" data-category="Gum Care" data-cost="3000">Scaling & Root Planing (₱3,000)</option>
+                    <option value="Gum Surgery" data-category="Gum Care" data-cost="10000">Gum Surgery (₱10,000)</option>
+                    <option value="Gum Grafting" data-category="Gum Care" data-cost="15000">Gum Grafting (₱15,000)</option>
+                </optgroup>
+                <optgroup label="Pediatric">
+                    <option value="Children's Dental Checkup" data-category="Pediatric" data-cost="400">Children's Dental Checkup (₱400)</option>
+                    <option value="Children's Teeth Cleaning" data-category="Pediatric" data-cost="600">Children's Teeth Cleaning (₱600)</option>
+                    <option value="Children's Filling" data-category="Pediatric" data-cost="800">Children's Filling (₱800)</option>
+                    <option value="Space Maintainer" data-category="Pediatric" data-cost="3000">Space Maintainer (₱3,000)</option>
+                </optgroup>
+                <optgroup label="Emergency">
+                    <option value="Emergency Consultation" data-category="Emergency" data-cost="500">Emergency Consultation (₱500)</option>
+                    <option value="Toothache Treatment" data-category="Emergency" data-cost="1000">Toothache Treatment (₱1,000)</option>
+                    <option value="Broken/Chipped Tooth Treatment" data-category="Emergency" data-cost="2000">Broken/Chipped Tooth Treatment (₱2,000)</option>
+                    <option value="Abscess Treatment" data-category="Emergency" data-cost="2500">Abscess Treatment (₱2,500)</option>
+                    <option value="Lost Filling/Crown Treatment" data-category="Emergency" data-cost="1500">Lost Filling/Crown Treatment (₱1,500)</option>
+                </optgroup>
+                <optgroup label="Specialized">
+                    <option value="TMJ Treatment" data-category="Specialized" data-cost="5000">TMJ Treatment (₱5,000)</option>
+                    <option value="Night Guard" data-category="Specialized" data-cost="3500">Night Guard (₱3,500)</option>
+                    <option value="Sleep Apnea Appliance" data-category="Specialized" data-cost="15000">Sleep Apnea Appliance (₱15,000)</option>
+                </optgroup>
+            </select>
+
+            <label for="createServiceCategory">Category</label>
+            <input id="createServiceCategory" name="Category" required readonly style="background: #f8fafc; color: #475569;" placeholder="Auto-populated on selection" />
+
             <label for="createServiceDescription">Description</label>
             <input id="createServiceDescription" name="Description" maxlength="500" placeholder="Brief details about procedure..." />
             
@@ -190,9 +260,13 @@
             @Html.AntiForgeryToken()
             <input type="hidden" id="editServiceId" name="Id" />
             <div class="modal-section-title">Service Details</div>
+            
             <label for="editServiceName">Service Name</label>
             <input id="editServiceName" name="Name" required maxlength="100" />
             
+            <label for="editServiceCategory">Category</label>
+            <input id="editServiceCategory" name="Category" required maxlength="100" />
+
             <label for="editServiceDescription">Description</label>
             <input id="editServiceDescription" name="Description" maxlength="500" />
             
@@ -216,6 +290,20 @@
         var editModal = document.getElementById('editServiceModal');
         var openCreateBtn = document.getElementById('openCreateService');
         var closeBtns = document.querySelectorAll('[data-close-service-modal]');
+        var createServiceNameSelect = document.getElementById('createServiceName');
+
+        if (createServiceNameSelect) {
+            createServiceNameSelect.addEventListener('change', function () {
+                var selectedOption = this.options[this.selectedIndex];
+                var category = selectedOption.getAttribute('data-category') || '';
+                var cost = selectedOption.getAttribute('data-cost') || '';
+                
+                document.getElementById('createServiceCategory').value = category;
+                if (cost) {
+                    document.getElementById('createServiceCost').value = cost;
+                }
+            });
+        }
 
         if (openCreateBtn && createModal) {
             openCreateBtn.addEventListener('click', function () {
@@ -234,6 +322,7 @@
             btn.addEventListener('click', function () {
                 document.getElementById('editServiceId').value = this.getAttribute('data-id');
                 document.getElementById('editServiceName').value = this.getAttribute('data-name');
+                document.getElementById('editServiceCategory').value = this.getAttribute('data-category') || '';
                 document.getElementById('editServiceDescription').value = this.getAttribute('data-description') || '';
                 document.getElementById('editServiceCost').value = this.getAttribute('data-cost');
                 document.getElementById('editServiceDuration').value = this.getAttribute('data-duration');

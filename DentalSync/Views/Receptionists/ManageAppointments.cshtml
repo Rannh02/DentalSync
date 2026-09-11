@@ -75,7 +75,13 @@
                                     <td>@app.StartTime.ToString("hh:mm tt")</td>
                                     <td style="font-weight: 600; color: #1e293b;">@app.PatientName</td>
                                     <td>@app.DentistName</td>
-                                    <td><span style="font-weight: 500; color: #4f46e5;">@app.ServiceName</span></td>
+                                    <td>
+                                        <span style="font-weight: 500; color: #4f46e5;">@app.ServiceNames</span>
+                                        @if (app.TotalCost > 0)
+                                        {
+                                            <br /><small style="color:#64748b; font-size:11px; font-weight:600;">₱@app.TotalCost.ToString("N2")</small>
+                                        }
+                                    </td>
                                     <td>
                                         <span class="ds-badge ds-badge-@app.Status.ToLower()">@app.Status</span>
                                     </td>
@@ -138,14 +144,48 @@
             </div>
 
             <div class="form-group">
-                <label asp-for="NewAppointment.ServiceId">Dental Service</label>
-                <select asp-for="NewAppointment.ServiceId" class="form-select" required>
-                    <option value="" disabled selected>-- Choose Service --</option>
-                    @foreach (var srv in Model.Services)
-                    {
-                        <option value="@srv.Id">@srv.Name (₱@srv.Cost.ToString("N2"))</option>
+                <label>Dental Services <span style="color:#ef4444;">*</span></label>
+
+                <!-- Search box -->
+                <div style="position:relative; margin-bottom:8px;">
+                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="serviceSearch" placeholder="Search services…"
+                           style="width:100%;padding:8px 10px 8px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;box-sizing:border-box;">
+                </div>
+
+                <!-- Checkbox list grouped by category -->
+                <div id="serviceChecklist" style="max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:6px 0;">
+                    @{
+                        var grouped = Model.Services.GroupBy(s => s.Category ?? "Other").OrderBy(g => g.Key);
                     }
-                </select>
+                    @foreach (var group in grouped)
+                    {
+                        <div class="svc-group" data-group="@group.Key">
+                            <div style="padding:6px 14px 3px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#94a3b8;text-transform:uppercase;">
+                                @group.Key
+                            </div>
+                            @foreach (var srv in group)
+                            {
+                                <label class="svc-item" data-name="@srv.Name.ToLower()" data-cost="@srv.Cost"
+                                       style="display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:background .15s;">
+                                    <input type="checkbox" name="NewAppointment.SelectedServiceIds"
+                                           value="@srv.Id" class="svc-cb"
+                                           style="accent-color:#4f46e5;width:15px;height:15px;flex-shrink:0;">
+                                    <span style="flex:1;font-size:13px;color:#1e293b;">@srv.Name</span>
+                                    <span style="font-size:12px;color:#64748b;font-weight:600;">₱@srv.Cost.ToString("N0")</span>
+                                </label>
+                            }
+                        </div>
+                    }
+                    <div id="noSvcMatch" style="display:none;padding:14px;text-align:center;color:#94a3b8;font-size:13px;">No services match.</div>
+                </div>
+
+                <!-- Total price ticker -->
+                <div id="svcTotalBar" style="display:none;margin-top:10px;padding:10px 14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:10px;color:#fff;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:13px;font-weight:600;">Total Price</span>
+                    <span id="svcTotalAmt" style="font-size:18px;font-weight:800;">₱0</span>
+                </div>
+                <div id="svcCountNote" style="margin-top:6px;font-size:12px;color:#64748b;"></div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -178,22 +218,81 @@
     const closeBtn = document.getElementById('closeAppointmentModal');
     const cancelBtn = document.getElementById('cancelAppointmentModal');
 
-    function openModal() {
-        modal.classList.add('active');
-    }
-
-    function closeModal() {
-        modal.classList.remove('active');
-    }
+    function openModal() { modal.classList.add('active'); }
+    function closeModal() { modal.classList.remove('active'); }
 
     openBtn.addEventListener('click', openModal);
     closeBtn.addEventListener('click', closeModal);
     cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-    // Close on click outside modal
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
+    /* ── Multi-service checklist logic ── */
+    const searchBox   = document.getElementById('serviceSearch');
+    const checklist   = document.getElementById('serviceChecklist');
+    const totalBar    = document.getElementById('svcTotalBar');
+    const totalAmt    = document.getElementById('svcTotalAmt');
+    const countNote   = document.getElementById('svcCountNote');
+    const noMatch     = document.getElementById('noSvcMatch');
+
+    function fmt(n) {
+        return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function recalc() {
+        const checked = checklist.querySelectorAll('.svc-cb:checked');
+        let total = 0;
+        checked.forEach(cb => {
+            const lbl = cb.closest('label');
+            total += parseFloat(lbl.dataset.cost || 0);
+        });
+
+        if (checked.length > 0) {
+            totalBar.style.display = 'flex';
+            totalAmt.textContent = fmt(total);
+            countNote.textContent = `${checked.length} service${checked.length > 1 ? 's' : ''} selected`;
+        } else {
+            totalBar.style.display = 'none';
+            countNote.textContent = '';
+        }
+    }
+
+    checklist.querySelectorAll('.svc-cb').forEach(cb => {
+        cb.addEventListener('change', recalc);
+    });
+
+    /* Hover highlight */
+    checklist.querySelectorAll('.svc-item').forEach(lbl => {
+        lbl.addEventListener('mouseenter', () => lbl.style.background = '#f1f5f9');
+        lbl.addEventListener('mouseleave', () => lbl.style.background = '');
+    });
+
+    /* Search filter */
+    searchBox.addEventListener('input', () => {
+        const q = searchBox.value.toLowerCase().trim();
+        let anyVisible = false;
+
+        checklist.querySelectorAll('.svc-item').forEach(lbl => {
+            const name = lbl.dataset.name || '';
+            const show = !q || name.includes(q);
+            lbl.style.display = show ? '' : 'none';
+            if (show) anyVisible = true;
+        });
+
+        /* Hide group headers that have no visible items */
+        checklist.querySelectorAll('.svc-group').forEach(grp => {
+            const hasVisible = [...grp.querySelectorAll('.svc-item')].some(l => l.style.display !== 'none');
+            grp.style.display = hasVisible ? '' : 'none';
+        });
+
+        noMatch.style.display = anyVisible ? 'none' : 'block';
+    });
+
+    /* Form submit guard */
+    document.querySelector('form[action*="CreateAppointment"]')?.addEventListener('submit', function(e) {
+        const anyChecked = checklist.querySelectorAll('.svc-cb:checked').length > 0;
+        if (!anyChecked) {
+            e.preventDefault();
+            alert('Please select at least one dental service.');
         }
     });
 </script>

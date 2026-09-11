@@ -11,6 +11,10 @@
     string registerError = TempData["RegisterError"] as string;
     string registerSuccess = TempData["RegisterSuccess"] as string;
     var tokens = Antiforgery.GetAndStoreTokens(Context);
+
+    string termsTitle = (ViewBag.TermsTitle as string) ?? "DentalSync Subscription Terms & Conditions";
+    string termsContent = (ViewBag.TermsContent as string) ?? "";
+    string termsUpdatedAt = (ViewBag.TermsUpdatedAt as string) ?? "";
 }
 
 <!DOCTYPE html>
@@ -133,12 +137,20 @@
 
                 <!-- STEP 2: PAYMENT METHOD -->
                 <div class="checkout-card" id="step-content-2" style="display: none;">
-                    <h2 class="card-title">Choose Payment Method</h2>
-                    <p class="card-subtitle">Select how you would like to complete your subscription payment.</p>
+                    <h2 class="card-title">Choose Payment Option</h2>
+                    <p class="card-subtitle">Select your payment method. You will be redirected to PayMongo's secure checkout to complete your transaction.</p>
 
-                    <!-- METHOD SELECTOR -->
+                    <!-- METHOD SELECTOR OPTIONS (GCash, Credit/Debit Card, Maya) -->
                     <div class="payment-methods">
-                        <div class="payment-method-card selected" id="method-card" onclick="selectPaymentMethod('card')">
+                        <div class="payment-method-card selected" id="method-gcash" onclick="selectPaymentMethod('gcash')">
+                            <div class="payment-icon">📱</div>
+                            <div class="payment-info">
+                                <span class="payment-title">GCash E-Wallet</span>
+                                <span class="payment-sub">Instant PH mobile payment</span>
+                            </div>
+                        </div>
+
+                        <div class="payment-method-card" id="method-card" onclick="selectPaymentMethod('card')">
                             <div class="payment-icon">💳</div>
                             <div class="payment-info">
                                 <span class="payment-title">Credit / Debit Card</span>
@@ -146,73 +158,51 @@
                             </div>
                         </div>
 
-                        <div class="payment-method-card" id="method-gcash" onclick="selectPaymentMethod('gcash')">
-                            <div class="payment-icon">📱</div>
+                        <div class="payment-method-card" id="method-paymaya" onclick="selectPaymentMethod('paymaya')">
+                            <div class="payment-icon">💚</div>
                             <div class="payment-info">
-                                <span class="payment-title">GCash E-Wallet</span>
-                                <span class="payment-sub">Instant PH mobile payment</span>
+                                <span class="payment-title">Maya E-Wallet</span>
+                                <span class="payment-sub">Instant Maya mobile payment</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- CARD FORM -->
-                    <form id="payment-card-form" method="post" action="/LandingPage/RegisterAdmin">
+                    <!-- PAYMONGO FORM -->
+                    <form id="payment-card-form" method="post" action="/LandingPage/CreateCheckoutSession">
                         <input type="hidden" name="__RequestVerificationToken" value="@tokens.RequestToken" />
 
                         <!-- Hidden fields populated from Step 1 -->
-                        <input type="hidden" id="h-fullName"  name="fullName"  />
-                        <input type="hidden" id="h-email"     name="email"     />
-                        <input type="hidden" id="h-password"  name="password"  />
-                        <input type="hidden" name="plan"      value="@plan"    />
-                        <input type="hidden" name="billing"   value="@billing" />
-                        <input type="hidden" name="price"     value="@priceStr" />
+                        <input type="hidden" id="h-fullName"      name="fullName"  />
+                        <input type="hidden" id="h-email"         name="email"     />
+                        <input type="hidden" id="h-password"      name="password"  />
+                        <input type="hidden" id="h-paymentMethod" name="paymentMethod" value="gcash" />
+                        <input type="hidden" name="plan"          value="@plan"    />
+                        <input type="hidden" name="billing"       value="@billing" />
+                        <input type="hidden" name="price"         value="@priceStr" />
 
-                        <div id="card-fields">
-                            <div class="form-group">
-                                <label for="cardName">Cardholder Name *</label>
-                                <input type="text" id="cardName" class="form-input" placeholder="Name on card" required />
-                            </div>
-
-                            <div class="form-group">
-                                <label for="cardNumber">Card Number *</label>
-                                <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456" maxlength="19" required />
-                            </div>
-
-                            <div class="form-group-row">
-                                <div class="form-group">
-                                    <label for="cardExpiry">Expiration Date *</label>
-                                    <input type="text" id="cardExpiry" class="form-input" placeholder="MM/YY" maxlength="5" required />
-                                </div>
-                                <div class="form-group">
-                                    <label for="cardCvv">CVV / CVC *</label>
-                                    <input type="password" id="cardCvv" class="form-input" placeholder="123" maxlength="4" required />
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 20px 0; font-size: 13.5px; color: #166534; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="font-size: 24px;">🛡️</div>
+                                <div>
+                                    <strong>Secured by PayMongo Gateway</strong>
+                                    <br />
+                                    Direct, end-to-end 256-bit encrypted checkout with instant transaction verification.
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- GCASH FIELDS -->
-                        <div id="gcash-fields" style="display: none;">
-                            <div class="form-group">
-                                <label for="gcashName">GCash Account Holder Name *</label>
-                                <input type="text" id="gcashName" class="form-input" placeholder="Juan Dela Cruz" />
-                            </div>
-
-                            <div class="form-group">
-                                <label for="gcashNumber">Registered GCash Mobile Number *</label>
-                                <input type="tel" id="gcashNumber" class="form-input" placeholder="09171234567" maxlength="11" />
-                            </div>
-
-                            <div style="background: #eef6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e40af; margin-bottom: 20px;">
-                                ℹ️ You will receive an authorization prompt on your registered GCash app once you click subscribe.
-                            </div>
+                            <button type="button" onclick="openTermsModal()" style="background:#e0f2fe; border:1px solid #bae6fd; color:#0369a1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">
+                                📜 Review Terms
+                            </button>
                         </div>
 
                         <div class="form-actions-inline">
                             <button type="button" onclick="goToStep(1)" class="btn-checkout-secondary">
-                                ← Back
+                                ← Back to Account Info
                             </button>
                             <button type="submit" class="btn-checkout-primary" style="margin-top:0;">
-                                Subscribe &amp; Complete Setup (₱@price.ToString("N0"))
+                                Pay via PayMongo (₱@price.ToString("N0"))
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
                             </button>
                         </div>
                     </form>
@@ -269,7 +259,36 @@
 
     </div>
 
-    <!-- SUCCESS MODAL -->
+    <!-- TERMS AND CONDITIONS MODAL -->
+    <div class="modal-overlay" id="termsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#ffffff; border-radius:16px; max-width:680px; width:100%; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden; animation: modalFadeIn 0.25s ease-out;">
+            <div style="padding:22px 28px; border-bottom:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="font-size:18px; font-weight:700; color:#0f172a; margin:0 0 4px;">@termsTitle</h3>
+                    <span style="font-size:12.5px; color:#64748b;">Official Subscription Policy &bull; Last Updated: @termsUpdatedAt</span>
+                </div>
+                <button type="button" onclick="closeTermsModal()" style="background:none; border:none; font-size:24px; color:#64748b; cursor:pointer; padding:0; line-height:1;">&times;</button>
+            </div>
+
+            <div style="padding:24px 28px; overflow-y:auto; font-size:13.5px; line-height:1.7; color:#334155; white-space:pre-wrap; font-family:'Inter', sans-serif; background:#ffffff; flex:1;">@termsContent</div>
+
+            <div style="padding:20px 28px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; flex-direction:column; gap:14px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; font-size:13px; color:#1e293b; cursor:pointer; font-weight:500;">
+                    <input type="checkbox" id="termsAgreeCheckbox" onchange="toggleTermsAcceptButton()" style="margin-top:3px; accent-color:#2563eb; width:17px; height:17px;" />
+                    <span>I have read, understood, and accept the <strong>Terms and Conditions</strong> set by Superadmin for subscribing to DentalSync.</span>
+                </label>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px;">
+                    <button type="button" onclick="closeTermsModal()" class="btn-checkout-secondary" style="padding:10px 18px; font-size:13px;">
+                        Back
+                    </button>
+                    <button type="button" id="btnAcceptTerms" onclick="confirmTermsAndProceed()" class="btn-checkout-primary" disabled style="padding:10px 22px; font-size:13.5px; opacity:0.5; margin-top:0;">
+                        Accept
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal-overlay" id="successModal">
         <div class="modal-box">
             <div class="modal-icon-success">
@@ -330,37 +349,57 @@
             document.getElementById('h-email').value    = email;
             document.getElementById('h-password').value = pwd;
 
+            // Advance step indicator to Payment & Setup and show Terms & Conditions modal
+            goToStep(2);
+            openTermsModal();
+        }
+
+        function openTermsModal() {
+            const modal = document.getElementById('termsModal');
+            if (modal) {
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+            }
+        }
+
+        function closeTermsModal() {
+            const modal = document.getElementById('termsModal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
+            }
+        }
+
+        function toggleTermsAcceptButton() {
+            const chk = document.getElementById('termsAgreeCheckbox');
+            const btn = document.getElementById('btnAcceptTerms');
+            if (btn) {
+                btn.disabled = !chk.checked;
+                btn.style.opacity = chk.checked ? '1' : '0.5';
+            }
+        }
+
+        function confirmTermsAndProceed() {
+            closeTermsModal();
             goToStep(2);
         }
 
         function selectPaymentMethod(method) {
             selectedMethod = method;
-            const cardPill = document.getElementById('method-card');
+            const hiddenField = document.getElementById('h-paymentMethod');
+            if (hiddenField) hiddenField.value = method;
+
             const gcashPill = document.getElementById('method-gcash');
+            const cardPill = document.getElementById('method-card');
+            const mayaPill = document.getElementById('method-paymaya');
 
-            const cardFields = document.getElementById('card-fields');
-            const gcashFields = document.getElementById('gcash-fields');
-
-            const cardInputs = cardFields.querySelectorAll('input');
-            const gcashInputs = gcashFields.querySelectorAll('input');
-
-            if (method === 'card') {
-                cardPill.classList.add('selected');
-                gcashPill.classList.remove('selected');
-                cardFields.style.display = 'block';
-                gcashFields.style.display = 'none';
-
-                cardInputs.forEach(i => i.required = true);
-                gcashInputs.forEach(i => i.required = false);
-            } else {
-                gcashPill.classList.add('selected');
-                cardPill.classList.remove('selected');
-                cardFields.style.display = 'none';
-                gcashFields.style.display = 'block';
-
-                cardInputs.forEach(i => i.required = false);
-                gcashInputs.forEach(i => i.required = true);
-            }
+            if (gcashPill) gcashPill.className = (method === 'gcash') ? 'payment-method-card selected' : 'payment-method-card';
+            if (cardPill) cardPill.className = (method === 'card') ? 'payment-method-card selected' : 'payment-method-card';
+            if (mayaPill) mayaPill.className = (method === 'paymaya') ? 'payment-method-card selected' : 'payment-method-card';
         }
 
         // The payment form now submits directly to the server — no JS override needed.

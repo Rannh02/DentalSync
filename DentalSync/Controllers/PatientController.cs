@@ -32,9 +32,41 @@ namespace DentalSync.Controllers
             return View("~/Views/Patients/ManageProfile.cshtml");
         }
 
-        public IActionResult RequestAppointment()
+        public async Task<IActionResult> RequestAppointment()
         {
-            return View("~/Views/Patients/RequestAppointment.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user!.Id);
+
+            var vm = new DentalSync.ViewModels.RequestAppointmentViewModel();
+
+            if (patient != null)
+            {
+                vm.MyAppointments = await _context.Appointments
+                    .Where(a => a.PatientId == patient.Id)
+                    .Include(a => a.Dentist)
+                    .Include(a => a.Service)
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .ThenByDescending(a => a.StartTime)
+                    .Select(a => new DentalSync.ViewModels.AppointmentListItemViewModel
+                    {
+                        Id = a.Id,
+                        PatientId = a.PatientId,
+                        PatientName = patient.FirstName + " " + patient.LastName,
+                        DentistId = a.DentistId,
+                        DentistName = "Dr. " + a.Dentist.FirstName + " " + a.Dentist.LastName,
+                        ServiceId = a.ServiceId,
+                        ServiceNames = a.Service.Name,
+                        TotalCost = a.Service.Cost,
+                        AppointmentDate = a.AppointmentDate,
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime,
+                        Status = a.Status,
+                        Notes = a.Notes
+                    })
+                    .ToListAsync();
+            }
+
+            return View("~/Views/Patients/RequestAppointment.cshtml", vm);
         }
 
         [HttpPost]

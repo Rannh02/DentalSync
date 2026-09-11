@@ -276,6 +276,53 @@ namespace DentalSync.Controllers
             ViewBag.Role = role;
             return View();
         }
+
+        // =========================================================================
+        // 7. TERMS & CONDITIONS MANAGEMENT FOR CHECKOUT PAGE
+        // =========================================================================
+        public async Task<IActionResult> TermsAndConditions()
+        {
+            var terms = await _db.TermsAndConditions.FirstOrDefaultAsync();
+            if (terms == null)
+            {
+                terms = new TermsAndConditions
+                {
+                    Title = "DentalSync Subscription Terms & Conditions",
+                    Content = "Enter your terms and conditions here...",
+                    UpdatedAt = DateTime.UtcNow,
+                    UpdatedBy = User.Identity?.Name ?? "Superadmin"
+                };
+            }
+            return View(terms);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateTermsAndConditions(string title, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                TempData["ErrorMessage"] = "Terms and Conditions content cannot be empty.";
+                return RedirectToAction("TermsAndConditions");
+            }
+
+            var terms = await _db.TermsAndConditions.FirstOrDefaultAsync();
+            if (terms == null)
+            {
+                terms = new TermsAndConditions();
+                _db.TermsAndConditions.Add(terms);
+            }
+
+            terms.Title = string.IsNullOrWhiteSpace(title) ? "DentalSync Subscription Terms & Conditions" : title.Trim();
+            terms.Content = content.Trim();
+            terms.UpdatedAt = DateTime.UtcNow;
+            terms.UpdatedBy = User.Identity?.Name ?? "Superadmin";
+
+            await _db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Terms & Conditions updated successfully! The updated terms will automatically display on the Checkout Page when users continue to payment.";
+            return RedirectToAction("TermsAndConditions");
+        }
     }
 
     // ViewModels for Superadmin User Management

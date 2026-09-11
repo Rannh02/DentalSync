@@ -470,33 +470,86 @@ namespace DentalSync.Controllers
 
         private async Task SeedInitialInventoryIfEmptyAsync()
         {
-            if (!await _context.InventoryCategories.AnyAsync())
+            var requiredCategories = new[]
             {
-                var catPpe = new InventoryCategory { CategoryName = "PPE & Disposables", Description = "Gloves, masks, bibs, barriers" };
-                var catRest = new InventoryCategory { CategoryName = "Restorative & Filling", Description = "Composites, etchants, primers, bonding agents" };
-                var catAnesth = new InventoryCategory { CategoryName = "Anesthetics", Description = "Local anesthetics, needles, topical gels" };
-                var catEndo = new InventoryCategory { CategoryName = "Endodontics", Description = "Root canal files, sealers, gutta percha" };
-                var catPrev = new InventoryCategory { CategoryName = "Preventive & Hygiene", Description = "Prophy paste, fluoride varnish, sealants" };
+                "Preventive", "Restorative", "Cosmetic", "Orthodontics",
+                "Oral Surgery", "Gum Care", "Pediatric", "Emergency", "Specialized"
+            };
 
-                _context.InventoryCategories.AddRange(catPpe, catRest, catAnesth, catEndo, catPrev);
+            var existingCats = await _context.InventoryCategories.ToListAsync();
+            var missingCats = requiredCategories
+                .Where(rc => !existingCats.Any(c => c.CategoryName.Equals(rc, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (missingCats.Any())
+            {
+                foreach (var catName in missingCats)
+                {
+                    _context.InventoryCategories.Add(new InventoryCategory
+                    {
+                        CategoryName = catName,
+                        Description = $"Dental clinical supplies for {catName} procedures"
+                    });
+                }
                 await _context.SaveChangesAsync();
+                existingCats = await _context.InventoryCategories.ToListAsync();
+            }
+
+            if (!await _context.Supplies.AnyAsync())
+            {
+                var getCatId = (string name) => existingCats.First(c => c.CategoryName.Equals(name, StringComparison.OrdinalIgnoreCase)).Id;
 
                 var supplies = new List<Supply>
                 {
-                    new() { CategoryId = catPpe.Id, SupplyName = "Nitrile Examination Gloves (Medium)", Description = "Powder-free medical grade blue nitrile", Unit = "Box (100s)", Quantity = 45, MinimumStock = 15, PurchasePrice = 320.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(18)), Status = "In Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catPpe.Id, SupplyName = "Dental Patient Bibs (3-ply)", Description = "Waterproof embossed patient bibs (Lavender)", Unit = "Pack (125s)", Quantity = 30, MinimumStock = 10, PurchasePrice = 180.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(24)), Status = "In Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catRest.Id, SupplyName = "Composite Resin Capsule A2", Description = "Universal nano-hybrid light cure composite", Unit = "Pack (20s)", Quantity = 8, MinimumStock = 10, PurchasePrice = 1450.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(12)), Status = "Low Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catRest.Id, SupplyName = "Phosphoric Acid Etchant Gel 37%", Description = "Syringe dispenser with applicator tips", Unit = "Syringe (12g)", Quantity = 14, MinimumStock = 5, PurchasePrice = 420.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(15)), Status = "In Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catAnesth.Id, SupplyName = "Lidocaine HCl 2% with Epinephrine 1:100,000", Description = "Dental cartridges for local anesthesia", Unit = "Box (50s)", Quantity = 25, MinimumStock = 12, PurchasePrice = 1850.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(10)), Status = "In Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catAnesth.Id, SupplyName = "Dental Needles 30G Short", Description = "Ultra-sharp disposable dental needles", Unit = "Box (100s)", Quantity = 4, MinimumStock = 8, PurchasePrice = 290.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(20)), Status = "Low Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catEndo.Id, SupplyName = "Gutta Percha Points #25 0.04 Taper", Description = "Color-coded standardized root canal filler", Unit = "Box (60s)", Quantity = 0, MinimumStock = 5, PurchasePrice = 580.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(16)), Status = "Out of Stock", CreatedAt = DateTime.UtcNow },
-                    new() { CategoryId = catPrev.Id, SupplyName = "Prophylaxis Paste Medium Mint", Description = "Fluoride-enriched splatter-free cleaning paste", Unit = "Jar (200g)", Quantity = 12, MinimumStock = 4, PurchasePrice = 650.00m, ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(14)), Status = "In Stock", CreatedAt = DateTime.UtcNow }
+                    // Preventive
+                    new() { CategoryId = getCatId("Preventive"), SupplyName = "Dental Exam Mirrors & Probe Sets", Description = "Sterile diagnostic exam instruments", Unit = "Pack (10s)", Quantity = 50, MinimumStock = 10, PurchasePrice = 500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Preventive"), SupplyName = "Prophylaxis Paste & Prophy Cups", Description = "Mint fluoride cleaning paste & rubber cups", Unit = "Jar (200g)", Quantity = 40, MinimumStock = 10, PurchasePrice = 650.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Preventive"), SupplyName = "Fluoride Varnish & Sealants", Description = "Enamel protection varnish kits", Unit = "Box (50s)", Quantity = 30, MinimumStock = 8, PurchasePrice = 1200.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Restorative
+                    new() { CategoryId = getCatId("Restorative"), SupplyName = "Composite Resin Capsule A2", Description = "Nano-hybrid tooth-colored filling resin", Unit = "Pack (20s)", Quantity = 35, MinimumStock = 10, PurchasePrice = 1450.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Restorative"), SupplyName = "Dental Crown Cement & Primers", Description = "Permanent luting cement for crowns & bridges", Unit = "Kit", Quantity = 25, MinimumStock = 5, PurchasePrice = 2800.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Restorative"), SupplyName = "Root Canal Gutta Percha & Files", Description = "Standardized endodontic canal filler points", Unit = "Box (60s)", Quantity = 20, MinimumStock = 5, PurchasePrice = 580.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Cosmetic
+                    new() { CategoryId = getCatId("Cosmetic"), SupplyName = "Teeth Whitening Gel Syringes 35%", Description = "In-office LED bleaching gel kit", Unit = "Kit (10s)", Quantity = 30, MinimumStock = 8, PurchasePrice = 3500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Cosmetic"), SupplyName = "Dental Veneers Porcelain Bonding Kit", Description = "Aesthetic veneer resin cement kit", Unit = "Kit", Quantity = 15, MinimumStock = 5, PurchasePrice = 4500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Cosmetic"), SupplyName = "Cosmetic Composite & Polishers", Description = "High-shine enamel finishing discs", Unit = "Pack", Quantity = 25, MinimumStock = 6, PurchasePrice = 1800.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Orthodontics
+                    new() { CategoryId = getCatId("Orthodontics"), SupplyName = "Metal Brackets & Archwire Sets", Description = "Standard stainless steel braces kit", Unit = "Set", Quantity = 25, MinimumStock = 8, PurchasePrice = 2500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Orthodontics"), SupplyName = "Ceramic Brackets & Aesthetic Wires", Description = "Tooth-colored ceramic bracket set", Unit = "Set", Quantity = 20, MinimumStock = 5, PurchasePrice = 4200.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Orthodontics"), SupplyName = "Clear Aligner Sheets & Retainer Wire", Description = "Thermoforming aligner vacuum sheets", Unit = "Box (50s)", Quantity = 30, MinimumStock = 10, PurchasePrice = 1900.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Oral Surgery
+                    new() { CategoryId = getCatId("Oral Surgery"), SupplyName = "Extraction Forceps & Gauze Packs", Description = "Sterile surgical extraction supplies", Unit = "Set", Quantity = 40, MinimumStock = 10, PurchasePrice = 1500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Oral Surgery"), SupplyName = "Titanium Dental Implants & Abutments", Description = "Biocompatible root fixture implants", Unit = "Box (5s)", Quantity = 15, MinimumStock = 5, PurchasePrice = 12000.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Oral Surgery"), SupplyName = "Bone Grafting Material & Membranes", Description = "Synthetic bone mineral matrix", Unit = "Vial", Quantity = 10, MinimumStock = 3, PurchasePrice = 4800.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Gum Care
+                    new() { CategoryId = getCatId("Gum Care"), SupplyName = "Periodontal Deep Cleaning Curettes", Description = "Subgingival scaling instruments", Unit = "Set", Quantity = 25, MinimumStock = 5, PurchasePrice = 1500.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Gum Care"), SupplyName = "Scaling & Root Planing Gel", Description = "Subgingival therapeutic gel", Unit = "Tube", Quantity = 30, MinimumStock = 8, PurchasePrice = 850.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Gum Care"), SupplyName = "Gum Surgery Scalpel Blades #15", Description = "Micro-surgical scalpel blades", Unit = "Box (100s)", Quantity = 40, MinimumStock = 10, PurchasePrice = 450.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Pediatric
+                    new() { CategoryId = getCatId("Pediatric"), SupplyName = "Children's Disposable Exam Kits", Description = "Child-sized mirrors & probes", Unit = "Pack (25s)", Quantity = 45, MinimumStock = 10, PurchasePrice = 750.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Pediatric"), SupplyName = "Children's Fluoride Varnish (Bubblegum)", Description = "Flavored pediatric fluoride gel", Unit = "Box (50s)", Quantity = 35, MinimumStock = 8, PurchasePrice = 1100.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Pediatric"), SupplyName = "Children's Glass Ionomer Filling", Description = "Biocompatible pediatric filling resin", Unit = "Box", Quantity = 30, MinimumStock = 8, PurchasePrice = 1650.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Emergency
+                    new() { CategoryId = getCatId("Emergency"), SupplyName = "Emergency Pain Relief Dressing & Gel", Description = "Immediate analgesic oral gel", Unit = "Bottle", Quantity = 30, MinimumStock = 8, PurchasePrice = 600.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Emergency"), SupplyName = "Lidocaine 2% Anesthetic Cartridges", Description = "Local dental anesthesia cartridges", Unit = "Box (50s)", Quantity = 50, MinimumStock = 15, PurchasePrice = 1850.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Emergency"), SupplyName = "Temporary Crown & Restoration Cement", Description = "Quick-setting emergency cement", Unit = "Kit", Quantity = 25, MinimumStock = 6, PurchasePrice = 950.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+
+                    // Specialized
+                    new() { CategoryId = getCatId("Specialized"), SupplyName = "TMJ Night Guard Sheets", Description = "Thermoplastic occlusal guard sheets", Unit = "Pack (20s)", Quantity = 30, MinimumStock = 8, PurchasePrice = 1250.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow },
+                    new() { CategoryId = getCatId("Specialized"), SupplyName = "Sleep Apnea Appliance Material", Description = "Mandibular repositioning kit", Unit = "Kit", Quantity = 15, MinimumStock = 5, PurchasePrice = 2900.00m, Status = "In Stock", CreatedAt = DateTime.UtcNow }
                 };
 
                 _context.Supplies.AddRange(supplies);
                 await _context.SaveChangesAsync();
 
-                foreach (var sup in supplies.Where(s => s.Quantity > 0))
+                foreach (var sup in supplies)
                 {
                     _context.StockTransactions.Add(new StockTransaction
                     {
@@ -505,7 +558,7 @@ namespace DentalSync.Controllers
                         Quantity = sup.Quantity,
                         TransactionDate = DateTime.UtcNow.AddDays(-Random.Shared.Next(1, 10)),
                         Reference = "PO-2026-INIT",
-                        Notes = "Initial clinic supply stock"
+                        Notes = "Initial dental clinic inventory stock"
                     });
                 }
                 await _context.SaveChangesAsync();

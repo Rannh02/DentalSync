@@ -17,17 +17,20 @@ namespace DentalSync.Controllers
         private readonly UserManager<Users> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly AuditService _audit;
+        private readonly InventoryDeductionService _deductionService;
 
         public ReceptionistController(
             AppDbContext context,
             UserManager<Users> userManager,
             RoleManager<IdentityRole> roleManager,
-            AuditService audit)
+            AuditService audit,
+            InventoryDeductionService deductionService)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _audit = audit;
+            _deductionService = deductionService;
         }
 
         public IActionResult Receptionist_Dashboard()
@@ -194,20 +197,59 @@ namespace DentalSync.Controllers
                 .ThenByDescending(a => a.StartTime)
                 .ToListAsync();
 
-            var appointments = rawAppointments.Select(a => new AppointmentListItemViewModel
+            var allServiceIds = rawAppointments.Select(a => a.ServiceId).Distinct().ToList();
+            var serviceMap = await _context.Services
+                .Where(s => allServiceIds.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id, s => s);
+
+            var appointments = rawAppointments.Select(a =>
             {
-                Id = a.Id,
-                PatientId = a.PatientId,
-                PatientName = $"{a.Patient?.FirstName} {a.Patient?.LastName}",
-                DentistId = a.DentistId,
-                DentistName = $"Dr. {a.Dentist?.FirstName} {a.Dentist?.LastName}",
-                ServiceId = a.ServiceId,
-                ServiceName = a.Service?.Name ?? "General Service",
-                AppointmentDate = a.AppointmentDate,
-                StartTime = a.StartTime,
-                EndTime = a.EndTime,
-                Status = a.Status,
-                Notes = a.Notes
+                // Parse extra service IDs stored in Notes as "[svc:1,2,3]..."
+                var extraIds = new List<int>();
+                var userNotes = a.Notes ?? string.Empty;
+                var svcTag = System.Text.RegularExpressions.Regex.Match(userNotes, @"\[svc:([\d,]+)\]");
+                if (svcTag.Success)
+                {
+                    extraIds = svcTag.Groups[1].Value.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => int.TryParse(x.Trim(), out var id) ? id : 0)
+                        .Where(id => id > 0 && id != a.ServiceId)
+                        .ToList();
+                    userNotes = userNotes.Replace(svcTag.Value, string.Empty).Trim();
+                }
+
+                var primaryName = serviceMap.TryGetValue(a.ServiceId, out var ps) ? ps.Name : "General Service";
+                var primaryCost = ps?.Cost ?? 0m;
+
+                decimal extraCost = 0m;
+                var extraNames = new List<string>();
+                foreach (var eid in extraIds)
+                {
+                    if (serviceMap.TryGetValue(eid, out var es))
+                    {
+                        extraNames.Add(es.Name);
+                        extraCost += es.Cost;
+                    }
+                }
+
+                var allNames = new[] { primaryName }.Concat(extraNames);
+
+                return new AppointmentListItemViewModel
+                {
+                    Id = a.Id,
+                    PatientId = a.PatientId,
+                    PatientName = $"{a.Patient?.FirstName} {a.Patient?.LastName}",
+                    DentistId = a.DentistId,
+                    DentistName = $"Dr. {a.Dentist?.FirstName} {a.Dentist?.LastName}",
+                    ServiceId = a.ServiceId,
+                    ServiceName = primaryName,
+                    ServiceNames = string.Join(", ", allNames),
+                    TotalCost = primaryCost + extraCost,
+                    AppointmentDate = a.AppointmentDate,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    Status = a.Status,
+                    Notes = userNotes
+                };
             }).ToList();
 
             var model = new ManageAppointmentsViewModel
@@ -232,21 +274,38 @@ namespace DentalSync.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateAppointment([Bind(Prefix = "NewAppointment")] CreateAppointmentViewModel model)
         {
+            // Remove model-state errors for the old single ServiceId — we use SelectedServiceIds now
+            ModelState.Remove("NewAppointment.ServiceId");
+
+            if (model.SelectedServiceIds == null || model.SelectedServiceIds.Count == 0)
+            {
+                TempData["AppointmentError"] = "Please select at least one dental service.";
+                return RedirectToAction(nameof(ManageAppointments));
+            }
+
             if (!ModelState.IsValid)
             {
                 TempData["AppointmentError"] = "Failed to create appointment. Please fill in all fields.";
                 return RedirectToAction(nameof(ManageAppointments));
             }
 
+            // Primary service = first selection; extras stored as tag in Notes
+            var primaryId = model.SelectedServiceIds[0];
+            var extraIds  = model.SelectedServiceIds.Skip(1).ToList();
+
+            string notesValue = model.Notes?.Trim() ?? string.Empty;
+            if (extraIds.Count > 0)
+                notesValue = $"[svc:{string.Join(",", extraIds)}] {notesValue}".Trim();
+
             var appointment = new Appointment
             {
                 PatientId = model.PatientId,
                 DentistId = model.DentistId,
-                ServiceId = model.ServiceId,
+                ServiceId = primaryId,
                 AppointmentDate = model.AppointmentDate,
                 StartTime = model.StartTime,
                 Status = "Scheduled",
-                Notes = model.Notes,
+                Notes = notesValue,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -255,8 +314,10 @@ namespace DentalSync.Controllers
 
             var patient = await _context.Patients.FindAsync(model.PatientId);
             var pName = patient != null ? $"{patient.FirstName} {patient.LastName}" : $"Patient #{model.PatientId}";
+            var serviceCount = model.SelectedServiceIds.Count;
 
-            await _audit.LogAsync("Schedule Appointment", "Appointments", $"Scheduled appointment for {pName} on {model.AppointmentDate:yyyy-MM-dd} at {model.StartTime}");
+            await _audit.LogAsync("Schedule Appointment", "Appointments",
+                $"Scheduled appointment for {pName} on {model.AppointmentDate:yyyy-MM-dd} at {model.StartTime} ({serviceCount} service(s))");
 
             TempData["AppointmentSuccess"] = "Appointment scheduled successfully!";
             return RedirectToAction(nameof(ManageAppointments));
@@ -322,6 +383,36 @@ namespace DentalSync.Controllers
             return View("~/Views/Receptionists/BillsAndPayments.cshtml", model);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetPatientServices(int patientId)
+        {
+            // Get all appointments for this patient (any status) and collect their services
+            var appointments = await _context.Appointments
+                .Where(a => a.PatientId == patientId)
+                .Include(a => a.Service)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .ToListAsync();
+
+            if (appointments.Count == 0)
+                return Json(new { services = Array.Empty<object>() });
+
+            // Return distinct services across all appointments
+            var services = appointments
+                .Where(a => a.Service != null)
+                .GroupBy(a => a.Service.Id)
+                .Select(g => new
+                {
+                    id   = g.Key,
+                    name = g.First().Service.Name,
+                    cost = g.First().Service.Cost
+                })
+                .ToArray();
+
+            return Json(new { services });
+        }
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateInvoice([Bind(Prefix = "NewInvoice")] CreateInvoiceViewModel model)
@@ -369,6 +460,12 @@ namespace DentalSync.Controllers
                     Amount = s.Cost
                 };
                 _context.InvoiceItems.Add(item);
+
+                if (!string.IsNullOrWhiteSpace(s.Category))
+                {
+                    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    await _deductionService.DeductSupplyForCategoryAsync(s.Category, s.Name, userId);
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -444,6 +541,106 @@ namespace DentalSync.Controllers
 
             TempData["PaymentSuccess"] = "Payment recorded successfully!";
             return RedirectToAction(nameof(BillsAndPayments));
+        }
+
+        // =================== Promotional Messages ===================
+        public async Task<IActionResult> PromotionalMessages(string search = "", string statusFilter = "", int page = 1)
+        {
+            const int pageSize = 6;
+            var query = _context.PromotionalMessages.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(m =>
+                    EF.Functions.Like(m.Name, $"%{term}%") ||
+                    EF.Functions.Like(m.Email, $"%{term}%") ||
+                    EF.Functions.Like(m.Phone, $"%{term}%") ||
+                    EF.Functions.Like(m.Message, $"%{term}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(statusFilter))
+            {
+                query = query.Where(m => m.Status == statusFilter);
+            }
+
+            var totalMessages = await query.CountAsync();
+            var newCount = await _context.PromotionalMessages.CountAsync(m => m.Status == "New");
+            var currentPage = Math.Max(1, page);
+
+            var rawMessages = await query
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var messageRows = rawMessages.Select(m => new PromotionalMessageItemViewModel
+            {
+                Id = m.Id,
+                Name = m.Name,
+                Email = m.Email,
+                Phone = m.Phone,
+                PreferredDate = m.PreferredDate,
+                Message = m.Message,
+                Status = m.Status,
+                ReceptionistNotes = m.ReceptionistNotes,
+                CreatedAt = m.CreatedAt,
+                UpdatedAt = m.UpdatedAt
+            }).ToList();
+
+            var model = new PromotionalMessagesViewModel
+            {
+                Search = search,
+                StatusFilter = statusFilter,
+                Page = currentPage,
+                PageSize = pageSize,
+                TotalMessages = totalMessages,
+                NewCount = newCount,
+                Messages = messageRows
+            };
+
+            return View("~/Views/Receptionists/PromotionalMessages.cshtml", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateMessageStatus(int id, string status, string? notes)
+        {
+            var message = await _context.PromotionalMessages.FindAsync(id);
+            if (message == null)
+            {
+                return NotFound();
+            }
+
+            message.Status = status;
+            message.ReceptionistNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+            message.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Update Message Status", "Promotional Messages", $"Updated message #{id} from {message.Name} to status '{status}'");
+
+            TempData["MessageSuccess"] = $"Message status updated to '{status}'!";
+            return RedirectToAction(nameof(PromotionalMessages));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMessage(int id)
+        {
+            var message = await _context.PromotionalMessages.FindAsync(id);
+            if (message == null)
+            {
+                return NotFound();
+            }
+
+            _context.PromotionalMessages.Remove(message);
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Delete Message", "Promotional Messages", $"Deleted message #{id} from {message.Name}");
+
+            TempData["MessageSuccess"] = "Message deleted successfully!";
+            return RedirectToAction(nameof(PromotionalMessages));
         }
     }
 }

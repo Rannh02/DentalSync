@@ -139,21 +139,26 @@
 
             <div class="form-group">
                 <label asp-for="NewInvoice.PatientId">Select Patient</label>
-                <select asp-for="NewInvoice.PatientId" class="form-select" required>
+                <select asp-for="NewInvoice.PatientId" id="invoicePatientSelect" class="form-select" required>
                     <option value="" disabled selected>-- Choose Patient --</option>
                     @foreach (var pat in Model.Patients)
                     {
                         <option value="@pat.Id">@pat.FirstName @pat.LastName</option>
                     }
                 </select>
+                <!-- Auto-fill hint shown after patient is chosen -->
+                <div id="apptHint" style="display:none; margin-top:8px; padding:8px 12px; background:linear-gradient(135deg,#ede9fe,#dbeafe); border-radius:8px; font-size:12px; color:#4f46e5; font-weight:500; align-items:center; gap:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="apptHintText"></span>
+                </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="servicesFormGroup">
                 <label>Select Services</label>
                 <div class="services-select-list">
                     @foreach (var srv in Model.Services)
                     {
-                        <div class="service-select-item">
+                        <div class="service-select-item" style="display:none;">
                             <label>
                                 <input type="checkbox" name="NewInvoice.SelectedServiceIds" value="@srv.Id" />
                                 <span>@srv.Name</span>
@@ -162,11 +167,26 @@
                         </div>
                     }
                 </div>
+                <p id="noPatientHint" style="color:#94a3b8; font-size:13px; text-align:center; padding:16px 0; margin:0;">Select a patient above to see their appointment services.</p>
             </div>
 
-            <div class="form-group">
-                <label asp-for="NewInvoice.Discount">Discount Amount (₱)</label>
-                <input asp-for="NewInvoice.Discount" type="number" class="form-control" placeholder="0.00" step="0.01" min="0" />
+            <!-- Hidden: keep controller happy, discount is always 0 -->
+            <input type="hidden" name="NewInvoice.Discount" value="0" />
+
+            <!-- Live Price Summary -->
+            <div id="priceSummaryCard" style="margin-top:4px; padding:14px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-size:13px; color:#64748b;">Subtotal</span>
+                    <span id="summarySubtotal" style="font-size:13px; font-weight:600; color:#1e293b;">₱0.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:13px; color:#64748b;">VAT (12%)</span>
+                    <span id="summaryVat" style="font-size:13px; font-weight:600; color:#64748b;">₱0.00</span>
+                </div>
+                <div style="border-top:1px solid #e2e8f0; padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:14px; font-weight:700; color:#1e293b;">Total Amount</span>
+                    <span id="summaryTotal" style="font-size:18px; font-weight:800; background:linear-gradient(135deg,#4f46e5,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">₱0.00</span>
+                </div>
             </div>
 
             <div class="modal-actions">
@@ -231,43 +251,181 @@
 </div>
 
 <script>
-    // Invoice Modal setup
-    const invModal = document.getElementById('invoiceModal');
-    const openInvBtn = document.getElementById('openInvoiceModal');
+    // ── Invoice Modal ──────────────────────────────────────────────
+    const invModal    = document.getElementById('invoiceModal');
+    const openInvBtn  = document.getElementById('openInvoiceModal');
     const closeInvBtn = document.getElementById('closeInvoiceModal');
     const cancelInvBtn = document.getElementById('cancelInvoiceModal');
 
-    openInvBtn.addEventListener('click', () => invModal.classList.add('active'));
-    
+    openInvBtn.addEventListener('click', () => {
+        hideAllServices();
+        resetServiceCheckboxes();
+        hideHint();
+        document.getElementById('invoicePatientSelect').value = '';
+        document.getElementById('noPatientHint').style.display = '';
+        invModal.classList.add('active');
+    });
+
     function closeInvoice() {
         invModal.classList.remove('active');
     }
     closeInvBtn.addEventListener('click', closeInvoice);
     cancelInvBtn.addEventListener('click', closeInvoice);
 
-    // Payment Modal setup
-    const payModal = document.getElementById('paymentModal');
-    const closePayBtn = document.getElementById('closePaymentModal');
+    // ── Payment Modal ─────────────────────────────────────────────
+    const payModal     = document.getElementById('paymentModal');
+    const closePayBtn  = document.getElementById('closePaymentModal');
     const cancelPayBtn = document.getElementById('cancelPaymentModal');
 
     function openPaymentModal(invoiceId, invoiceNumber, balance) {
-        document.getElementById('payInvoiceId').value = invoiceId;
+        document.getElementById('payInvoiceId').value    = invoiceId;
         document.getElementById('payInvoiceNumber').value = invoiceNumber;
-        document.getElementById('payAmount').value = balance.toFixed(2);
-        document.getElementById('payAmount').max = balance.toFixed(2);
-        document.getElementById('maxPayNotice').innerText = `Maximum amount: ₱${balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('payAmount').value        = balance.toFixed(2);
+        document.getElementById('payAmount').max          = balance.toFixed(2);
+        document.getElementById('maxPayNotice').innerText =
+            `Maximum amount: ₱${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         payModal.classList.add('active');
     }
 
-    function closePayment() {
-        payModal.classList.remove('active');
-    }
+    function closePayment() { payModal.classList.remove('active'); }
     closePayBtn.addEventListener('click', closePayment);
     cancelPayBtn.addEventListener('click', closePayment);
 
-    // General close on click outside
+    // General close on backdrop click
     window.addEventListener('click', (e) => {
         if (e.target === invModal) closeInvoice();
         if (e.target === payModal) closePayment();
     });
+
+    // ── Auto-fill services from patient's latest appointment ──────
+    const patientSelect = document.getElementById('invoicePatientSelect');
+    const apptHint      = document.getElementById('apptHint');
+    const apptHintText  = document.getElementById('apptHintText');
+
+    function resetServiceCheckboxes() {
+        document.querySelectorAll('input[name="NewInvoice.SelectedServiceIds"]')
+                .forEach(cb => cb.checked = false);
+        recalcPriceSummary();
+    }
+
+    function showAllServices() {
+        document.querySelectorAll('.service-select-item')
+                .forEach(item => item.style.display = '');
+    }
+
+    function hideAllServices() {
+        document.querySelectorAll('.service-select-item')
+                .forEach(item => item.style.display = 'none');
+    }
+
+    function hideHint() {
+        apptHint.style.display = 'none';
+        apptHintText.textContent = '';
+    }
+
+    function showHint(text) {
+        apptHintText.textContent = text;
+        apptHint.style.display   = 'flex';
+    }
+
+    patientSelect.addEventListener('change', async function () {
+        const patientId = this.value;
+        const noPatientHint = document.getElementById('noPatientHint');
+        if (!patientId) {
+            hideHint();
+            hideAllServices();
+            resetServiceCheckboxes();
+            noPatientHint.style.display = '';
+            return;
+        }
+
+        // Hide the placeholder and show loading
+        noPatientHint.style.display = 'none';
+        showHint('Loading appointment services…');
+        resetServiceCheckboxes();
+
+        try {
+            const res  = await fetch(`/Receptionist/GetPatientServices?patientId=${patientId}`);
+            const data = await res.json();
+
+            if (!data.services || data.services.length === 0) {
+                showHint('No scheduled appointment found for this patient.');
+                apptHint.style.background = 'linear-gradient(135deg,#fef9c3,#fef3c7)';
+                apptHintText.style.color  = '#92400e';
+                hideAllServices();
+                return;
+            }
+
+            // Reset hint colours
+            apptHint.style.background = 'linear-gradient(135deg,#ede9fe,#dbeafe)';
+            apptHintText.style.color  = '#4f46e5';
+
+            // Build set of returned service IDs
+            const apptServiceIds = new Set(data.services.map(s => String(s.id)));
+
+            // Hide all, then show + check only appointment services
+            let checkedNames = [];
+            document.querySelectorAll('.service-select-item').forEach(item => {
+                const cb = item.querySelector('input[type="checkbox"]');
+                if (cb && apptServiceIds.has(cb.value)) {
+                    item.style.display = '';
+                    cb.checked = true;
+                    checkedNames.push(item.querySelector('span')?.textContent?.trim() || cb.value);
+                } else {
+                    item.style.display = 'none';
+                    if (cb) cb.checked = false;
+                }
+            });
+
+            if (checkedNames.length > 0) {
+                showHint(`Auto-filled from latest appointment: ${checkedNames.join(', ')}`);
+            } else {
+                showHint('Appointment service not found in active services list.');
+                apptHint.style.background = 'linear-gradient(135deg,#fef9c3,#fef3c7)';
+                apptHintText.style.color  = '#92400e';
+                hideAllServices();
+            }
+        } catch (err) {
+            console.error('Failed to load patient services', err);
+            hideHint();
+            hideAllServices();
+        }
+        recalcPriceSummary();
+    });
+
+    // ── Live price summary ────────────────────────────────────────
+
+    function recalcPriceSummary() {
+        let subtotal = 0;
+        document.querySelectorAll('input[name="NewInvoice.SelectedServiceIds"]:checked')
+            .forEach(cb => {
+                // find cost from the sibling .service-cost span
+                const item = cb.closest('.service-select-item');
+                if (item) {
+                    const costText = item.querySelector('.service-cost')?.textContent || '0';
+                    // strip ₱ and commas
+                    subtotal += parseFloat(costText.replace(/[₱,]/g, '')) || 0;
+                }
+            });
+
+        const vat   = subtotal * 0.12;
+        const total = subtotal + vat;
+
+        const fmt = n => '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('summarySubtotal').textContent = fmt(subtotal);
+        document.getElementById('summaryVat').textContent      = fmt(vat);
+        document.getElementById('summaryTotal').textContent    = fmt(total);
+    }
+
+    // Wire up checkboxes
+    document.querySelectorAll('input[name="NewInvoice.SelectedServiceIds"]')
+        .forEach(cb => cb.addEventListener('change', recalcPriceSummary));
+
+    // Also recalc after auto-fill runs
+    const _origReset = resetServiceCheckboxes;
+    function resetServiceCheckboxes() {
+        document.querySelectorAll('input[name="NewInvoice.SelectedServiceIds"]')
+                .forEach(cb => cb.checked = false);
+        recalcPriceSummary();
+    }
 </script>

@@ -14,12 +14,14 @@ namespace DentalSync.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
         private readonly AuditService _audit;
+        private readonly InventoryDeductionService _deductionService;
 
-        public DentistController(AppDbContext context, UserManager<Users> userManager, AuditService audit)
+        public DentistController(AppDbContext context, UserManager<Users> userManager, AuditService audit, InventoryDeductionService deductionService)
         {
             _context = context;
             _userManager = userManager;
             _audit = audit;
+            _deductionService = deductionService;
         }
 
         public IActionResult Dashboard()
@@ -32,9 +34,66 @@ namespace DentalSync.Controllers
             return View("~/Views/Dentist/ViewPatientRecords.cshtml");
         }
 
-        public IActionResult ViewAppointments()
+        public async Task<IActionResult> ViewAppointments()
         {
-            return View("~/Views/Dentist/ViewAppointments.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            var dentist = await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user!.Id);
+
+            var vm = new DentalSync.ViewModels.DentistViewAppointmentsViewModel();
+
+            if (dentist != null)
+            {
+                vm.Appointments = await _context.Appointments
+                    .Where(a => a.DentistId == dentist.Id)
+                    .Include(a => a.Patient)
+                    .Include(a => a.Service)
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .ThenByDescending(a => a.StartTime)
+                    .Select(a => new DentalSync.ViewModels.AppointmentListItemViewModel
+                    {
+                        Id = a.Id,
+                        PatientId = a.PatientId,
+                        PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                        DentistId = a.DentistId,
+                        DentistName = "Dr. " + dentist.FirstName + " " + dentist.LastName,
+                        ServiceId = a.ServiceId,
+                        ServiceNames = a.Service.Name,
+                        TotalCost = a.Service.Cost,
+                        AppointmentDate = a.AppointmentDate,
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime,
+                        Status = a.Status,
+                        Notes = a.Notes
+                    })
+                    .ToListAsync();
+            }
+
+            return View("~/Views/Dentist/ViewAppointments.cshtml", vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateAppointmentStatus(int id, string status)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+                return NotFound();
+
+            appointment.Status = status;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var pName = appointment.Patient != null
+                ? $"{appointment.Patient.FirstName} {appointment.Patient.LastName}"
+                : $"Appointment #{id}";
+            await _audit.LogAsync("Update Appointment Status", "Appointments",
+                $"Dentist updated appointment for {pName} status to '{status}'");
+
+            TempData["AppointmentSuccess"] = $"Appointment status updated to '{status}'!";
+            return RedirectToAction(nameof(ViewAppointments));
         }
 
         public async Task<IActionResult> UpdateDentalHistory()
@@ -92,6 +151,13 @@ namespace DentalSync.Controllers
 
             var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : $"Patient #{patientId}";
             var serviceName = service != null ? service.Name : "Dental Procedure";
+
+            if (service != null && !string.IsNullOrWhiteSpace(service.Category))
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                await _deductionService.DeductSupplyForCategoryAsync(service.Category, service.Name, userId);
+            }
+
             await _audit.LogAsync("Record Treatment", "Medical Records", $"Dentist recorded treatment '{serviceName}' for {patientName}");
 
             return RedirectToAction(nameof(TreatmentRecords));

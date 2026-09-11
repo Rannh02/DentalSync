@@ -1,4 +1,5 @@
-﻿@{
+@model DentalSync.ViewModels.RequestAppointmentViewModel
+@{
     Layout = null;
     ViewData["Title"] = "Request Appointment";
 }
@@ -20,10 +21,61 @@
             </div>
         </div>
 
+        @if (TempData["PatientSuccess"] != null)
+        {
+            <div class="alert-banner alert-success">
+                @TempData["PatientSuccess"]
+            </div>
+        }
+
+        <!-- My Requested Appointments Table -->
         <div class="layout-card">
-            <p style="color: #64748b; text-align: center; padding: 40px 0;">
-                Appointment request features will be available here.
-            </p>
+            <div class="ds-table-responsive">
+                <table class="ds-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>Dentist</th>
+                            <th>Service</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MyAppointments.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 32px;">
+                                    No appointment requests yet.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var app in Model.MyAppointments)
+                            {
+                                <tr>
+                                    <td style="font-weight: 500;">@app.AppointmentDate.ToString("MMMM dd, yyyy")</td>
+                                    <td>@app.StartTime.ToString("hh:mm tt")</td>
+                                    <td style="font-weight: 600; color: #1e293b;">@app.PatientName</td>
+                                    <td>@app.DentistName</td>
+                                    <td>
+                                        <span style="font-weight: 500; color: #4f46e5;">@app.ServiceNames</span>
+                                        @if (app.TotalCost > 0)
+                                        {
+                                            <br /><small style="color:#64748b; font-size:11px; font-weight:600;">₱@app.TotalCost.ToString("N2")</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="ds-badge ds-badge-@app.Status.ToLower()">@app.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 </div>

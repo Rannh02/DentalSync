@@ -14,6 +14,9 @@ namespace DentalSync.ViewModels
         public string DentistName { get; set; } = string.Empty;
         public int ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
+        /// <summary>Comma-joined display names of all services for this appointment.</summary>
+        public string ServiceNames { get; set; } = string.Empty;
+        public decimal TotalCost { get; set; }
         public DateOnly AppointmentDate { get; set; }
         public TimeOnly StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
@@ -38,8 +41,8 @@ namespace DentalSync.ViewModels
         [Required(ErrorMessage = "Dentist is required")]
         public int DentistId { get; set; }
 
-        [Required(ErrorMessage = "Service is required")]
-        public int ServiceId { get; set; }
+        /// <summary>All selected service IDs (multi-select). First item is stored as primary ServiceId.</summary>
+        public List<int> SelectedServiceIds { get; set; } = new();
 
         [Required(ErrorMessage = "Date is required")]
         [DataType(DataType.Date)]
@@ -102,5 +105,41 @@ namespace DentalSync.ViewModels
 
         public string? ReferenceNumber { get; set; }
         public string? Notes { get; set; }
+    }
+
+    public class RequestAppointmentViewModel
+    {
+        public List<AppointmentListItemViewModel> MyAppointments { get; set; } = new();
+    }
+
+    public class DentistViewAppointmentsViewModel
+    {
+        public List<AppointmentListItemViewModel> Appointments { get; set; } = new();
+    }
+
+    public class PromotionalMessageItemViewModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public DateTime? PreferredDate { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string Status { get; set; } = "New";
+        public string? ReceptionistNotes { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class PromotionalMessagesViewModel
+    {
+        public string Search { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 6;
+        public int TotalMessages { get; set; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalMessages / PageSize);
+        public int NewCount { get; set; }
+        public List<PromotionalMessageItemViewModel> Messages { get; set; } = new();
     }
 }

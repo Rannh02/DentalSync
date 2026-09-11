@@ -121,6 +121,86 @@ namespace DentalSync.Data
                 }
             }
             await dbContext.SaveChangesAsync();
+
+            // Ensure TermsAndConditions table exists and has default content
+            try
+            {
+                await dbContext.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS `TermsAndConditions` (
+                        `Id` INT AUTO_INCREMENT NOT NULL,
+                        `Title` VARCHAR(200) NOT NULL,
+                        `Content` LONGTEXT NOT NULL,
+                        `UpdatedAt` DATETIME NOT NULL,
+                        `UpdatedBy` VARCHAR(150) NULL,
+                        PRIMARY KEY (`Id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+
+                if (!await dbContext.TermsAndConditions.AnyAsync())
+                {
+                    dbContext.TermsAndConditions.Add(new TermsAndConditions
+                    {
+                        Title = "DentalSync Subscription Terms & Conditions",
+                        Content = @"WELCOME TO DENTALSYNC CLINIC MANAGEMENT SYSTEM
+
+Please read these Terms and Conditions carefully before completing your subscription registration.
+
+1. ACCEPTANCE OF TERMS
+By subscribing to DentalSync Clinic Management System (""Service""), you agree to be bound by these Terms and Conditions. If you do not agree to all terms, you may not complete subscription or use our software platform.
+
+2. SUBSCRIPTION & LICENSE
+DentalSync grants your clinic a non-exclusive, non-transferable subscription license to access and use our web-based dental practice management platform during the active subscription period (Monthly or Annual).
+
+3. CLINIC DATA & PRIVACY
+- All patient records, clinical notes, treatment plans, and clinic data remain the exclusive property of your dental clinic.
+- DentalSync implements industry-standard 256-bit encryption and security measures to protect your clinic and patient records against unauthorized access.
+
+4. BILLING, PAYMENTS & RENEWAL
+- Subscription fees are billed in advance based on your selected billing cycle (Monthly or Annual).
+- Automated payments are processed securely via PayMongo (GCash, Credit/Debit Card, Maya).
+- Subscriptions auto-renew unless cancelled prior to the next billing date. Refunds are provided in accordance with applicable consumer rights.
+
+5. SYSTEM AVAILABILITY & SUPPORT
+- We maintain a target system uptime of 99.9%. Scheduled system updates and maintenance windows will be communicated to clinic administrators in advance.
+- Technical customer support is available via support@dentalsync.ph.
+
+6. ACCOUNT RESPONSIBILITIES
+- Clinic Administrators are responsible for safeguarding their login credentials and managing staff role permissions within their clinic portal.",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System Seeder"
+                    });
+                    await dbContext.SaveChangesAsync();
+                    logger.LogInformation("Seeded default Terms and Conditions.");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to verify or seed TermsAndConditions table.");
+            }
+
+            try
+            {
+                await dbContext.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS `PromotionalMessages` (
+                        `Id` INT NOT NULL AUTO_INCREMENT,
+                        `Name` VARCHAR(100) NOT NULL,
+                        `Email` VARCHAR(150) NOT NULL,
+                        `Phone` VARCHAR(30) NOT NULL,
+                        `PreferredDate` DATETIME(6) NULL,
+                        `Message` LONGTEXT NOT NULL,
+                        `Status` VARCHAR(30) NOT NULL DEFAULT 'New',
+                        `ReceptionistNotes` LONGTEXT NULL,
+                        `CreatedAt` DATETIME(6) NOT NULL,
+                        `UpdatedAt` DATETIME(6) NULL,
+                        PRIMARY KEY (`Id`)
+                    );
+                ");
+                logger.LogInformation("Ensured PromotionalMessages table exists.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to create or verify PromotionalMessages table.");
+            }
         }
     }
 }

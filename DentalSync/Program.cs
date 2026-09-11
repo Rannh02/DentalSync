@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<DentalSync.Services.AuditService>();
+builder.Services.AddScoped<DentalSync.Services.InventoryDeductionService>();
+builder.Services.AddHttpClient<DentalSync.Services.IPayMongoService, DentalSync.Services.PayMongoService>();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
