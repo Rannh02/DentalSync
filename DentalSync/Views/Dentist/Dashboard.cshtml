@@ -1,4 +1,5 @@
-﻿@{
+﻿@model DentalSync.ViewModels.DentistDashboardViewModel
+@{
     Layout = null;
     ViewData["Title"] = "Dentist Dashboard";
 }
@@ -16,14 +17,88 @@
         <div class="page-header">
             <div>
                 <h1>Dentist Dashboard</h1>
-                <p>Welcome back, Doctor. Manage your patient records and schedule appointments.</p>
+                <p>Here is your current patient and appointment overview.</p>
             </div>
         </div>
 
-        <div class="layout-card">
-            <p style="color: #64748b; text-align: center; padding: 40px 0;">
-                Clinical summary and statistics will be displayed here.
-            </p>
+        <div class="dc-kpi-grid">
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Assigned</span>
+                </div>
+                <div class="dc-kpi-value">@Model.TotalPatients.ToString("N0")</div>
+                <div class="dc-kpi-label">Patients</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-teal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">Today</span>
+                </div>
+                <div class="dc-kpi-value">@Model.TodayAppointmentsCount.ToString("N0")</div>
+                <div class="dc-kpi-label">Appointments</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-up">Completed</span>
+                </div>
+                <div class="dc-kpi-value">@Model.CompletedAppointmentsCount.ToString("N0")</div>
+                <div class="dc-kpi-label">Completed Visits</div>
+            </div>
+
+            <div class="dc-kpi-card">
+                <div class="dc-kpi-top">
+                    <div class="dc-kpi-icon dc-icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M12 3v18" /><circle cx="12" cy="12" r="9" /></svg>
+                    </div>
+                    <span class="dc-kpi-delta dc-delta-flat">All time</span>
+                </div>
+                <div class="dc-kpi-value">@Model.TotalAppointmentsCount.ToString("N0")</div>
+                <div class="dc-kpi-label">Total Appointments</div>
+            </div>
+        </div>
+
+        <div class="dc-lower-grid">
+            <div class="dc-lower-column" style="grid-column: 1 / -1;">
+                <div class="dc-panel">
+                    <div class="dc-panel-header">
+                        <span class="dc-panel-title">Today's Appointments</span>
+                        <a asp-controller="Dentist" asp-action="ViewAppointments" class="dc-panel-link">View all</a>
+                    </div>
+                    <div class="dc-appt-list">
+                        @if (Model.TodayAppointments.Any())
+                        {
+                            @foreach (var appointment in Model.TodayAppointments)
+                            {
+                                <div class="dc-appt-row">
+                                    <div class="dc-avatar">@appointment.Initials</div>
+                                    <div class="dc-appt-info">
+                                        <div class="dc-appt-name">@appointment.PatientName</div>
+                                        <div class="dc-appt-service">@appointment.ServiceName</div>
+                                    </div>
+                                    <div class="dc-appt-time">
+                                        @appointment.StartTime.ToString("h:mm tt")<br />
+                                        <span class="dc-status @appointment.StatusCssClass">@appointment.Status</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="dc-appt-row" style="justify-content: center; padding: 24px 0; color: #64748b;">No appointments scheduled for today.</div>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 </div>

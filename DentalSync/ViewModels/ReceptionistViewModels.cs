@@ -117,6 +117,25 @@ namespace DentalSync.ViewModels
         public List<AppointmentListItemViewModel> Appointments { get; set; } = new();
     }
 
+    public class DentistPatientRecordsViewModel
+    {
+        public List<DentistPatientRecordItemViewModel> Records { get; set; } = new();
+    }
+
+    public class DentistPatientRecordItemViewModel
+    {
+        public int AppointmentId { get; set; }
+        public int PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
+        public string DentistName { get; set; } = string.Empty;
+        public string ServiceName { get; set; } = string.Empty;
+        public DateOnly AppointmentDate { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
+        public string Status { get; set; } = "Scheduled";
+        public string? Notes { get; set; }
+    }
+
     public class PromotionalMessageItemViewModel
     {
         public int Id { get; set; }

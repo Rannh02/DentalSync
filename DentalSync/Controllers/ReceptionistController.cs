@@ -33,9 +33,123 @@ namespace DentalSync.Controllers
             _deductionService = deductionService;
         }
 
-        public IActionResult Receptionist_Dashboard()
+        public async Task<IActionResult> Receptionist_Dashboard()
         {
-            return View("~/Views/Receptionists/Receptionist_Dashboard.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            ViewBag.UserFullName = user?.FullName ?? user?.UserName ?? "there";
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var totalPatients = await _context.Patients.CountAsync();
+            var todayAppointmentsCount = await _context.Appointments.CountAsync(a => a.AppointmentDate == today);
+            var totalAppointmentsCount = await _context.Appointments.CountAsync();
+            var totalRevenue = await _context.Payments.SumAsync(p => (decimal?)p.Amount) ?? 0m;
+
+            var openInvoices = await _context.Invoices
+                .Where(i => i.Status == "Pending" || i.Status == "PartiallyPaid")
+                .Include(i => i.Payments)
+                .ToListAsync();
+
+            decimal pendingPayments = 0m;
+            foreach (var invoice in openInvoices)
+            {
+                var paid = invoice.Payments.Sum(p => p.Amount);
+                pendingPayments += Math.Max(0, invoice.TotalAmount - paid);
+            }
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .Include(a => a.Service)
+                .Where(a => a.AppointmentDate == today)
+                .OrderBy(a => a.StartTime)
+                .Take(4)
+                .ToListAsync();
+
+            if (!appointments.Any())
+            {
+                appointments = await _context.Appointments
+                    .Include(a => a.Patient)
+                    .Include(a => a.Dentist)
+                    .Include(a => a.Service)
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .ThenBy(a => a.StartTime)
+                    .Take(4)
+                    .ToListAsync();
+            }
+
+            var todayAppointmentItems = appointments.Select(appointment =>
+            {
+                var patientName = $"{appointment.Patient?.FirstName} {appointment.Patient?.LastName}".Trim();
+                if (string.IsNullOrWhiteSpace(patientName)) patientName = "Patient";
+
+                var dentistName = $"{appointment.Dentist?.FirstName} {appointment.Dentist?.LastName}".Trim();
+                if (string.IsNullOrWhiteSpace(dentistName)) dentistName = "Staff";
+
+                return new DashboardAppointmentItemViewModel
+                {
+                    Id = appointment.Id,
+                    PatientName = patientName,
+                    Initials = GetInitials(patientName),
+                    ServiceName = appointment.Service?.Name ?? "General Checkup",
+                    DentistName = dentistName.StartsWith("Dr.") ? dentistName : $"Dr. {dentistName}",
+                    AppointmentDate = appointment.AppointmentDate,
+                    StartTime = appointment.StartTime,
+                    EndTime = appointment.EndTime,
+                    CreatedAt = appointment.CreatedAt,
+                    Status = appointment.Status
+                };
+            }).ToList();
+
+            var recentActivities = await _context.AuditLogs
+                .OrderByDescending(log => log.DateTime)
+                .Take(4)
+                .Select(log => new DashboardActivityItemViewModel
+                {
+                    Id = log.Id,
+                    User = log.User,
+                    Action = log.Action,
+                    Module = log.Module,
+                    Description = log.Description,
+                    Timestamp = log.DateTime,
+                    RelativeTimeText = ""
+                })
+                .ToListAsync();
+
+            foreach (var activity in recentActivities)
+            {
+                activity.RelativeTimeText = GetRelativeTimeString(activity.Timestamp);
+            }
+
+            var model = new AdminDashboardViewModel
+            {
+                TotalPatients = totalPatients,
+                TodayAppointmentsCount = todayAppointmentsCount,
+                TotalAppointmentsCount = totalAppointmentsCount,
+                TotalRevenue = totalRevenue,
+                PendingPayments = pendingPayments,
+                TodayAppointments = todayAppointmentItems,
+                RecentActivities = recentActivities
+            };
+
+            return View("~/Views/Receptionists/Receptionist_Dashboard.cshtml", model);
+        }
+
+        private static string GetInitials(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "P";
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1) return parts[0][..1].ToUpper();
+            return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+        }
+
+        private static string GetRelativeTimeString(DateTime dateTime)
+        {
+            var timeSpan = DateTime.Now - dateTime;
+            if (timeSpan.TotalMinutes < 1) return "Just now";
+            if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes} min ago";
+            if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours} hr{((int)timeSpan.TotalHours > 1 ? "s" : "")} ago";
+            if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays} day{((int)timeSpan.TotalDays > 1 ? "s" : "")} ago";
+            return dateTime.ToString("MMM dd, h:mm tt");
         }
 
         public async Task<IActionResult> Register_Patients(string search = "", int page = 1)

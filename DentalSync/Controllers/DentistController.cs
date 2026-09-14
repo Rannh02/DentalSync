@@ -24,14 +24,143 @@ namespace DentalSync.Controllers
             _deductionService = deductionService;
         }
 
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            return View("~/Views/Dentist/Dashboard.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            ViewBag.UserFullName = user?.FullName ?? user?.UserName ?? "Doctor";
+
+            var dentist = user == null
+                ? null
+                : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            var model = new DentalSync.ViewModels.DentistDashboardViewModel();
+            if (dentist != null)
+            {
+                var appointments = _context.Appointments
+                    .Where(a => a.DentistId == dentist.Id && a.Status != "Archived");
+
+                model.TotalPatients = await appointments
+                    .Select(a => a.PatientId)
+                    .Distinct()
+                    .CountAsync();
+                model.TodayAppointmentsCount = await appointments
+                    .CountAsync(a => a.AppointmentDate == DateOnly.FromDateTime(DateTime.Today));
+                model.TotalAppointmentsCount = await appointments.CountAsync();
+                model.CompletedAppointmentsCount = await appointments
+                    .CountAsync(a => a.Status == "Completed");
+
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                model.TodayAppointments = await appointments
+                    .Where(a => a.AppointmentDate == today)
+                    .Include(a => a.Patient)
+                    .Include(a => a.Service)
+                    .OrderBy(a => a.StartTime)
+                    .Take(8)
+                    .Select(a => new DentalSync.ViewModels.DashboardAppointmentItemViewModel
+                    {
+                        Id = a.Id,
+                        PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                        Initials = (a.Patient.FirstName.Substring(0, 1) + a.Patient.LastName.Substring(0, 1)).ToUpper(),
+                        ServiceName = a.Service.Name,
+                        DentistName = "Dr. " + dentist.FirstName + " " + dentist.LastName,
+                        AppointmentDate = a.AppointmentDate,
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime,
+                        CreatedAt = a.CreatedAt,
+                        Status = a.Status
+                    })
+                    .ToListAsync();
+            }
+
+            return View("~/Views/Dentist/Dashboard.cshtml", model);
         }
 
-        public IActionResult ViewPatientRecords()
+        public async Task<IActionResult> ViewPatientRecords()
         {
-            return View("~/Views/Dentist/ViewPatientRecords.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            var dentist = user == null
+                ? null
+                : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            var model = new DentalSync.ViewModels.DentistPatientRecordsViewModel();
+            if (dentist != null)
+            {
+                model.Records = await _context.Appointments
+                    .Where(a => a.DentistId == dentist.Id && a.Status != "Archived")
+                    .Include(a => a.Patient)
+                    .Include(a => a.Dentist)
+                    .Include(a => a.Service)
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .ThenByDescending(a => a.StartTime)
+                    .Select(a => new DentalSync.ViewModels.DentistPatientRecordItemViewModel
+                    {
+                        AppointmentId = a.Id,
+                        PatientId = a.PatientId,
+                        PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                        DentistName = "Dr. " + a.Dentist.FirstName + " " + a.Dentist.LastName,
+                        ServiceName = a.Service.Name,
+                        AppointmentDate = a.AppointmentDate,
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime,
+                        Status = a.Status,
+                        Notes = a.Notes
+                    })
+                    .ToListAsync();
+            }
+
+            return View("~/Views/Dentist/ViewPatientRecords.cshtml", model);
+        }
+
+        public async Task<IActionResult> ViewPatientRecord(int id)
+        {
+            var record = await GetDentistRecordQuery().FirstOrDefaultAsync(a => a.Id == id);
+            if (record == null)
+                return NotFound();
+
+            var model = new DentalSync.ViewModels.DentistPatientRecordItemViewModel
+            {
+                AppointmentId = record.Id,
+                PatientId = record.PatientId,
+                PatientName = $"{record.Patient.FirstName} {record.Patient.LastName}",
+                DentistName = $"Dr. {record.Dentist.FirstName} {record.Dentist.LastName}",
+                ServiceName = record.Service.Name,
+                AppointmentDate = record.AppointmentDate,
+                StartTime = record.StartTime,
+                EndTime = record.EndTime,
+                Status = record.Status,
+                Notes = record.Notes
+            };
+
+            return View("~/Views/Dentist/ViewPatientRecord.cshtml", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ArchivePatientRecord(int id)
+        {
+            var record = await GetDentistRecordQuery().FirstOrDefaultAsync(a => a.Id == id);
+            if (record == null)
+                return NotFound();
+
+            record.Status = "Archived";
+            record.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Archive Patient Record", "Medical Records",
+                $"Dentist archived patient record for {record.Patient.FirstName} {record.Patient.LastName}");
+
+            TempData["PatientRecordSuccess"] = "Patient record archived successfully.";
+            return RedirectToAction(nameof(ViewPatientRecords));
+        }
+
+        private IQueryable<Appointment> GetDentistRecordQuery()
+        {
+            var dentistUserId = _userManager.GetUserId(User);
+            return _context.Appointments
+                .Where(a => a.Dentist.UserId == dentistUserId && a.Status != "Archived")
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .Include(a => a.Service);
         }
 
         public async Task<IActionResult> ViewAppointments()
@@ -94,12 +223,6 @@ namespace DentalSync.Controllers
 
             TempData["AppointmentSuccess"] = $"Appointment status updated to '{status}'!";
             return RedirectToAction(nameof(ViewAppointments));
-        }
-
-        public async Task<IActionResult> UpdateDentalHistory()
-        {
-            await _audit.LogAsync("View Dental History", "Medical Records", "Dentist accessed patient dental history records");
-            return View("~/Views/Dentist/UpdateDentalHistory.cshtml");
         }
 
         public async Task<IActionResult> TreatmentRecords()

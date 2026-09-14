@@ -74,4 +74,13 @@ namespace DentalSync.ViewModels
         public List<DashboardAppointmentItemViewModel> TodayAppointments { get; set; } = new();
         public List<DashboardActivityItemViewModel> RecentActivities { get; set; } = new();
     }
+
+    public class DentistDashboardViewModel
+    {
+        public int TotalPatients { get; set; }
+        public int TodayAppointmentsCount { get; set; }
+        public int TotalAppointmentsCount { get; set; }
+        public int CompletedAppointmentsCount { get; set; }
+        public List<DashboardAppointmentItemViewModel> TodayAppointments { get; set; } = new();
+    }
 }
