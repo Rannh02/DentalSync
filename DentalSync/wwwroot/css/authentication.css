@@ -25,11 +25,10 @@
     font-weight: 600;
 }
 .auth-event-login {
-    background: #f3f0ff;
     color: #6d28d9;
 }
 .auth-event-logout {
-    background: #f1f2f4;
+
     color: #4b5563;
 }
 

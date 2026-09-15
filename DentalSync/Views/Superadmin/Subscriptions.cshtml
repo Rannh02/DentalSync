@@ -41,7 +41,7 @@
                             <th>Subscription Plan</th>
                             <th>Billing Cycle</th>
                             <th>Status</th>
-                            <th class="users-actions-heading">Actions</th>
+                          
                         </tr>
                     </thead>
                     <tbody>
@@ -73,7 +73,7 @@
                                     </td>
                                     <td>@item.Email</td>
                                     <td>
-                                        <span class="role-pill" style="background:#eef4ff; color:#2e6ff2; border:1px solid #cfe0ff;">
+                                        <span class="role-pill">
                                             @item.Plan
                                         </span>
                                     </td>
@@ -88,11 +88,7 @@
                                             <span class="status-pill status-active">Active</span>
                                         }
                                     </td>
-                                    <td>
-                                        <div class="user-actions">
-                                            <button type="button" class="action-button action-edit" onclick="alert('Viewing Subscription details for @item.ClinicName')">Manage</button>
-                                        </div>
-                                    </td>
+                                    
                                 </tr>
                             }
                         }

@@ -26,7 +26,7 @@ namespace DentalSync.Controllers
         {
             await SeedPredefinedServicesIfEmptyAsync();
 
-            const int pageSize = 8;
+            const int pageSize = 5;
             var query = _context.Services.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(search))

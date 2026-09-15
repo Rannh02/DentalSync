@@ -49,12 +49,12 @@
 .user-cell small { color: #6b7280; font-size: 12px; }
 .user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: #eef4ff; color: #2e6ff2; font-size: 12px; font-weight: 700; }
 .user-avatar-large { width: 64px; height: 64px; margin-bottom: 14px; font-size: 21px; }
-.role-pill, .status-pill { display: inline-flex; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.role-pill, .status-pill {  padding: 4px 9px;  font-size: 11px; font-weight: 600; }
 .role-pill { color: #4b5563; }
 .status-active {  color: #158a3e; }
 .status-inactive { background: #fceaea; color: #c22a2a; }
 .status-new { background: #fef3c7; color: #92400e; }
-.status-read { background: #e0f2fe; color: #0369a1; }
+.status-read {color: #0369a1; }
 .status-replied { background: #e9f9ee; color: #158a3e; }
 .status-archived { background: #f1f2f4; color: #4b5563; }
 .user-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; white-space: nowrap; }
