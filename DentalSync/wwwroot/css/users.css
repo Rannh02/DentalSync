@@ -21,6 +21,17 @@
 .users-clear-button { border-color: #dfe3e8; background: #fff; color: #4b5563; }
 .users-table-wrap { overflow-x: auto; }
 .users-table { width: 100%; min-width: 900px; table-layout: fixed; border-collapse: collapse; }
+.services-table { min-width: 1120px; }
+.services-table .services-col-category { width: 15%; }
+.services-table .services-col-name { width: 22%; }
+.services-table .services-col-description { width: 24%; }
+.services-table .services-col-cost { width: 12%; }
+.services-table .services-col-status { width: 12%; }
+.services-table .services-col-actions { width: 15%; }
+.services-table th:nth-child(5),
+.services-table td:nth-child(5) { white-space: nowrap; text-align: center; }
+.services-table td:nth-child(6) { min-width: 168px; }
+.services-table .status-pill { white-space: nowrap; }
 .users-col-user { width: 34%; }
 .users-col-role { width: 14%; }
 .users-col-status { width: 14%; }
@@ -39,8 +50,8 @@
 .user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: #eef4ff; color: #2e6ff2; font-size: 12px; font-weight: 700; }
 .user-avatar-large { width: 64px; height: 64px; margin-bottom: 14px; font-size: 21px; }
 .role-pill, .status-pill { display: inline-flex; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-.role-pill { background: #f1f2f4; color: #4b5563; }
-.status-active { background: #e9f9ee; color: #158a3e; }
+.role-pill { color: #4b5563; }
+.status-active {  color: #158a3e; }
 .status-inactive { background: #fceaea; color: #c22a2a; }
 .status-new { background: #fef3c7; color: #92400e; }
 .status-read { background: #e0f2fe; color: #0369a1; }

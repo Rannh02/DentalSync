@@ -112,4 +112,26 @@ namespace DentalSync.ViewModels
         public int TotalInvoices { get; set; }
         public int TotalInvoicePages => Math.Max(1, (int)Math.Ceiling(TotalInvoices / (double)InvoicePageSize));
     }
+
+    public class GlobalAnalyticsViewModel
+    {
+        public int TotalUsers { get; set; }
+        public int ActiveUsers { get; set; }
+        public int SuspendedUsers { get; set; }
+        public int TotalPatients { get; set; }
+        public int TotalDentists { get; set; }
+        public int TotalAppointments { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public int FailedLogins { get; set; }
+        public int LockedAccounts { get; set; }
+
+        public List<ChartPoint> UserRoles { get; set; } = new();
+        public List<ChartPoint> PatientGrowth { get; set; } = new();
+        public List<ChartPoint> AppointmentsByMonth { get; set; } = new();
+        public List<ChartPoint> RevenueByMonth { get; set; } = new();
+        public List<ChartPoint> LoginsByMonth { get; set; } = new();
+        public List<ChartPoint> FailedLoginsByMonth { get; set; } = new();
+        public List<ChartPoint> AuditModules { get; set; } = new();
+        public List<ChartPoint> BrowserStats { get; set; } = new();
+    }
 }

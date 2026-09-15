@@ -173,9 +173,9 @@
     padding: 2px 7px;
     border-radius: 999px;
 }
-.rp-kpi-delta.up   { background: #e9f9ee; color: #158a3e; }
-.rp-kpi-delta.down { background: #fceaea; color: #c22a2a; }
-.rp-kpi-delta.flat { background: #f1f5f9; color: #64748b; }
+.rp-kpi-delta.up   { color: #158a3e; }
+.rp-kpi-delta.down { color: #c22a2a; }
+.rp-kpi-delta.flat { color: #64748b; }
 
 /* ── Section panels ──────────────────────────────────────────────────────── */
 .rp-panel {
@@ -229,6 +229,40 @@
 /* ── Chart canvas ────────────────────────────────────────────────────────── */
 .rp-chart-wrap { position: relative; height: 200px; }
 .rp-chart-wrap canvas { max-width: 100%; }
+
+/* Superadmin global analytics charts */
+.global-analytics-page .rp-analytics-grid,
+.global-analytics-page .rp-analytics-grid-3 {
+    min-width: 0;
+}
+
+.global-analytics-page .rp-panel {
+    min-width: 0;
+}
+
+.global-analytics-page .rp-panel-body {
+    min-width: 0;
+}
+
+.global-analytics-page .rp-chart-wrap {
+    width: 100%;
+    height: 248px;
+    min-width: 0;
+}
+
+.global-analytics-page .rp-chart-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.global-analytics-page .global-analytics-primary {
+    margin-top: 24px;
+}
+
+.global-analytics-page .global-analytics-secondary {
+    grid-template-columns: 1fr 1fr;
+}
 
 /* ── Donut / stat ring ───────────────────────────────────────────────────── */
 .rp-appt-list {
@@ -619,5 +653,8 @@
     .rp-browser-row { grid-template-columns: 12px 1fr 44px 80px; }
     .rp-tab-bar { gap: 4px; }
     .rp-tab-btn { padding: 8px 12px; font-size: 12.5px; }
+
+    .global-analytics-page .rp-chart-wrap { height: 220px; }
+    .global-analytics-page .global-analytics-secondary { grid-template-columns: 1fr; }
 }
 

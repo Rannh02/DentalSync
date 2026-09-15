@@ -15,12 +15,12 @@
 
 /* Action pills — colour-coded by type */
 .audit-action-pill { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-.audit-action-created { background: #e9f9ee; color: #158a3e; }
-.audit-action-updated { background: #fff7e6; color: #b5730a; }
-.audit-action-added   { background: #eef4ff; color: #2e6ff2; }
-.audit-action-deleted { background: #fceaea; color: #c22a2a; }
-.audit-action-login   { background: #f3f0ff; color: #6d28d9; }
-.audit-action-logout  { background: #f1f2f4; color: #4b5563; }
+.audit-action-created { color: #158a3e; }
+.audit-action-updated { color: #b5730a; }
+.audit-action-added   { color: #2e6ff2; }
+.audit-action-deleted { color: #c22a2a; }
+.audit-action-login   { color: #6d28d9; }
+.audit-action-logout  { color: #4b5563; }
 
 /* Browser pills */
 .browser-pill {
@@ -33,10 +33,10 @@
     font-weight: 600;
     white-space: nowrap;
 }
-.browser-chrome  { background: #e8f0fe; color: #1a73e8; }
-.browser-edge    { background: #e3f5f5; color: #0078d4; }
-.browser-firefox { background: #fff3e0; color: #e65100; }
-.browser-safari  { background: #e0f7fa; color: #00838f; }
-.browser-opera   { background: #fce4ec; color: #c62828; }
-.browser-ie      { background: #e8eaf6; color: #3949ab; }
-.browser-other   { background: #f1f5f9; color: #64748b; }
+.browser-chrome  { color: #1a73e8; }
+.browser-edge    { color: #0078d4; }
+.browser-firefox { color: #e65100; }
+.browser-safari  { color: #00838f; }
+.browser-opera   { color: #c62828; }
+.browser-ie      { color: #3949ab; }
+.browser-other   { color: #64748b; }

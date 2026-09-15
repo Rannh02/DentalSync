@@ -1,3 +1,4 @@
+@model DentalSync.ViewModels.SuperadminDashboardViewModel
 @{
     ViewData["Title"] = "Superadmin Dashboard";
     Layout = null;
@@ -11,64 +12,92 @@
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
-    <main class="users-page">
+    <div class="dc-wrap">
+        <h2>System Dashboard</h2>
+        <p class="dc-subtitle">Global platform management, clinic operations, and security oversight.</p>
 
-        <div class="users-page-heading">
-            <div>
-                <h1>Dashboard</h1>
-                <p>Global system management, multi-branch operations, clinic subscriptions, and audit oversight.</p>
-            </div>
-        </div>
-
-        <!-- Health & Metrics Overview Grid -->
         <div class="dc-kpi-grid">
             <div class="dc-kpi-card">
                 <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-blue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg>
-                    </div>
+                    <div class="dc-kpi-icon dc-icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h2M13 10h2M9 14h2M13 14h2"/></svg></div>
                     <span class="dc-kpi-delta dc-delta-up">Active</span>
                 </div>
-                <div class="dc-kpi-value">3 Branches</div>
+                <div class="dc-kpi-value">@Model.ActiveClinics.ToString("N0")</div>
                 <div class="dc-kpi-label">Active Clinics</div>
             </div>
 
             <div class="dc-kpi-card">
                 <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-teal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </div>
+                    <div class="dc-kpi-icon dc-icon-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
                     <span class="dc-kpi-delta dc-delta-up">Registered</span>
                 </div>
-                <div class="dc-kpi-value">128 Users</div>
+                <div class="dc-kpi-value">@Model.TotalAccounts.ToString("N0")</div>
                 <div class="dc-kpi-label">Total Accounts</div>
             </div>
 
             <div class="dc-kpi-card">
                 <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-green">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-up">Monthly</span>
+                    <div class="dc-kpi-icon dc-icon-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <span class="dc-kpi-delta dc-delta-up">Collected</span>
                 </div>
-                <div class="dc-kpi-value">₱47,980</div>
-                <div class="dc-kpi-label">Subscriptions</div>
+                <div class="dc-kpi-value">₱@Model.TotalRevenue.ToString("N2")</div>
+                <div class="dc-kpi-label">Total Revenue</div>
             </div>
 
             <div class="dc-kpi-card">
                 <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-amber">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-flat">Normal</span>
+                    <div class="dc-kpi-icon dc-icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg></div>
+                    <span class="dc-kpi-delta @(Model.LockedAccounts > 0 ? "dc-delta-down" : "dc-delta-flat")">@(Model.LockedAccounts > 0 ? "Review" : "Normal")</span>
                 </div>
-                <div class="dc-kpi-value">99.98%</div>
-                <div class="dc-kpi-label">Platform Health</div>
+                <div class="dc-kpi-value">@Model.LockedAccounts.ToString("N0")</div>
+                <div class="dc-kpi-label">Locked Accounts</div>
             </div>
         </div>
-        
 
-    </main>
+        <div class="dc-lower-grid">
+            <div class="dc-lower-column">
+                <div class="dc-panel">
+                    <div class="dc-panel-header">
+                        <span class="dc-panel-title">Recent Activity</span>
+                        <a asp-controller="Superadmin" asp-action="AuditLogs" class="dc-panel-link">View all</a>
+                    </div>
+                    <div class="dc-activity-list">
+                        @if (Model.RecentActivities.Any())
+                        {
+                            @foreach (var activity in Model.RecentActivities)
+                            {
+                                <div class="dc-activity-row">
+                                    <div class="dc-activity-icon @activity.IconCssClass">@activity.Icon</div>
+                                    <div class="dc-activity-info">
+                                        <strong>@activity.Action</strong>
+                                        <span>@activity.Description</span>
+                                    </div>
+                                    <time title="@activity.Timestamp.ToString("F")">@activity.RelativeTimeText</time>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="dc-activity-row" style="justify-content: center; padding: 24px 0; color: #64748b;">No recent activity logged.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="dc-lower-column">
+                <div class="dc-panel">
+                    <div class="dc-panel-header">
+                        <span class="dc-panel-title">Platform Status</span>
+                        <a asp-controller="Superadmin" asp-action="Analytics" class="dc-panel-link">View analytics</a>
+                    </div>
+                    <div class="dc-activity-list">
+                        <div class="dc-activity-row"><div class="dc-activity-icon dc-icon-green">✓</div><div class="dc-activity-info"><strong>Database connected</strong><span>Live data is being read from DentalSync.</span></div></div>
+                        <div class="dc-activity-row"><div class="dc-activity-icon dc-icon-blue">i</div><div class="dc-activity-info"><strong>Audit monitoring enabled</strong><span>Recent system events are shown on this dashboard.</span></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

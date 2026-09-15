@@ -75,8 +75,13 @@
 .dc-kpi-top {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 12px;
     margin-bottom: 18px;
+}
+
+.dc-kpi-delta {
+    order: 0;
 }
 
 .dc-kpi-icon {
@@ -123,20 +128,21 @@
     align-items: center;
     gap: 3px;
     white-space: nowrap;
+
 }
 
 .dc-delta-up {
-    background: #E9F9EE;
+   
     color: #158A3E;
 }
 
 .dc-delta-down {
-    background: #FCEAEA;
+    
     color: #C22A2A;
 }
 
 .dc-delta-flat {
-    background: #F1F2F4;
+    
     color: #6B7280;
 }
 
@@ -147,6 +153,7 @@
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
     margin-bottom: 6px;
+    text-align: right;
 }
 
 .dc-kpi-label {
@@ -375,12 +382,11 @@
 }
 
 .dc-status-confirmed {
-    background: #E9F9EE;
     color: #158A3E;
 }
 
 .dc-status-pending {
-    background: #FDF3E3;
+
     color: #B5730A;
 }
 

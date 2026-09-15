@@ -75,6 +75,15 @@ namespace DentalSync.ViewModels
         public List<DashboardActivityItemViewModel> RecentActivities { get; set; } = new();
     }
 
+    public class SuperadminDashboardViewModel
+    {
+        public int ActiveClinics { get; set; }
+        public int TotalAccounts { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public int LockedAccounts { get; set; }
+        public List<DashboardActivityItemViewModel> RecentActivities { get; set; } = new();
+    }
+
     public class DentistDashboardViewModel
     {
         public int TotalPatients { get; set; }

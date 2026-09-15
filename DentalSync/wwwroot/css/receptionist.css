@@ -97,6 +97,34 @@
     background-color: #f8fafc;
 }
 
+.patient-records-table {
+    min-width: 1040px;
+}
+
+.patient-record-actions-cell {
+    white-space: nowrap;
+}
+
+.patient-record-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.patient-record-actions form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.patient-record-actions .btn-secondary {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
 /* Badges for Statuses */
 .ds-badge {
     display: inline-flex;
@@ -108,13 +136,13 @@
     text-transform: capitalize;
 }
 
-.ds-badge-scheduled { background: #eff6ff; color: #1d4ed8; }
-.ds-badge-confirmed { background: #ecfdf5; color: #047857; }
-.ds-badge-completed { background: #f0fdf4; color: #166534; }
-.ds-badge-cancelled { background: #fef2f2; color: #b91c1c; }
-.ds-badge-pending { background: #fffbeb; color: #b45309; }
-.ds-badge-partiallypaid { background: #fef3c7; color: #d97706; }
-.ds-badge-paid { background: #f0fdf4; color: #15803d; }
+.ds-badge-scheduled { color: #1d4ed8; }
+.ds-badge-confirmed { color: #047857; }
+.ds-badge-completed { color: #166534; }
+.ds-badge-cancelled { color: #b91c1c; }
+.ds-badge-pending { color: #b45309; }
+.ds-badge-partiallypaid { color: #d97706; }
+.ds-badge-paid { color: #15803d; }
 
 /* Modal overlay and content */
 .modal-overlay {

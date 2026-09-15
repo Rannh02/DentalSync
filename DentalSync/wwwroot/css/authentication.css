@@ -42,11 +42,10 @@
     font-weight: 600;
 }
 .auth-status-success {
-    background: #e9f9ee;
+    
     color: #158a3e;
 }
 .auth-status-failed {
-    background: #fceaea;
     color: #c22a2a;
 }
 

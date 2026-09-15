@@ -1,5 +1,6 @@
 using DentalSync.Data;
 using DentalSync.Models;
+using DentalSync.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -27,9 +28,46 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 1. DASHBOARD OVERVIEW
         // =========================================================================
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var users = _userManager.Users.AsNoTracking();
+            var now = DateTimeOffset.UtcNow;
+            var administrators = await _userManager.GetUsersInRoleAsync("Administrator");
+            var activeClinics = administrators.Count(user => !user.LockoutEnd.HasValue || user.LockoutEnd <= now);
+            var lockedAccounts = await users.CountAsync(user => user.LockoutEnd.HasValue && user.LockoutEnd > now);
+            var recentActivities = await _db.AuditLogs
+                .AsNoTracking()
+                .OrderByDescending(log => log.DateTime)
+                .Take(4)
+                .ToListAsync();
+
+            return View(new SuperadminDashboardViewModel
+            {
+                ActiveClinics = activeClinics,
+                TotalAccounts = await users.CountAsync(),
+                TotalRevenue = await _db.Payments.AsNoTracking().SumAsync(payment => (decimal?)payment.Amount) ?? 0m,
+                LockedAccounts = lockedAccounts,
+                RecentActivities = recentActivities.Select(log => new DashboardActivityItemViewModel
+                {
+                    Id = log.Id,
+                    User = log.User,
+                    Action = log.Action,
+                    Module = log.Module,
+                    Description = log.Description,
+                    Timestamp = log.DateTime,
+                    RelativeTimeText = GetRelativeTimeString(log.DateTime)
+                }).ToList()
+            });
+        }
+
+        private static string GetRelativeTimeString(DateTime dateTime)
+        {
+            var timeSpan = DateTime.Now - dateTime;
+            if (timeSpan.TotalMinutes < 1) return "Just now";
+            if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes} min ago";
+            if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours} hr{((int)timeSpan.TotalHours > 1 ? "s" : "")} ago";
+            if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays} day{((int)timeSpan.TotalDays > 1 ? "s" : "")} ago";
+            return dateTime.ToString("MMM dd, h:mm tt");
         }
 
         // =========================================================================
@@ -262,9 +300,110 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 5. GLOBAL ANALYTICS AND REPORTS
         // =========================================================================
-        public IActionResult Analytics()
+        public async Task<IActionResult> Analytics()
         {
-            return View();
+            var sixMonthsAgo = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(-5);
+            var users = _userManager.Users.AsNoTracking();
+            var auditLogs = _db.AuditLogs.AsNoTracking();
+
+            var roleCounts = (await (from user in users
+                                     join userRole in _db.UserRoles on user.Id equals userRole.UserId
+                                     join role in _db.Roles on userRole.RoleId equals role.Id
+                                     group user by role.Name into grouped
+                                     select new { Role = grouped.Key ?? "Unknown", Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = item.Role, Count = item.Count })
+                .OrderByDescending(item => item.Count)
+                .ToList();
+
+            var patientGrowth = (await _db.Patients.AsNoTracking()
+                .Where(patient => patient.CreatedAt >= sixMonthsAgo)
+                .GroupBy(patient => new { patient.CreatedAt.Year, patient.CreatedAt.Month })
+                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
+                .OrderBy(item => item.Label)
+                .ToList();
+
+            var appointmentsByMonth = (await _db.Appointments.AsNoTracking()
+                .Where(appointment => appointment.CreatedAt >= sixMonthsAgo)
+                .GroupBy(appointment => new { appointment.CreatedAt.Year, appointment.CreatedAt.Month })
+                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
+                .OrderBy(item => item.Label)
+                .ToList();
+
+            var revenueByMonth = (await _db.Payments.AsNoTracking()
+                .Where(payment => payment.PaymentDate >= sixMonthsAgo)
+                .GroupBy(payment => new { payment.PaymentDate.Year, payment.PaymentDate.Month })
+                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Value = grouped.Sum(payment => payment.Amount) })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Value = item.Value })
+                .OrderBy(item => item.Label)
+                .ToList();
+
+            var loginsByMonth = await GetAuditTrendAsync(auditLogs, "Login", sixMonthsAgo);
+            var failedLoginsByMonth = await GetAuditTrendAsync(auditLogs, "Failed Login", sixMonthsAgo);
+            var auditModules = (await auditLogs
+                .Where(log => !string.IsNullOrEmpty(log.Module))
+                .GroupBy(log => log.Module)
+                .Select(grouped => new { Module = grouped.Key, Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = item.Module, Count = item.Count })
+                .OrderByDescending(item => item.Count)
+                .Take(8)
+                .ToList();
+
+            var browserStats = (await auditLogs
+                .Where(log => !string.IsNullOrEmpty(log.Browser))
+                .GroupBy(log => log.Browser)
+                .Select(grouped => new { Browser = grouped.Key, Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = item.Browser, Count = item.Count })
+                .OrderByDescending(item => item.Count)
+                .Take(6)
+                .ToList();
+
+            var now = DateTimeOffset.UtcNow;
+            var suspendedUsers = await users.CountAsync(user => user.LockoutEnd.HasValue && user.LockoutEnd > now);
+            var totalUsers = await users.CountAsync();
+
+            var vm = new GlobalAnalyticsViewModel
+            {
+                TotalUsers = totalUsers,
+                ActiveUsers = totalUsers - suspendedUsers,
+                SuspendedUsers = suspendedUsers,
+                TotalPatients = await _db.Patients.AsNoTracking().CountAsync(),
+                TotalDentists = await _db.Dentists.AsNoTracking().CountAsync(),
+                TotalAppointments = await _db.Appointments.AsNoTracking().CountAsync(),
+                TotalRevenue = await _db.Payments.AsNoTracking().SumAsync(payment => (decimal?)payment.Amount) ?? 0m,
+                FailedLogins = await auditLogs.CountAsync(log => log.Module == "Authentication" && log.Action == "Failed Login"),
+                LockedAccounts = suspendedUsers,
+                UserRoles = roleCounts,
+                PatientGrowth = patientGrowth,
+                AppointmentsByMonth = appointmentsByMonth,
+                RevenueByMonth = revenueByMonth,
+                LoginsByMonth = loginsByMonth,
+                FailedLoginsByMonth = failedLoginsByMonth,
+                AuditModules = auditModules,
+                BrowserStats = browserStats
+            };
+
+            return View(vm);
+        }
+
+        private static async Task<List<ChartPoint>> GetAuditTrendAsync(
+            IQueryable<AuditLog> auditLogs, string action, DateTime from)
+        {
+            return (await auditLogs
+                .Where(log => log.Module == "Authentication" && log.Action == action && log.DateTime >= from)
+                .GroupBy(log => new { log.DateTime.Year, log.DateTime.Month })
+                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
+                .ToListAsync())
+                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
+                .OrderBy(item => item.Label)
+                .ToList();
         }
 
         // =========================================================================

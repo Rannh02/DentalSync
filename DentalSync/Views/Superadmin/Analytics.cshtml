@@ -1,110 +1,98 @@
+@model DentalSync.ViewModels.GlobalAnalyticsViewModel
+@using System.Text.Json
 @{
     ViewData["Title"] = "Global Analytics & Reports";
     Layout = null;
+    var labels = Model.RevenueByMonth.Select(point => point.Label).Union(Model.PatientGrowth.Select(point => point.Label)).Distinct().OrderBy(label => label).ToList();
+    var loginLabels = Model.LoginsByMonth.Select(point => point.Label).Union(Model.FailedLoginsByMonth.Select(point => point.Label)).Distinct().OrderBy(label => label).ToList();
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 }
 
 @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
 <link rel="stylesheet" href="~/css/dashboard.css" />
 <link rel="stylesheet" href="~/css/users.css" />
 <link rel="stylesheet" href="~/css/reports.css" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Sidebar.cshtml")
-    <main class="users-page">
-
+    <main class="users-page global-analytics-page">
         <div class="users-page-heading">
             <div>
                 <h1>Global Analytics &amp; Reports</h1>
-                <p>Access high-level system analytics, platform health, user activity, and overall clinic performance metrics.</p>
+                <p>Live platform, clinic, and security metrics from the DentalSync database.</p>
             </div>
         </div>
 
-        <!-- Platform Health KPI Grid -->
         <div class="dc-kpi-grid">
-            <div class="dc-kpi-card">
-                <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-blue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-up">Optimal</span>
-                </div>
-                <div class="dc-kpi-value">99.98%</div>
-                <div class="dc-kpi-label">Server Uptime</div>
-            </div>
-
-            <div class="dc-kpi-card">
-                <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-teal">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-up">Online</span>
-                </div>
-                <div class="dc-kpi-value">42 Active</div>
-                <div class="dc-kpi-label">Concurrent Users</div>
-            </div>
-
-            <div class="dc-kpi-card">
-                <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-green">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-flat">Normal</span>
-                </div>
-                <div class="dc-kpi-value">1.2 GB / 16 GB</div>
-                <div class="dc-kpi-label">RAM Utilization</div>
-            </div>
-
-            <div class="dc-kpi-card">
-                <div class="dc-kpi-top">
-                    <div class="dc-kpi-icon dc-icon-amber">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <span class="dc-kpi-delta dc-delta-up">Secure</span>
-                </div>
-                <div class="dc-kpi-value">0 Threats</div>
-                <div class="dc-kpi-label">System Security</div>
-            </div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">@Model.TotalUsers</div><div class="dc-kpi-label">Registered Users</div></div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">@Model.TotalPatients</div><div class="dc-kpi-label">Patient Records</div></div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">@Model.TotalAppointments</div><div class="dc-kpi-label">Appointments</div></div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">₱@Model.TotalRevenue.ToString("N0")</div><div class="dc-kpi-label">Collected Revenue</div></div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">@Model.FailedLogins</div><div class="dc-kpi-label">Failed Logins</div></div>
+            <div class="dc-kpi-card"><div class="dc-kpi-value">@Model.LockedAccounts</div><div class="dc-kpi-label">Locked Accounts</div></div>
         </div>
 
-        <!-- Global Performance Grid -->
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px; margin-top:24px;">
-
-            <section class="users-panel" style="padding:24px;">
-                <h3 style="font-size:16px; font-weight:700; color:#14181f; margin:0 0 16px;">Platform Usage &amp; Activity Overview</h3>
-                <div style="height:220px; background:#fafbfc; border:1px dashed #dfe3e8; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2e6ff2" stroke-width="2"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-3 3 2 5-6"/></svg>
-                    <strong style="color:#14181f;">Real-time User Activity &amp; API Traffic</strong>
-                    <span style="font-size:13px; color:#6b7280;">Average API Response Time: 42ms | Database Query Time: 12ms</span>
-                </div>
-            </section>
-
-            <section class="users-panel" style="padding:24px;">
-                <h3 style="font-size:16px; font-weight:700; color:#14181f; margin:0 0 16px;">Clinic Growth Stats</h3>
-                <div style="display:grid; gap:14px; font-size:13px;">
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
-                        <span style="color:#6b7280;">Total Patient Records:</span>
-                        <strong style="color:#14181f;">1,420 Patients</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
-                        <span style="color:#6b7280;">Completed Appointments:</span>
-                        <strong style="color:#14181f;">3,890 Total</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eef0f3; padding-bottom:8px;">
-                        <span style="color:#6b7280;">Invoices Issued:</span>
-                        <strong style="color:#14181f;">₱184,500 Total</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="color:#6b7280;">Active Dentists:</span>
-                        <strong style="color:#14181f;">15 Dentists</strong>
-                    </div>
-                </div>
-            </section>
-
+        <div class="rp-analytics-grid global-analytics-primary">
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">Platform Growth</div><div class="rp-panel-sub">Revenue and new patients over the last six months</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="growthChart"></canvas></div></div></section>
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">User Roles</div><div class="rp-panel-sub">Current registered accounts by role</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="rolesChart"></canvas></div></div></section>
         </div>
 
+        <div class="rp-analytics-grid global-analytics-secondary">
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">Appointment Volume</div><div class="rp-panel-sub">Appointments created by month</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="appointmentsChart"></canvas></div></div></section>
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">System Security</div><div class="rp-panel-sub">Successful and failed authentication events</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="securityTrendChart"></canvas></div></div></section>
+        </div>
+
+        <div class="rp-analytics-grid-3">
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">Audit Activity</div><div class="rp-panel-sub">Events grouped by module</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="auditChart"></canvas></div></div></section>
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">Browser Sessions</div><div class="rp-panel-sub">Recorded audit log user agents</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="browserChart"></canvas></div></div></section>
+            <section class="rp-panel"><div class="rp-panel-header"><div><div class="rp-panel-title">Account Security</div><div class="rp-panel-sub">Current access status</div></div></div><div class="rp-panel-body"><div class="rp-chart-wrap"><canvas id="accountSecurityChart"></canvas></div></div></section>
+        </div>
     </main>
 </div>
+
+<script>
+    Chart.defaults.font.family = "Inter, -apple-system, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#94a3b8";
+
+    const labels = @Html.Raw(JsonSerializer.Serialize(labels, jsonOptions));
+    const loginLabels = @Html.Raw(JsonSerializer.Serialize(loginLabels, jsonOptions));
+    const revenue = @Html.Raw(JsonSerializer.Serialize(labels.Select(label => Model.RevenueByMonth.FirstOrDefault(point => point.Label == label)?.Value ?? 0m).ToList(), jsonOptions));
+    const patients = @Html.Raw(JsonSerializer.Serialize(labels.Select(label => Model.PatientGrowth.FirstOrDefault(point => point.Label == label)?.Count ?? 0).ToList(), jsonOptions));
+    const appointments = @Html.Raw(JsonSerializer.Serialize(Model.AppointmentsByMonth.Select(point => point.Count).ToList(), jsonOptions));
+    const loginCounts = @Html.Raw(JsonSerializer.Serialize(loginLabels.Select(label => Model.LoginsByMonth.FirstOrDefault(point => point.Label == label)?.Count ?? 0).ToList(), jsonOptions));
+    const failedCounts = @Html.Raw(JsonSerializer.Serialize(loginLabels.Select(label => Model.FailedLoginsByMonth.FirstOrDefault(point => point.Label == label)?.Count ?? 0).ToList(), jsonOptions));
+
+    const lineOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false }, ticks: { maxRotation: 0 } },
+            y: { beginAtZero: true, grid: { color: '#f0f2f5' }, ticks: { precision: 0 } }
+        }
+    };
+    const multiLineOptions = { ...lineOptions, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 14 } } } };
+    const doughnutOptions = { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 12 } } } };
+    const polarOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 10 } } }, scales: { r: { beginAtZero: true, ticks: { display: false }, grid: { color: '#f0f2f5' } } } };
+    const barOptions = { ...lineOptions, plugins: { legend: { display: false } } };
+    const line = (id, datasets, chartLabels = labels, options = lineOptions) => new Chart(document.getElementById(id), { type: 'line', data: { labels: chartLabels, datasets }, options });
+
+    line('growthChart', [
+        { label: 'Revenue', data: revenue, borderColor: '#0b84ff', backgroundColor: 'rgba(11,132,255,.08)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0b84ff', fill: true, tension: .4 },
+        { label: 'New patients', data: patients, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.08)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#059669', fill: true, tension: .4 }
+    ], labels, multiLineOptions);
+    new Chart(document.getElementById('rolesChart'), { type: 'doughnut', data: { labels: @Html.Raw(JsonSerializer.Serialize(Model.UserRoles.Select(point => point.Label).ToList(), jsonOptions)), datasets: [{ data: @Html.Raw(JsonSerializer.Serialize(Model.UserRoles.Select(point => point.Count).ToList(), jsonOptions)), backgroundColor: ['#0b84ff','#059669','#f59e0b','#7c3aed','#ef4444'], borderWidth: 0, hoverOffset: 5 }] }, options: doughnutOptions });
+    line('appointmentsChart', [{ label: 'Appointments', data: appointments, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,.08)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#7c3aed', fill: true, tension: .4 }]);
+    line('securityTrendChart', [
+        { label: 'Successful logins', data: loginCounts, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.08)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#059669', fill: true, tension: .4 },
+        { label: 'Failed logins', data: failedCounts, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,.06)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#dc2626', fill: true, tension: .4 }
+    ], loginLabels, multiLineOptions);
+    new Chart(document.getElementById('auditChart'), { type: 'bar', data: { labels: @Html.Raw(JsonSerializer.Serialize(Model.AuditModules.Select(point => point.Label).ToList(), jsonOptions)), datasets: [{ label: 'Events', data: @Html.Raw(JsonSerializer.Serialize(Model.AuditModules.Select(point => point.Count).ToList(), jsonOptions)), backgroundColor: 'rgba(11,132,255,.15)', borderColor: '#0b84ff', borderWidth: 2, borderRadius: 5, borderSkipped: false }] }, options: barOptions });
+    new Chart(document.getElementById('browserChart'), { type: 'polarArea', data: { labels: @Html.Raw(JsonSerializer.Serialize(Model.BrowserStats.Select(point => point.Label).ToList(), jsonOptions)), datasets: [{ data: @Html.Raw(JsonSerializer.Serialize(Model.BrowserStats.Select(point => point.Count).ToList(), jsonOptions)), backgroundColor: ['#0b84ff','#059669','#f59e0b','#7c3aed','#ef4444','#0891b2'], borderColor: '#fff', borderWidth: 2 }] }, options: polarOptions });
+    new Chart(document.getElementById('accountSecurityChart'), { type: 'doughnut', data: { labels: ['Active accounts', 'Locked accounts'], datasets: [{ data: [@Model.ActiveUsers, @Model.LockedAccounts], backgroundColor: ['#059669','#dc2626'], borderWidth: 0, hoverOffset: 5 }] }, options: doughnutOptions });
+</script>
 
 @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")
