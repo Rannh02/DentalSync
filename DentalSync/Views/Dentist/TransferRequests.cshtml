@@ -1,0 +1,104 @@
+@model DentalSync.ViewModels.DentistTransferRequestsViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Transfer Requests";
+}
+
+@await Html.PartialAsync("~/Views/Shared/DentistSideBars/_HeaderDentist.cshtml")
+<link rel="stylesheet" href="~/css/dashboard.css" />
+<link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Transfer Requests</h1>
+                <p>Review requests from the receptionist and choose the dentist who will receive the patient.</p>
+            </div>
+            <span class="users-total">@Model.TotalRequests requests</span>
+        </div>
+
+        @if (TempData["TransferSuccess"] is string successMessage)
+        {
+            <div class="alert-banner alert-success">@successMessage</div>
+        }
+
+        <section class="users-panel" aria-label="Transfer requests">
+            <form method="get" asp-controller="Dentist" asp-action="TransferRequests" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search transfer requests</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by patient or service" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="statusFilter">
+                        <option value="">All statuses</option>
+                        <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Dentist" asp-action="TransferRequests" class="users-clear-button">Clear</a>
+            </form>
+            <div class="users-table-wrap">
+                <table class="users-table patient-records-table">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Appointment</th>
+                            <th>Service</th>
+                            <th>Requested</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (!Model.Requests.Any())
+                    {
+                        <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:32px;">No pending transfer requests.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var request in Model.Requests)
+                        {
+                            <tr>
+                                <td style="font-weight:600;color:#1e293b;">@request.PatientName</td>
+                                <td>@request.AppointmentDate.ToString("MMMM dd, yyyy")<small style="display:block;color:#64748b;">@request.StartTime.ToString("hh:mm tt")</small></td>
+                                <td>@request.ServiceName</td>
+                                <td>@request.RequestedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                <td>
+                                    <form asp-controller="Dentist" asp-action="ApprovePatientTransfer" method="post" style="display:flex;gap:8px;align-items:center;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="appointmentId" value="@request.AppointmentId" />
+                                        <select name="targetDentistId" class="form-select" required aria-label="Dentist to transfer patient to" style="min-width:180px;">
+                                            <option value="">Choose dentist</option>
+                                            @foreach (var dentist in Model.Dentists)
+                                            {
+                                                <option value="@dentist.Id">Dr. @dentist.FirstName @dentist.LastName</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn-primary-action">Approve transfer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Transfer request pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalRequests == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalRequests) of @Model.TotalRequests</span>
+                    <div>
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Page ? "current" : "")" asp-controller="Dentist" asp-action="TransferRequests" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-page="@p">@p</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
+</div>

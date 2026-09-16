@@ -26,13 +26,9 @@
                         <button type="button" class="dd-mark" id="markAllRead">Mark all as read</button>
                     </div>
                     <div class="notif-list">
-                        <div class="notif-item">
-                            <div class="notif-content">
-                                <p class="notif-text">No new notifications.</p>
-                            </div>
-                        </div>
+                        <div class="notif-item"><div class="notif-content"><p class="notif-text">Loading notifications...</p></div></div>
                     </div>
-                    <div class="dd-footer"><a href="#">View all notifications</a></div>
+                    <div class="dd-footer"><a asp-controller="Dentist" asp-action="TransferRequests">View transfer requests</a></div>
                 </div>
             </div>
 
@@ -60,6 +56,36 @@
         var notificationMenu = document.getElementById('notifDropdown');
         var notificationContainer = document.querySelector('.notification-container');
         var markAllReadButton = document.getElementById('markAllRead');
+        var notificationList = document.querySelector('.notif-list');
+        var notificationCount = document.querySelector('.notif-count');
+        var notificationBadge = document.getElementById('badgeDot');
+
+        function loadNotifications() {
+            if (!notificationList) return;
+            fetch('/Notifications/GetNotifications')
+                .then(function(response) { return response.json(); })
+                .then(function(notifications) {
+                    notificationList.innerHTML = '';
+                    if (!notifications.length) {
+                        notificationList.innerHTML = '<div class="notif-item"><div class="notif-content"><p class="notif-text">No new notifications.</p></div></div>';
+                    } else {
+                        notifications.forEach(function(notification) {
+                            var item = document.createElement('div');
+                            item.className = 'notif-item unread';
+                            item.innerHTML = '<div class="notif-avatar ' + notification.category + '">' + notification.icon + '</div>' +
+                                '<div class="notif-content"><p class="notif-text"></p><span class="notif-time"></span></div><div class="unread-dot"></div>';
+                            item.querySelector('.notif-text').textContent = notification.description;
+                            item.querySelector('.notif-time').textContent = notification.timeAgo;
+                            notificationList.appendChild(item);
+                        });
+                    }
+                    if (notificationCount) notificationCount.textContent = '(' + notifications.length + ')';
+                    if (notificationBadge) notificationBadge.classList.toggle('is-hidden', notifications.length === 0);
+                })
+                .catch(function() {
+                    notificationList.innerHTML = '<div class="notif-item"><div class="notif-content"><p class="notif-text">Unable to load notifications.</p></div></div>';
+                });
+        }
 
         function closeNotifications() {
             if (!notificationToggle || !notificationMenu) return;
@@ -78,6 +104,7 @@
             notificationMenu.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
+            loadNotifications();
         }
 
         if (markAllReadButton) {

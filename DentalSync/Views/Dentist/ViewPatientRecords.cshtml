@@ -9,16 +9,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
 
-    <main class="receptionist-page">
-        <div class="page-header">
+    <main class="users-page">
+        <div class="users-page-heading">
             <div>
                 <h1>Patient Records</h1>
                 <p>View the appointment and procedure records assigned to you.</p>
             </div>
+            <span class="users-total">@Model.TotalRecords records</span>
         </div>
 
         @if (TempData["PatientRecordSuccess"] != null)
@@ -26,9 +28,28 @@
             <div class="alert-banner alert-success">@TempData["PatientRecordSuccess"]</div>
         }
 
-        <div class="layout-card">
-            <div class="ds-table-responsive">
-                <table class="ds-table patient-records-table">
+        <section class="users-panel" aria-label="Patient records">
+            <form method="get" asp-controller="Dentist" asp-action="ViewPatientRecords" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search patient records</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by patient or service" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="statusFilter">
+                        <option value="">All statuses</option>
+                        @foreach (var status in new[] { "Scheduled", "Confirmed", "Completed", "Cancelled", "NoShow" })
+                        {
+                            <option value="@status" selected="@(Model.StatusFilter == status)">@status</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Dentist" asp-action="ViewPatientRecords" class="users-clear-button">Clear</a>
+            </form>
+            <div class="users-table-wrap">
+                <table class="users-table patient-records-table">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -73,6 +94,18 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Patient records pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalRecords == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalRecords) of @Model.TotalRecords</span>
+                    <div>
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Page ? "current" : "")" asp-controller="Dentist" asp-action="ViewPatientRecords" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-page="@p">@p</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
     </main>
 </div>

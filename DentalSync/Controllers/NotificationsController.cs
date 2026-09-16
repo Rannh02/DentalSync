@@ -1,7 +1,9 @@
 using DentalSync.Data;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using DentalSync.Models;
 
 namespace DentalSync.Controllers
 {
@@ -9,10 +11,12 @@ namespace DentalSync.Controllers
     public class NotificationsController : Controller
     {
         private readonly AppDbContext _db;
+        private readonly UserManager<Users> _userManager;
 
-        public NotificationsController(AppDbContext db)
+        public NotificationsController(AppDbContext db, UserManager<Users> userManager)
         {
             _db = db;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -20,7 +24,20 @@ namespace DentalSync.Controllers
         [Route("Notifications/GetNotifications")]
         public async Task<IActionResult> GetNotifications()
         {
-            var logs = await _db.AuditLogs
+            var query = _db.AuditLogs.AsQueryable();
+            if (User.IsInRole("Dentist"))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var dentist = user == null
+                    ? null
+                    : await _db.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+                query = dentist == null
+                    ? query.Where(l => false)
+                    : query.Where(l => l.Action == "Request Patient Transfer" && l.Description.Contains($"[source-dentist:{dentist.Id}]"));
+            }
+
+            var logs = await query
                 .OrderByDescending(l => l.DateTime)
                 .Take(6)
                 .ToListAsync();

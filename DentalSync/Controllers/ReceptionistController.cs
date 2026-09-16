@@ -210,6 +210,139 @@ namespace DentalSync.Controllers
             return View("~/Views/Receptionists/Register_Patients.cshtml", model);
         }
 
+        public async Task<IActionResult> PatientRecords(string search = "", string statusFilter = "", int page = 1)
+        {
+            const int pageSize = 6;
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .Include(a => a.Service)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(a =>
+                    EF.Functions.Like(a.Patient.FirstName, $"%{term}%") ||
+                    EF.Functions.Like(a.Patient.LastName, $"%{term}%") ||
+                    (a.Patient.MiddleName != null && EF.Functions.Like(a.Patient.MiddleName, $"%{term}%")) ||
+                    EF.Functions.Like(a.Patient.ContactNumber, $"%{term}%") ||
+                    EF.Functions.Like(a.Dentist.FirstName, $"%{term}%") ||
+                    EF.Functions.Like(a.Dentist.LastName, $"%{term}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(statusFilter))
+            {
+                query = query.Where(a => a.Status == statusFilter);
+            }
+
+            var totalRecords = await query.CountAsync();
+            var currentPage = Math.Max(1, page);
+            var records = await query
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .Select(a => new DentistPatientRecordItemViewModel
+                {
+                    AppointmentId = a.Id,
+                    PatientId = a.PatientId,
+                    PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                    DentistName = "Dr. " + a.Dentist.FirstName + " " + a.Dentist.LastName,
+                    ServiceName = a.Service.Name,
+                    AppointmentDate = a.AppointmentDate,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    Status = a.Status,
+                    Notes = a.Notes
+                })
+                .ToListAsync();
+
+            var recordIds = records.Select(record => record.AppointmentId).ToHashSet();
+            var requestedIds = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log => log.Action == "Request Patient Transfer")
+                .Select(log => log.Description)
+                .ToListAsync();
+            var approvedIds = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log => log.Action == "Approve Patient Transfer")
+                .Select(log => log.Description)
+                .ToListAsync();
+            var approvedAppointmentIds = approvedIds
+                .Select(description => ExtractMarkerId(description, "approved-transfer"))
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToHashSet();
+            var pendingAppointmentIds = requestedIds
+                .Select(description => ExtractMarkerId(description, "appointment"))
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Where(recordIds.Contains)
+                .Where(id => !approvedAppointmentIds.Contains(id))
+                .ToHashSet();
+
+            foreach (var record in records)
+            {
+                record.TransferRequested = pendingAppointmentIds.Contains(record.AppointmentId);
+            }
+
+            var model = new ReceptionistPatientRecordsViewModel
+            {
+                Search = search,
+                StatusFilter = statusFilter,
+                Page = currentPage,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                Records = records
+            };
+
+            return View("~/Views/Receptionists/PatientRecords.cshtml", model);
+        }
+
+        private static int? ExtractMarkerId(string description, string marker)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(description, $@"\[{marker}:(\d+)\]");
+            return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestPatientTransfer(int id, string search = "", string statusFilter = "", int page = 1)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .FirstOrDefaultAsync(a => a.Id == id);
+            if (appointment == null)
+                return NotFound();
+
+            var hasPendingRequest = await _context.AuditLogs.AnyAsync(log =>
+                log.Action == "Request Patient Transfer" &&
+                log.Description.Contains($"[appointment:{appointment.Id}]") &&
+                log.Description.Contains($"[source-dentist:{appointment.DentistId}]")) &&
+                !await _context.AuditLogs.AnyAsync(log =>
+                    log.Action == "Approve Patient Transfer" &&
+                    log.Description.Contains($"[approved-transfer:{appointment.Id}]") &&
+                    log.Description.Contains($"[from-dentist:{appointment.DentistId}]"));
+
+            if (hasPendingRequest)
+            {
+                TempData["PatientRecordSuccess"] = "A transfer request is already pending for this patient record.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
+
+            var patientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
+            await _audit.LogAsync(
+                "Request Patient Transfer",
+                "Medical Records",
+                $"[transfer-request][appointment:{appointment.Id}][source-dentist:{appointment.DentistId}] Receptionist requested to transfer patient {patientName} from Dr. {appointment.Dentist.FirstName} {appointment.Dentist.LastName}.");
+
+            TempData["PatientRecordSuccess"] = "Transfer request sent to the patient's current dentist.";
+            return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreatePatient(CreatePatientViewModel model)

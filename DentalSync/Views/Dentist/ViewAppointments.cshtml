@@ -9,17 +9,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
 
-    <main class="receptionist-page">
+    <main class="users-page">
         <!-- Header -->
-        <div class="page-header">
+        <div class="users-page-heading">
             <div>
                 <h1>Appointments List</h1>
                 <p>View your upcoming treatments and consultations schedule.</p>
             </div>
+            <span class="users-total">@Model.TotalAppointments appointments</span>
         </div>
 
         <!-- Success & Error Alerts -->
@@ -37,9 +39,28 @@
         }
 
         <!-- Appointments Table Card -->
-        <div class="layout-card">
-            <div class="ds-table-responsive">
-                <table class="ds-table">
+        <section class="users-panel" aria-label="Appointments">
+            <form method="get" asp-controller="Dentist" asp-action="ViewAppointments" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search appointments</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by patient or service" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="statusFilter">
+                        <option value="">All statuses</option>
+                        @foreach (var status in new[] { "Scheduled", "Confirmed", "Completed", "Cancelled", "NoShow" })
+                        {
+                            <option value="@status" selected="@(Model.StatusFilter == status)">@status</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Dentist" asp-action="ViewAppointments" class="users-clear-button">Clear</a>
+            </form>
+            <div class="users-table-wrap">
+                <table class="users-table">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -84,6 +105,18 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Appointment pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalAppointments == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalAppointments) of @Model.TotalAppointments</span>
+                    <div>
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Page ? "current" : "")" asp-controller="Dentist" asp-action="ViewAppointments" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-page="@p">@p</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
     </main>
 </div>

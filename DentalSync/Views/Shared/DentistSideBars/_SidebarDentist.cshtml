@@ -22,6 +22,7 @@
         <div class="ds-section-title">PATIENTS</div>
         <ul class="ds-list">
             <li class="ds-item"><a asp-controller="Dentist" asp-action="ViewPatientRecords" class="ds-link@(ActiveIf("Dentist","ViewPatientRecords"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="#222" stroke-width="1.2" fill="none" /><path d="M4 20a8 8 0 0116 0" stroke="#222" stroke-width="1.2" fill="none" /></svg>View Patient Records</a></li>
+            <li class="ds-item"><a asp-controller="Dentist" asp-action="TransferRequests" class="ds-link@(ActiveIf("Dentist","TransferRequests"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h16"></path><path d="m16 9 4 3-4 3"></path></svg>Transfer Requests</a></li>
         </ul>
 
         <div class="ds-section-title">APPOINTMENTS</div>
@@ -29,9 +30,5 @@
             <li class="ds-item"><a asp-controller="Dentist" asp-action="ViewAppointments" class="ds-link@(ActiveIf("Dentist","ViewAppointments"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>View Appointments</a></li>
         </ul>
 
-        <div class="ds-section-title">CLINICAL RECORDS</div>
-        <ul class="ds-list">
-            <li class="ds-item"><a asp-controller="Dentist" asp-action="TreatmentRecords" class="ds-link@(ActiveIf("Dentist","TreatmentRecords"))"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 4h14v16H5z" stroke="#222" stroke-width="1.2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#222" stroke-width="1.2" stroke-linecap="round"/></svg>Treatment Records</a></li>
-        </ul>
     </nav>
 </aside>

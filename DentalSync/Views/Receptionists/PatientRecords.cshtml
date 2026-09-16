@@ -1,0 +1,126 @@
+@model DentalSync.ViewModels.ReceptionistPatientRecordsViewModel
+@{
+    Layout = null;
+}
+
+@await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_HeaderReceptionist.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/ReceptionistBars/_SidebarReceptionist.cshtml")
+    <main class="users-page">
+        <div class="users-page-heading">
+            <div>
+                <h1>Patient Records</h1>
+                <p>Review patient appointments and request a transfer to another dentist.</p>
+            </div>
+            <div class="users-heading-actions">
+                <span class="users-total">@Model.TotalRecords records</span>
+            </div>
+        </div>
+
+        @if (TempData["PatientRecordSuccess"] is string successMessage)
+        {
+            <div class="modal-success" style="margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: #e9f9ee; color: #158a3e; font-size: 13px; font-weight: 500;">@successMessage</div>
+        }
+        @if (TempData["PatientRecordError"] is string errorMessage)
+        {
+            <div class="modal-error" style="margin-bottom: 16px;">@errorMessage</div>
+        }
+
+        <section class="users-panel" aria-label="Patient records">
+            <form method="get" asp-controller="Receptionist" asp-action="PatientRecords" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search patient records</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@Model.Search" placeholder="Search by patient or dentist" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="statusFilter">
+                        <option value="">All statuses</option>
+                        @foreach (var status in new[] { "Scheduled", "Confirmed", "Completed", "Cancelled", "NoShow", "Archived" })
+                        {
+                            <option value="@status" selected="@(Model.StatusFilter == status)">@status</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Receptionist" asp-action="PatientRecords" class="users-clear-button">Clear</a>
+            </form>
+
+            <div class="users-table-wrap">
+                <table class="users-table">
+                    <colgroup>
+                        <col style="width: 24%;" />
+                        <col style="width: 18%;" />
+                        <col style="width: 18%;" />
+                        <col style="width: 13%;" />
+                        <col style="width: 27%;" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Appointment</th>
+                            <th>Current Dentist</th>
+                            <th>Status</th>
+                            <th class="users-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.Records.Count == 0)
+                    {
+                        <tr><td colspan="5" class="users-empty">No patient records match the selected filters.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var record in Model.Records)
+                        {
+                            <tr>
+                                <td><strong>@record.PatientName</strong><small style="display:block;color:#6b7280;margin-top:3px;">@record.ServiceName</small></td>
+                                <td>@record.AppointmentDate.ToString("MMM dd, yyyy")<small style="display:block;color:#6b7280;margin-top:3px;">@record.StartTime.ToString("hh:mm tt")</small></td>
+                                <td>@record.DentistName</td>
+                                <td>
+                                    @if (record.TransferRequested)
+                                    {
+                                        <span class="status-pill status-new">Pending</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill status-@record.Status.ToLowerInvariant()">@record.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="user-actions">
+                                        <form method="post" asp-controller="Receptionist" asp-action="RequestPatientTransfer">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@record.AppointmentId" />
+                                            <input type="hidden" name="search" value="@Model.Search" />
+                                            <input type="hidden" name="statusFilter" value="@Model.StatusFilter" />
+                                            <input type="hidden" name="page" value="@Model.Page" />
+                                            <button type="submit" class="action-button action-status" disabled="@record.TransferRequested">@(record.TransferRequested ? "Requesting" : "Request transfer")</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Patient records pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalRecords == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalRecords) of @Model.TotalRecords</span>
+                    <div>
+                    @for (var p = 1; p <= Model.TotalPages; p++)
+                    {
+                        <a class="@(p == Model.Page ? "current" : "")" asp-controller="Receptionist" asp-action="PatientRecords" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-page="@p">@p</a>
+                    }
+                    </div>
+                </nav>
+            }
+        </section>
+    </main>
+</div>

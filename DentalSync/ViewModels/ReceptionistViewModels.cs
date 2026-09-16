@@ -22,6 +22,7 @@ namespace DentalSync.ViewModels
         public TimeOnly? EndTime { get; set; }
         public string Status { get; set; } = "Scheduled";
         public string? Notes { get; set; }
+        public bool TransferRequested { get; set; }
     }
 
     public class ManageAppointmentsViewModel
@@ -114,12 +115,59 @@ namespace DentalSync.ViewModels
 
     public class DentistViewAppointmentsViewModel
     {
+        public string Search { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 5;
+        public int TotalAppointments { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalAppointments / (double)PageSize));
         public List<AppointmentListItemViewModel> Appointments { get; set; } = new();
     }
 
     public class DentistPatientRecordsViewModel
     {
+        public string Search { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 5;
+        public int TotalRecords { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalRecords / (double)PageSize));
         public List<DentistPatientRecordItemViewModel> Records { get; set; } = new();
+    }
+
+    public class ReceptionistPatientRecordsViewModel
+    {
+        public string Search { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 6;
+        public int TotalRecords { get; set; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalRecords / PageSize);
+        public List<DentistPatientRecordItemViewModel> Records { get; set; } = new();
+    }
+
+    public class DentistTransferRequestsViewModel
+    {
+        public string Search { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 5;
+        public int TotalRequests { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalRequests / (double)PageSize));
+        public List<DentistTransferRequestItemViewModel> Requests { get; set; } = new();
+        public List<Dentist> Dentists { get; set; } = new();
+    }
+
+    public class DentistTransferRequestItemViewModel
+    {
+        public int AuditLogId { get; set; }
+        public int AppointmentId { get; set; }
+        public int PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
+        public string ServiceName { get; set; } = string.Empty;
+        public DateOnly AppointmentDate { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public DateTime RequestedAt { get; set; }
     }
 
     public class DentistPatientRecordItemViewModel
@@ -134,6 +182,7 @@ namespace DentalSync.ViewModels
         public TimeOnly? EndTime { get; set; }
         public string Status { get; set; } = "Scheduled";
         public string? Notes { get; set; }
+        public bool TransferRequested { get; set; }
     }
 
     public class PromotionalMessageItemViewModel
