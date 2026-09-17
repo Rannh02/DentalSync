@@ -41,6 +41,11 @@ namespace DentalSync.Controllers
             return View("~/Views/LandingPage/Promotionpage.cshtml");
         }
 
+        public IActionResult SubscriptionPage()
+        {
+            return View("~/Views/LandingPage/SubscriptionPage.cshtml");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitMessage(string name, string email, string phone, DateTime? preferredDate, string message)
