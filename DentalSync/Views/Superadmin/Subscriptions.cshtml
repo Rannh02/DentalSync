@@ -22,16 +22,41 @@
         </div>
 
         <section class="users-panel" aria-label="Subscription plans list">
+            <form method="get" asp-controller="Superadmin" asp-action="Subscriptions" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search clinic subscriptions</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@ViewBag.Search" placeholder="Search clinic name or email" />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by plan</span>
+                    <select name="plan">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Plan))">All plans</option>
+                        <option value="Starter Clinic" selected="@(ViewBag.Plan == "Starter Clinic")">Starter Clinic</option>
+                        <option value="Essential Clinic" selected="@(ViewBag.Plan == "Essential Clinic")">Essential Clinic</option>
+                        <option value="Premium Clinic" selected="@(ViewBag.Plan == "Premium Clinic")">Premium Clinic</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="sr-only">Filter by billing cycle</span>
+                    <select name="billing">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Billing))">All billing</option>
+                        <option value="Monthly" selected="@(ViewBag.Billing == "Monthly")">Monthly</option>
+                        <option value="Annual" selected="@(ViewBag.Billing == "Annual")">Annual</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="status">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status))">All statuses</option>
+                        <option value="active" selected="@(ViewBag.Status == "active")">Active</option>
+                        <option value="suspended" selected="@(ViewBag.Status == "suspended")">Suspended</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply filters</button>
+                <a asp-controller="Superadmin" asp-action="Subscriptions" class="users-clear-button">Clear</a>
+            </form>
 
-            <div class="users-filters">
-                <strong style="font-size:15px; color:#14181f;">Clinic Subscriptions (@list.Count)</strong>
-                <form method="get" asp-controller="Superadmin" asp-action="Subscriptions" style="display:flex; gap:8px;">
-                    <input type="text" name="search" value="@ViewBag.Search" placeholder="Search clinic name or email..." class="users-search-input" style="padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
-                    <button type="submit" class="users-add-button" style="padding:6px 12px; font-size:13px;">Filter</button>
-                </form>
-            </div>
-
-            <!-- Table -->
             <div class="users-table-wrap">
                 <table class="users-table">
                     <thead>
@@ -99,5 +124,3 @@
 
     </main>
 </div>
-
-@await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Footer.cshtml")

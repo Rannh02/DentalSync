@@ -69,10 +69,7 @@ namespace DentalSync.Controllers
             return Redirect($"{Url.Action("Promotionpage")}#contact");
         }
 
-        public IActionResult SubscriptionPage()
-        {
-            return View("~/Views/LandingPage/SubscriptionPage.cshtml");
-        }
+     
 
         public async Task<IActionResult> CheckoutPage(string plan = "Starter Clinic", string billing = "monthly", string price = "799")
         {

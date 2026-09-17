@@ -259,9 +259,12 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 4. SUBSCRIPTION AND BILLING (CLINIC SUBSCRIPTION TABLE)
         // =========================================================================
-        public async Task<IActionResult> Subscriptions(string search = "")
+        public async Task<IActionResult> Subscriptions(string search = "", string plan = "", string billing = "", string status = "")
         {
             ViewBag.Search = search;
+            ViewBag.Plan = plan;
+            ViewBag.Billing = billing;
+            ViewBag.Status = status;
 
             var allUsers = await _userManager.Users.ToListAsync();
             var subscriptions = new List<SubscriptionViewModel>();
@@ -284,13 +287,36 @@ namespace DentalSync.Controllers
                 });
             }
 
-            // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var s = search.Trim();
                 subscriptions = subscriptions
                     .Where(x => x.ClinicName.Contains(s, StringComparison.OrdinalIgnoreCase) ||
                                 x.Email.Contains(s, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(plan))
+            {
+                subscriptions = subscriptions
+                    .Where(x => x.Plan.Equals(plan, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(billing))
+            {
+                subscriptions = subscriptions
+                    .Where(x => x.Billing.Equals(billing, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                var normalizedStatus = status.Trim();
+                subscriptions = subscriptions
+                    .Where(x => x.Status.Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase) ||
+                                (normalizedStatus == "active" && !x.IsSuspended) ||
+                                (normalizedStatus == "suspended" && x.IsSuspended))
                     .ToList();
             }
 
