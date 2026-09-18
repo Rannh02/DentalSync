@@ -144,6 +144,7 @@ namespace DentalSync.ViewModels
         public int TotalRecords { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalRecords / PageSize);
         public List<DentistPatientRecordItemViewModel> Records { get; set; } = new();
+        public List<Dentist> Dentists { get; set; } = new();
     }
 
     public class DentistTransferRequestsViewModel
@@ -163,6 +164,7 @@ namespace DentalSync.ViewModels
         public int AuditLogId { get; set; }
         public int AppointmentId { get; set; }
         public int PatientId { get; set; }
+        public int TargetDentistId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;
         public DateOnly AppointmentDate { get; set; }
@@ -174,6 +176,7 @@ namespace DentalSync.ViewModels
     {
         public int AppointmentId { get; set; }
         public int PatientId { get; set; }
+        public int CurrentDentistId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public string DentistName { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;

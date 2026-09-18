@@ -43,22 +43,27 @@
 .users-col-status th, .users-table th:nth-child(3),
 .users-table td:nth-child(3) { text-align: center; }
 .users-actions-heading { text-align: right !important; }
+.transfer-action-cell { display: flex; justify-content: flex-end; }
+.transfer-request-form { display: flex; align-items: center; justify-content: flex-end; gap: 8px; width: 100%; }
+.transfer-target-select { width: 170px; min-height: 32px; padding: 0 10px; border: 1px solid #dfe3e8; border-radius: 6px; background: #fff; color: #14181f; font: inherit; font-size: 11px; outline: none; }
+.transfer-target-select:focus { border-color: #2e6ff2; box-shadow: 0 0 0 3px rgba(46, 111, 242, .12); }
+.transfer-target-select:disabled { opacity: .65; cursor: not-allowed; background: #f3f4f6; }
 .user-cell { display: flex; align-items: center; gap: 11px; min-width: 220px; }
 .user-cell strong, .user-cell small { display: block; }
 .user-cell strong { margin-bottom: 3px; font-size: 13px; }
 .user-cell small { color: #6b7280; font-size: 12px; }
 .user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: #eef4ff; color: #2e6ff2; font-size: 12px; font-weight: 700; }
 .user-avatar-large { width: 64px; height: 64px; margin-bottom: 14px; font-size: 21px; }
-.role-pill, .status-pill {  padding: 4px 9px;  font-size: 11px; font-weight: 600; }
+.role-pill, .status-pill { padding: 4px 9px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap; }
 .role-pill { color: #4b5563; }
 .status-active {  color: #158a3e; }
 .status-inactive { background: #fceaea; color: #c22a2a; }
-.status-new { background: #fef3c7; color: #92400e; }
+.status-new { color: #92400e; }
 .status-read {color: #0369a1; }
 .status-replied { background: #e9f9ee; color: #158a3e; }
 .status-archived { background: #f1f2f4; color: #4b5563; }
 .user-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; white-space: nowrap; }
-.user-actions form { display: contents; }
+.user-actions form { display: flex; align-items: center; gap: 8px; margin: 0; }
 .action-button, .back-link { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 9px; border: 1px solid #dfe3e8; border-radius: 6px; background: #fff; color: #4b5563; font: inherit; font-size: 11px; text-decoration: none; cursor: pointer; }
 .action-button:hover, .back-link:hover { border-color: #2e6ff2; color: #2e6ff2; background: #f7faff; }
 .action-view { border-color: #cfe0ff; color: #2e6ff2; }

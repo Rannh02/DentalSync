@@ -83,7 +83,7 @@
                                 <td>
                                     @if (record.TransferRequested)
                                     {
-                                        <span class="status-pill status-new">Pending</span>
+                                        <span class="status-pill status-new">Pending Dentist Approval</span>
                                     }
                                     else
                                     {
@@ -91,14 +91,39 @@
                                     }
                                 </td>
                                 <td>
-                                    <div class="user-actions">
-                                        <form method="post" asp-controller="Receptionist" asp-action="RequestPatientTransfer">
+                                    <div class="user-actions transfer-action-cell">
+                                        <form method="post" asp-controller="Receptionist" asp-action="RequestPatientTransfer" class="transfer-request-form">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@record.AppointmentId" />
                                             <input type="hidden" name="search" value="@Model.Search" />
                                             <input type="hidden" name="statusFilter" value="@Model.StatusFilter" />
                                             <input type="hidden" name="page" value="@Model.Page" />
-                                            <button type="submit" class="action-button action-status" disabled="@record.TransferRequested">@(record.TransferRequested ? "Requesting" : "Request transfer")</button>
+
+                                            @if (record.TransferRequested)
+                                            {
+                                                <select name="targetDentistId" class="transfer-target-select" required disabled aria-label="Select dentist to transfer patient to">
+                                                    <option value="">Select dentist</option>
+                                                    @foreach (var dentist in Model.Dentists.Where(d => d.Id != record.CurrentDentistId))
+                                                    {
+                                                        <option value="@dentist.Id">Dr. @dentist.FirstName @dentist.LastName</option>
+                                                    }
+                                                </select>
+                                                <button type="submit"
+                                                        formaction="@Url.Action("CancelPatientTransfer", "Receptionist")"
+                                                        formmethod="post"
+                                                        class="action-button action-delete">Cancel</button>
+                                            }
+                                            else
+                                            {
+                                                <select name="targetDentistId" class="transfer-target-select" required aria-label="Select dentist to transfer patient to">
+                                                    <option value="">Select dentist</option>
+                                                    @foreach (var dentist in Model.Dentists.Where(d => d.Id != record.CurrentDentistId))
+                                                    {
+                                                        <option value="@dentist.Id">Dr. @dentist.FirstName @dentist.LastName</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="action-button action-view">Transfer Patient</button>
+                                            }
                                         </form>
                                     </div>
                                 </td>

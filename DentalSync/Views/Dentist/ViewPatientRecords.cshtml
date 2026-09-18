@@ -14,13 +14,15 @@
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
 
-    <main class="users-page">
-        <div class="users-page-heading">
+    <main class="receptionist-page">
+        <div class="page-header">
             <div>
                 <h1>Patient Records</h1>
                 <p>View the appointment and procedure records assigned to you.</p>
             </div>
-            <span class="users-total">@Model.TotalRecords records</span>
+            <div>
+                <span class="users-total">@Model.TotalRecords records</span>
+            </div>
         </div>
 
         @if (TempData["PatientRecordSuccess"] != null)
@@ -28,7 +30,7 @@
             <div class="alert-banner alert-success">@TempData["PatientRecordSuccess"]</div>
         }
 
-        <section class="users-panel" aria-label="Patient records">
+        <div class="layout-card">
             <form method="get" asp-controller="Dentist" asp-action="ViewPatientRecords" class="users-filters">
                 <label class="users-search">
                     <span class="sr-only">Search patient records</span>
@@ -48,8 +50,9 @@
                 <button type="submit" class="users-filter-button">Apply filters</button>
                 <a asp-controller="Dentist" asp-action="ViewPatientRecords" class="users-clear-button">Clear</a>
             </form>
-            <div class="users-table-wrap">
-                <table class="users-table patient-records-table">
+
+            <div class="ds-table-responsive">
+                <table class="ds-table patient-records-table">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -78,13 +81,13 @@
                                     <td style="font-weight: 600; color: #1e293b;">@record.PatientName</td>
                                     <td>@record.DentistName</td>
                                     <td>@record.ServiceName</td>
-                                    <td><span class="ds-badge ds-badge-@record.Status.ToLower()">@record.Status</span></td>
+                                    <td><span class="ds-badge ds-badge-@record.Status.ToLowerInvariant()">@record.Status</span></td>
                                     <td class="patient-record-actions-cell">
-                                        <div class="patient-record-actions">
-                                            <a asp-controller="Dentist" asp-action="ViewPatientRecord" asp-route-id="@record.AppointmentId" class="btn-secondary">View</a>
+                                        <div class="user-actions patient-record-actions">
+                                            <a asp-controller="Dentist" asp-action="ViewPatientRecord" asp-route-id="@record.AppointmentId" class="action-button action-view">View</a>
                                             <form asp-controller="Dentist" asp-action="ArchivePatientRecord" asp-route-id="@record.AppointmentId" method="post" onsubmit="return confirm('Archive this patient record?');">
-                                            @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-secondary">Archive</button>
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="action-button action-delete">Archive</button>
                                             </form>
                                         </div>
                                     </td>
@@ -94,6 +97,7 @@
                     </tbody>
                 </table>
             </div>
+
             @if (Model.TotalPages > 1)
             {
                 <nav class="users-pagination" aria-label="Patient records pages">
@@ -106,6 +110,6 @@
                     </div>
                 </nav>
             }
-        </section>
+        </div>
     </main>
 </div>

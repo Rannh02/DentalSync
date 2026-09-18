@@ -116,6 +116,14 @@
     margin: 0;
 }
 
+.transfer-approval-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0;
+}
+
 .patient-record-actions .btn-secondary {
     min-height: 30px;
     padding: 0 10px;
@@ -138,11 +146,13 @@
 
 .ds-badge-scheduled { color: #1d4ed8; }
 .ds-badge-confirmed { color: #047857; }
-.ds-badge-completed { color: #166534; }
+.ds-badge-completed { color: #008d36; }
 .ds-badge-cancelled { color: #b91c1c; }
 .ds-badge-pending { color: #b45309; }
+.ds-badge-noshow { color: #374151; }
 .ds-badge-partiallypaid { color: #d97706; }
 .ds-badge-paid { color: #15803d; }
+
 
 /* Modal overlay and content */
 .modal-overlay {

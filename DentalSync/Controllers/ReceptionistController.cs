@@ -248,6 +248,7 @@ namespace DentalSync.Controllers
                 {
                     AppointmentId = a.Id,
                     PatientId = a.PatientId,
+                    CurrentDentistId = a.DentistId,
                     PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
                     DentistName = "Dr. " + a.Dentist.FirstName + " " + a.Dentist.LastName,
                     ServiceName = a.Service.Name,
@@ -270,8 +271,18 @@ namespace DentalSync.Controllers
                 .Where(log => log.Action == "Approve Patient Transfer")
                 .Select(log => log.Description)
                 .ToListAsync();
+            var cancelledIds = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log => log.Action == "Cancel Patient Transfer")
+                .Select(log => log.Description)
+                .ToListAsync();
             var approvedAppointmentIds = approvedIds
                 .Select(description => ExtractMarkerId(description, "approved-transfer"))
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToHashSet();
+            var cancelledAppointmentIds = cancelledIds
+                .Select(description => ExtractMarkerId(description, "cancel-transfer"))
                 .Where(id => id.HasValue)
                 .Select(id => id!.Value)
                 .ToHashSet();
@@ -281,12 +292,21 @@ namespace DentalSync.Controllers
                 .Select(id => id!.Value)
                 .Where(recordIds.Contains)
                 .Where(id => !approvedAppointmentIds.Contains(id))
+                .Where(id => !cancelledAppointmentIds.Contains(id))
                 .ToHashSet();
 
             foreach (var record in records)
             {
-                record.TransferRequested = pendingAppointmentIds.Contains(record.AppointmentId);
+                record.TransferRequested = pendingAppointmentIds.Contains(record.AppointmentId)
+                    || string.Equals(record.Status, "Pending Dentist Approval", StringComparison.OrdinalIgnoreCase);
             }
+
+            var activeDentists = await _context.Dentists
+                .AsNoTracking()
+                .Where(d => d.Status == "Active")
+                .OrderBy(d => d.LastName)
+                .ThenBy(d => d.FirstName)
+                .ToListAsync();
 
             var model = new ReceptionistPatientRecordsViewModel
             {
@@ -295,7 +315,8 @@ namespace DentalSync.Controllers
                 Page = currentPage,
                 PageSize = pageSize,
                 TotalRecords = totalRecords,
-                Records = records
+                Records = records,
+                Dentists = activeDentists
             };
 
             return View("~/Views/Receptionists/PatientRecords.cshtml", model);
@@ -307,9 +328,15 @@ namespace DentalSync.Controllers
             return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
         }
 
+        private static string? ExtractMarkerText(string description, string marker)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(description, $@"\[{marker}:([^\]]+)\]");
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RequestPatientTransfer(int id, string search = "", string statusFilter = "", int page = 1)
+        public async Task<IActionResult> RequestPatientTransfer(int id, int targetDentistId, string search = "", string statusFilter = "", int page = 1)
         {
             var appointment = await _context.Appointments
                 .Include(a => a.Patient)
@@ -318,28 +345,103 @@ namespace DentalSync.Controllers
             if (appointment == null)
                 return NotFound();
 
-            var hasPendingRequest = await _context.AuditLogs.AnyAsync(log =>
-                log.Action == "Request Patient Transfer" &&
-                log.Description.Contains($"[appointment:{appointment.Id}]") &&
-                log.Description.Contains($"[source-dentist:{appointment.DentistId}]")) &&
-                !await _context.AuditLogs.AnyAsync(log =>
-                    log.Action == "Approve Patient Transfer" &&
-                    log.Description.Contains($"[approved-transfer:{appointment.Id}]") &&
-                    log.Description.Contains($"[from-dentist:{appointment.DentistId}]"));
+            if (targetDentistId <= 0)
+            {
+                TempData["PatientRecordError"] = "Please select a dentist to transfer the patient to.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
 
-            if (hasPendingRequest)
+            var targetDentist = await _context.Dentists
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == targetDentistId && d.Status == "Active");
+
+            if (targetDentist == null || targetDentistId == appointment.DentistId)
+            {
+                TempData["PatientRecordError"] = "Please choose a valid dentist other than the current one.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
+
+            var latestTransferAction = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log =>
+                    log.Description.Contains($"[appointment:{appointment.Id}]") &&
+                    (log.Action == "Request Patient Transfer" ||
+                     log.Action == "Approve Patient Transfer" ||
+                     log.Action == "Cancel Patient Transfer"))
+                .OrderByDescending(log => log.DateTime)
+                .Select(log => log.Action)
+                .FirstOrDefaultAsync();
+
+            var isAlreadyPending = string.Equals(appointment.Status, "Pending Dentist Approval", StringComparison.OrdinalIgnoreCase)
+                || latestTransferAction == "Request Patient Transfer";
+
+            if (isAlreadyPending)
             {
                 TempData["PatientRecordSuccess"] = "A transfer request is already pending for this patient record.";
                 return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
             }
 
+            var previousStatus = appointment.Status;
             var patientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
+            appointment.Status = "Pending Dentist Approval";
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
             await _audit.LogAsync(
                 "Request Patient Transfer",
                 "Medical Records",
-                $"[transfer-request][appointment:{appointment.Id}][source-dentist:{appointment.DentistId}] Receptionist requested to transfer patient {patientName} from Dr. {appointment.Dentist.FirstName} {appointment.Dentist.LastName}.");
+                $"[transfer-request][appointment:{appointment.Id}][source-dentist:{appointment.DentistId}][target-dentist:{targetDentist.Id}][previous-status:{previousStatus}] Receptionist requested to transfer patient {patientName} to Dr. {targetDentist.FirstName} {targetDentist.LastName} from Dr. {appointment.Dentist.FirstName} {appointment.Dentist.LastName}." );
 
             TempData["PatientRecordSuccess"] = "Transfer request sent to the patient's current dentist.";
+            return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelPatientTransfer(int id, string search = "", string statusFilter = "", int page = 1)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+                return NotFound();
+
+            var latestTransferLog = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log =>
+                    log.Description.Contains($"[appointment:{id}]") &&
+                    (log.Action == "Request Patient Transfer" ||
+                     log.Action == "Approve Patient Transfer" ||
+                     log.Action == "Cancel Patient Transfer"))
+                .OrderByDescending(log => log.DateTime)
+                .FirstOrDefaultAsync();
+
+            var latestAction = latestTransferLog?.Action;
+
+            if (latestAction == "Approve Patient Transfer")
+            {
+                TempData["PatientRecordError"] = "This transfer has already been approved and cannot be cancelled.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
+
+            if (latestAction != "Request Patient Transfer" && appointment.Status != "Pending Dentist Approval")
+            {
+                TempData["PatientRecordError"] = "There is no pending transfer to cancel for this patient.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
+
+            appointment.Status = "Cancelled";
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(
+                "Cancel Patient Transfer",
+                "Medical Records",
+                $"[cancel-transfer:{appointment.Id}][source-dentist:{appointment.DentistId}] Receptionist cancelled the pending transfer request for patient {appointment.Patient.FirstName} {appointment.Patient.LastName}." );
+
+            TempData["PatientRecordSuccess"] = "Transfer request cancelled and the patient record is now marked as cancelled.";
             return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
         }
 

@@ -32,9 +32,18 @@ namespace DentalSync.Controllers
                     ? null
                     : await _db.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
 
-                query = dentist == null
-                    ? query.Where(l => false)
-                    : query.Where(l => l.Action == "Request Patient Transfer" && l.Description.Contains($"[source-dentist:{dentist.Id}]"));
+                if (dentist == null)
+                {
+                    query = query.Where(l => false);
+                }
+                else
+                {
+                    query = query.Where(l =>
+                        l.Action == "Request Patient Transfer" &&
+                        l.Description.Contains($"[source-dentist:{dentist.Id}]") &&
+                        l.Description.Contains("[appointment:")
+                    );
+                }
             }
 
             var logs = await query

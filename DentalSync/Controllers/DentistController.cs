@@ -155,49 +155,98 @@ namespace DentalSync.Controllers
 
             var requestLogs = await _context.AuditLogs
                 .AsNoTracking()
-                .Where(log => log.Action == "Request Patient Transfer" && log.Description.Contains($"[source-dentist:{dentist.Id}]"))
+                .Where(log => log.Action == "Request Patient Transfer")
                 .OrderByDescending(log => log.DateTime)
                 .ToListAsync();
-            var approvedAppointmentIds = await _context.AuditLogs
+
+            var approvalLogs = await _context.AuditLogs
                 .AsNoTracking()
-                .Where(log => log.Action == "Approve Patient Transfer" && log.Description.Contains($"[from-dentist:{dentist.Id}]"))
-                .Select(log => log.Description)
+                .Where(log => log.Action == "Approve Patient Transfer")
+                .OrderByDescending(log => log.DateTime)
                 .ToListAsync();
-            var approvedIds = approvedAppointmentIds
-                .Select(description => ExtractMarkerId(description, "approved-transfer"))
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
+
+            var cancelLogs = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log => log.Action == "Cancel Patient Transfer")
+                .OrderByDescending(log => log.DateTime)
+                .ToListAsync();
+
+            var pendingAppointmentIds = requestLogs
+                .Select(log => new
+                {
+                    AppointmentId = ExtractMarkerId(log.Description, "appointment"),
+                    SourceDentistId = ExtractMarkerId(log.Description, "source-dentist"),
+                    TargetDentistId = ExtractMarkerId(log.Description, "target-dentist")
+                })
+                .Where(x => x.AppointmentId.HasValue && x.SourceDentistId.HasValue && x.TargetDentistId.HasValue)
+                .Where(x => x.SourceDentistId.Value == dentist.Id)
+                .Where(x => !approvalLogs.Any(log => ExtractMarkerId(log.Description, "approved-transfer") == x.AppointmentId.Value))
+                .Where(x => !cancelLogs.Any(log => ExtractMarkerId(log.Description, "cancel-transfer") == x.AppointmentId.Value))
+                .Select(x => x.AppointmentId!.Value)
+                .Distinct()
                 .ToHashSet();
 
-            var requestItems = requestLogs
-                .Select(log => new { Log = log, AppointmentId = ExtractMarkerId(log.Description, "appointment") })
-                .Where(item => item.AppointmentId.HasValue && !approvedIds.Contains(item.AppointmentId.Value))
-                .GroupBy(item => item.AppointmentId!.Value)
-                .Select(group => group.First())
-                .ToList();
-            var appointmentIds = requestItems.Select(item => item.AppointmentId!.Value).ToList();
-            var appointments = await _context.Appointments
+            var pendingAppointments = await _context.Appointments
                 .AsNoTracking()
                 .Include(a => a.Patient)
                 .Include(a => a.Service)
-                .Where(a => appointmentIds.Contains(a.Id) && a.DentistId == dentist.Id)
-                .ToDictionaryAsync(a => a.Id);
+                .Where(a => a.DentistId == dentist.Id && a.Status == "Pending Dentist Approval")
+                .Where(a => pendingAppointmentIds.Contains(a.Id) || a.Status == "Pending Dentist Approval")
+                .OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
+                .ToListAsync();
 
-            model.Requests = requestItems
-                .Where(item => appointments.ContainsKey(item.AppointmentId!.Value))
-                .Select(item =>
+            var pendingAppointmentSet = pendingAppointments
+                .Select(a => a.Id)
+                .ToHashSet();
+
+            foreach (var requestLog in requestLogs)
+            {
+                var appointmentId = ExtractMarkerId(requestLog.Description, "appointment");
+                var sourceDentistId = ExtractMarkerId(requestLog.Description, "source-dentist");
+                if (!appointmentId.HasValue || !sourceDentistId.HasValue || sourceDentistId.Value != dentist.Id)
+                    continue;
+
+                if (approvalLogs.Any(log => ExtractMarkerId(log.Description, "approved-transfer") == appointmentId.Value))
+                    continue;
+
+                if (cancelLogs.Any(log => ExtractMarkerId(log.Description, "cancel-transfer") == appointmentId.Value))
+                    continue;
+
+                pendingAppointmentSet.Add(appointmentId.Value);
+            }
+
+            var finalizedPendingAppointments = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Patient)
+                .Include(a => a.Service)
+                .Where(a => pendingAppointmentSet.Contains(a.Id))
+                .OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
+                .ToListAsync();
+
+            pendingAppointments = finalizedPendingAppointments;
+
+            model.Requests = pendingAppointments
+                .Select(appointment =>
                 {
-                    var appointment = appointments[item.AppointmentId!.Value];
+                    var matchingLog = requestLogs
+                        .Where(log => log.Description.Contains($"[appointment:{appointment.Id}]"))
+                        .OrderByDescending(log => log.DateTime)
+                        .FirstOrDefault();
+
+                    var targetDentistId = matchingLog == null
+                        ? 0
+                        : ExtractMarkerId(matchingLog.Description, "target-dentist") ?? 0;
+
                     return new DentalSync.ViewModels.DentistTransferRequestItemViewModel
                     {
-                        AuditLogId = item.Log.Id,
                         AppointmentId = appointment.Id,
                         PatientId = appointment.PatientId,
+                        TargetDentistId = targetDentistId,
                         PatientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}",
                         ServiceName = appointment.Service.Name,
                         AppointmentDate = appointment.AppointmentDate,
                         StartTime = appointment.StartTime,
-                        RequestedAt = item.Log.DateTime
+                        RequestedAt = appointment.UpdatedAt ?? appointment.CreatedAt
                     };
                 })
                 .ToList();
@@ -227,30 +276,59 @@ namespace DentalSync.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApprovePatientTransfer(int appointmentId, int targetDentistId)
+        public async Task<IActionResult> ApprovePatientTransfer(int appointmentId, int targetDentistId = 0)
         {
             var user = await _userManager.GetUserAsync(User);
             var sourceDentist = user == null
                 ? null
                 : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            var targetDentist = await _context.Dentists
-                .FirstOrDefaultAsync(d => d.Id == targetDentistId && d.Status == "Active");
+
+            if (sourceDentist == null)
+            {
+                TempData["TransferError"] = "Your dentist profile could not be found.";
+                return RedirectToAction(nameof(TransferRequests));
+            }
+
+            var pendingRequestLog = await _context.AuditLogs
+                .AsNoTracking()
+                .Where(log => log.Action == "Request Patient Transfer" && log.Description.Contains($"[appointment:{appointmentId}]"))
+                .OrderByDescending(log => log.DateTime)
+                .FirstOrDefaultAsync();
+
+            if (targetDentistId <= 0 && pendingRequestLog != null)
+            {
+                targetDentistId = ExtractMarkerId(pendingRequestLog.Description, "target-dentist") ?? 0;
+            }
+
             var appointment = await _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Service)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId);
 
-            if (sourceDentist == null || targetDentist == null || appointment == null || appointment.DentistId != sourceDentist.Id || targetDentist.Id == sourceDentist.Id)
-                return NotFound();
+            if (appointment == null)
+            {
+                TempData["TransferError"] = "The transfer request could not be found.";
+                return RedirectToAction(nameof(TransferRequests));
+            }
 
-            var hasRequest = await _context.AuditLogs.AnyAsync(log =>
-                log.Action == "Request Patient Transfer" &&
-                log.Description.Contains($"[appointment:{appointmentId}]") &&
-                log.Description.Contains($"[source-dentist:{sourceDentist.Id}]"));
-            if (!hasRequest)
-                return NotFound();
+            var requestSourceDentistId = pendingRequestLog == null
+                ? appointment.DentistId
+                : ExtractMarkerId(pendingRequestLog.Description, "source-dentist") ?? appointment.DentistId;
+
+            var targetDentist = await _context.Dentists
+                .FirstOrDefaultAsync(d => d.Id == targetDentistId && d.Status == "Active");
+
+            var hasRequest = pendingRequestLog != null &&
+                (requestSourceDentistId == sourceDentist.Id || appointment.DentistId == sourceDentist.Id);
+
+            if (!hasRequest || targetDentist == null || targetDentist.Id == sourceDentist.Id)
+            {
+                TempData["TransferError"] = "This transfer request is no longer valid for approval.";
+                return RedirectToAction(nameof(TransferRequests));
+            }
 
             appointment.DentistId = targetDentist.Id;
+            appointment.Status = "Scheduled";
             appointment.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 

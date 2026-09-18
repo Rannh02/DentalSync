@@ -69,6 +69,7 @@
                             <th>Dentist</th>
                             <th>Service</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,6 +99,21 @@
                                     </td>
                                     <td>
                                         <span class="ds-badge ds-badge-@app.Status.ToLower()">@app.Status</span>
+                                    </td>
+                                    <td>
+                                        @if (app.Status == "Pending Dentist Approval" || app.Status == "Scheduled")
+                                        {
+                                            <form asp-controller="Dentist" asp-action="UpdateAppointmentStatus" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@app.Id" />
+                                                <input type="hidden" name="status" value="Confirmed" />
+                                                <button type="submit" class="action-button action-view" style="padding: 8px 12px; min-width: 90px;">Accept</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#64748b; font-size:12px;">—</span>
+                                        }
                                     </td>
                                 </tr>
                             }

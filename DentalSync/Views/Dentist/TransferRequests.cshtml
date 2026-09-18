@@ -15,7 +15,7 @@
         <div class="users-page-heading">
             <div>
                 <h1>Transfer Requests</h1>
-                <p>Review requests from the receptionist and choose the dentist who will receive the patient.</p>
+                <p>Review the patient transfer requests sent by the receptionist and approve them.</p>
             </div>
             <span class="users-total">@Model.TotalRequests requests</span>
         </div>
@@ -43,43 +43,46 @@
                 <a asp-controller="Dentist" asp-action="TransferRequests" class="users-clear-button">Clear</a>
             </form>
             <div class="users-table-wrap">
-                <table class="users-table patient-records-table">
+                <table class="users-table">
+                    <colgroup>
+                        <col style="width: 28%;" />
+                        <col style="width: 22%;" />
+                        <col style="width: 20%;" />
+                        <col style="width: 15%;" />
+                        <col style="width: 15%;" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Patient</th>
                             <th>Appointment</th>
                             <th>Service</th>
                             <th>Requested</th>
-                            <th>Actions</th>
+                            <th class="users-actions-heading">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                     @if (!Model.Requests.Any())
                     {
-                        <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:32px;">No pending transfer requests.</td></tr>
+                        <tr><td colspan="5" class="users-empty">No pending transfer requests.</td></tr>
                     }
                     else
                     {
                         @foreach (var request in Model.Requests)
                         {
                             <tr>
-                                <td style="font-weight:600;color:#1e293b;">@request.PatientName</td>
-                                <td>@request.AppointmentDate.ToString("MMMM dd, yyyy")<small style="display:block;color:#64748b;">@request.StartTime.ToString("hh:mm tt")</small></td>
+                                <td><strong>@request.PatientName</strong></td>
+                                <td>@request.AppointmentDate.ToString("MMM dd, yyyy")<small style="display:block;color:#6b7280;margin-top:3px;">@request.StartTime.ToString("hh:mm tt")</small></td>
                                 <td>@request.ServiceName</td>
                                 <td>@request.RequestedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
                                 <td>
-                                    <form asp-controller="Dentist" asp-action="ApprovePatientTransfer" method="post" style="display:flex;gap:8px;align-items:center;">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="appointmentId" value="@request.AppointmentId" />
-                                        <select name="targetDentistId" class="form-select" required aria-label="Dentist to transfer patient to" style="min-width:180px;">
-                                            <option value="">Choose dentist</option>
-                                            @foreach (var dentist in Model.Dentists)
-                                            {
-                                                <option value="@dentist.Id">Dr. @dentist.FirstName @dentist.LastName</option>
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn-primary-action">Approve transfer</button>
-                                    </form>
+                                    <div class="user-actions transfer-action-cell">
+                                        <form asp-controller="Dentist" asp-action="ApprovePatientTransfer" method="post" class="transfer-approval-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="appointmentId" value="@request.AppointmentId" />
+                                            <input type="hidden" name="targetDentistId" value="@request.TargetDentistId" />
+                                            <button type="submit" class="action-button action-view">Approve Transfer</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         }
