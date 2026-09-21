@@ -13,10 +13,10 @@
     @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_SidebarPatient.cshtml")
 
     <main class="receptionist-page">
-        <div class="page-header">
+        <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
             <div>
-                <h1>Patient Dashboard</h1>
-                <p>Welcome back to DentalSync. Access your appointments, bills, and treatments below.</p>
+                <h2 style="margin: 0; font-size: 2rem; font-weight: 800; color: #0f172a;">Welcome back, <span class="ds-brand-accent">@ViewBag.UserFullName</span></h2>
+                <p style="margin: 8px 0 0; color: #64748b; font-size: 1rem;">Here’s what’s happening across your dental care today.</p>
             </div>
         </div>
 

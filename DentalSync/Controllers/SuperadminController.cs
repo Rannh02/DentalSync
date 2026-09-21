@@ -73,7 +73,7 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 2. USER MANAGEMENT (SEPARATED TABLES BY DATABASE ROLES)
         // =========================================================================
-        public async Task<IActionResult> UserManagement(string search = "", string role = "", string status = "")
+        public async Task<IActionResult> UserManagement(string search = "", string role = "", string status = "", int page = 1)
         {
             ViewBag.Search = search;
             ViewBag.Role = role;
@@ -152,6 +152,11 @@ namespace DentalSync.Controllers
                     vm.Administrators = vm.Administrators.Where(a => a.IsSuspended).ToList();
                 }
             }
+
+            vm.PageSize = 8;
+            vm.TotalUsers = vm.Administrators.Count;
+            vm.Page = Math.Clamp(page, 1, vm.TotalPages);
+            vm.Administrators = vm.Administrators.Skip((vm.Page - 1) * vm.PageSize).Take(vm.PageSize).ToList();
 
             return View(vm);
         }
@@ -259,7 +264,7 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 4. SUBSCRIPTION AND BILLING (CLINIC SUBSCRIPTION TABLE)
         // =========================================================================
-        public async Task<IActionResult> Subscriptions(string search = "", string plan = "", string billing = "", string status = "")
+        public async Task<IActionResult> Subscriptions(string search = "", string plan = "", string billing = "", string status = "", int page = 1)
         {
             ViewBag.Search = search;
             ViewBag.Plan = plan;
@@ -320,7 +325,28 @@ namespace DentalSync.Controllers
                     .ToList();
             }
 
-            return View(subscriptions);
+            const int pageSize = 8;
+            var totalSubscriptions = subscriptions.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalSubscriptions / (double)pageSize));
+            var currentPage = Math.Clamp(page, 1, totalPages);
+
+            var model = new SuperadminSubscriptionListViewModel
+            {
+                Search = search,
+                Plan = plan,
+                Billing = billing,
+                Status = status,
+                Page = currentPage,
+                PageSize = pageSize,
+                TotalSubscriptions = totalSubscriptions,
+                TotalPages = totalPages,
+                Items = subscriptions
+                    .Skip((currentPage - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList()
+            };
+
+            return View(model);
         }
 
         // =========================================================================
@@ -342,35 +368,44 @@ namespace DentalSync.Controllers
                 .OrderByDescending(item => item.Count)
                 .ToList();
 
-            var patientGrowth = (await _db.Patients.AsNoTracking()
-                .Where(patient => patient.CreatedAt >= sixMonthsAgo)
-                .GroupBy(patient => new { patient.CreatedAt.Year, patient.CreatedAt.Month })
-                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
-                .ToListAsync())
-                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
-                .OrderBy(item => item.Label)
-                .ToList();
+            var patientGrowth = FillMonthlySeries(
+                (await _db.Patients.AsNoTracking()
+                    .Where(patient => patient.CreatedAt >= sixMonthsAgo)
+                    .GroupBy(patient => new { patient.CreatedAt.Year, patient.CreatedAt.Month })
+                    .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
+                    .ToListAsync())
+                    .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
+                    .OrderBy(item => item.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
-            var appointmentsByMonth = (await _db.Appointments.AsNoTracking()
-                .Where(appointment => appointment.CreatedAt >= sixMonthsAgo)
-                .GroupBy(appointment => new { appointment.CreatedAt.Year, appointment.CreatedAt.Month })
-                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
-                .ToListAsync())
-                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
-                .OrderBy(item => item.Label)
-                .ToList();
+            var appointmentsByMonth = FillMonthlySeries(
+                (await _db.Appointments.AsNoTracking()
+                    .Where(appointment => appointment.CreatedAt >= sixMonthsAgo)
+                    .GroupBy(appointment => new { appointment.CreatedAt.Year, appointment.CreatedAt.Month })
+                    .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Count = grouped.Count() })
+                    .ToListAsync())
+                    .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Count = item.Count })
+                    .OrderBy(item => item.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
-            var revenueByMonth = (await _db.Payments.AsNoTracking()
-                .Where(payment => payment.PaymentDate >= sixMonthsAgo)
-                .GroupBy(payment => new { payment.PaymentDate.Year, payment.PaymentDate.Month })
-                .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Value = grouped.Sum(payment => payment.Amount) })
-                .ToListAsync())
-                .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Value = item.Value })
-                .OrderBy(item => item.Label)
-                .ToList();
+            var revenueByMonth = FillMonthlySeries(
+                (await _db.Payments.AsNoTracking()
+                    .Where(payment => payment.PaymentDate >= sixMonthsAgo)
+                    .GroupBy(payment => new { payment.PaymentDate.Year, payment.PaymentDate.Month })
+                    .Select(grouped => new { grouped.Key.Year, grouped.Key.Month, Value = grouped.Sum(payment => payment.Amount) })
+                    .ToListAsync())
+                    .Select(item => new ChartPoint { Label = $"{item.Year}-{item.Month:D2}", Value = item.Value })
+                    .OrderBy(item => item.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
-            var loginsByMonth = await GetAuditTrendAsync(auditLogs, "Login", sixMonthsAgo);
-            var failedLoginsByMonth = await GetAuditTrendAsync(auditLogs, "Failed Login", sixMonthsAgo);
+            var loginsByMonth = FillMonthlySeries(await GetAuditTrendAsync(auditLogs, "Login", sixMonthsAgo), sixMonthsAgo, 6);
+            var failedLoginsByMonth = FillMonthlySeries(await GetAuditTrendAsync(auditLogs, "Failed Login", sixMonthsAgo), sixMonthsAgo, 6);
             var auditModules = (await auditLogs
                 .Where(log => !string.IsNullOrEmpty(log.Module))
                 .GroupBy(log => log.Module)
@@ -419,6 +454,33 @@ namespace DentalSync.Controllers
             return View(vm);
         }
 
+        private static List<ChartPoint> FillMonthlySeries(List<ChartPoint> points, DateTime startDate, int monthsToInclude)
+        {
+            var chartMap = points
+                .GroupBy(point => point.Label)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+            var series = new List<ChartPoint>();
+            var cursor = new DateTime(startDate.Year, startDate.Month, 1);
+
+            for (var index = 0; index < monthsToInclude; index++)
+            {
+                var label = $"{cursor.Year}-{cursor.Month:D2}";
+                var match = chartMap.TryGetValue(label, out var point) ? point : new ChartPoint { Label = label };
+
+                series.Add(new ChartPoint
+                {
+                    Label = label,
+                    Count = match.Count,
+                    Value = match.Value
+                });
+
+                cursor = cursor.AddMonths(1);
+            }
+
+            return series;
+        }
+
         private static async Task<List<ChartPoint>> GetAuditTrendAsync(
             IQueryable<AuditLog> auditLogs, string action, DateTime from)
         {
@@ -435,11 +497,61 @@ namespace DentalSync.Controllers
         // =========================================================================
         // 6. SYSTEM AUDIT LOGS & SECURITY
         // =========================================================================
-        public IActionResult AuditLogs(string search = "", string role = "")
+        public async Task<IActionResult> AuditLogs(string search = "", string role = "", int page = 1)
         {
+            var query = _db.AuditLogs.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(l =>
+                    l.User.Contains(term) ||
+                    l.Action.Contains(term) ||
+                    l.Module.Contains(term) ||
+                    l.Description.Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                query = query.Where(l => l.Role == role);
+            }
+
+            const int pageSize = 5;
+            var totalLogs = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalLogs / (double)pageSize));
+            var currentPage = Math.Clamp(page, 1, totalPages);
+
+            var logs = await query
+                .OrderByDescending(l => l.DateTime)
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .Select(l => new AuditLogEntry
+                {
+                    DateTime = l.DateTime,
+                    User = l.User,
+                    Role = l.Role,
+                    Action = l.Action,
+                    Module = l.Module,
+                    Description = l.Description,
+                    IpAddress = l.IpAddress,
+                    Browser = l.Browser,
+                })
+                .ToListAsync();
+
+            var vm = new AuditLogViewModel
+            {
+                Search = search,
+                Role = role,
+                Roles = new List<string> { "Superadmin", "Administrator", "Dentist", "Receptionist" },
+                Logs = logs,
+                TotalLogs = totalLogs,
+                Page = currentPage,
+                PageSize = pageSize,
+            };
+
             ViewBag.Search = search;
             ViewBag.Role = role;
-            return View();
+            return View(vm);
         }
 
         // =========================================================================
@@ -511,6 +623,10 @@ namespace DentalSync.Controllers
         public List<SuperadminUserViewModel> Patients { get; set; } = new();
 
         public int TotalCount => Superadmins.Count + Administrators.Count + Dentists.Count + Receptionists.Count + Patients.Count;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 8;
+        public int TotalUsers { get; set; }
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalUsers / (double)PageSize));
     }
 
     public class SubscriptionViewModel
@@ -522,5 +638,18 @@ namespace DentalSync.Controllers
         public string Billing { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool IsSuspended { get; set; }
+    }
+
+    public class SuperadminSubscriptionListViewModel
+    {
+        public string Search { get; set; } = string.Empty;
+        public string Plan { get; set; } = string.Empty;
+        public string Billing { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 8;
+        public int TotalSubscriptions { get; set; }
+        public int TotalPages { get; set; }
+        public List<SubscriptionViewModel> Items { get; set; } = new();
     }
 }

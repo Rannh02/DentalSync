@@ -348,11 +348,55 @@ namespace DentalSync.Controllers
             return match.Success && int.TryParse(match.Groups[1].Value, out var id) ? id : null;
         }
 
+        private static List<int> ExtractExtraServiceIds(string? notes, int primaryServiceId)
+        {
+            if (string.IsNullOrWhiteSpace(notes))
+                return new List<int>();
+
+            var match = System.Text.RegularExpressions.Regex.Match(notes, @"\[svc:([\d,]+)\]");
+            if (!match.Success)
+                return new List<int>();
+
+            return match.Groups[1].Value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => int.TryParse(x, out var id) ? id : 0)
+                .Where(id => id > 0 && id != primaryServiceId)
+                .Distinct()
+                .ToList();
+        }
+
+        private static string CleanNotesText(string? notes)
+        {
+            if (string.IsNullOrWhiteSpace(notes))
+                return string.Empty;
+
+            var cleaned = notes.Trim();
+            cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"^\[svc:\d+(?:,\d+)*\]\s*", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return cleaned.Trim();
+        }
+
         public async Task<IActionResult> ViewPatientRecord(int id)
         {
             var record = await GetDentistRecordQuery().FirstOrDefaultAsync(a => a.Id == id);
             if (record == null)
                 return NotFound();
+
+            var extraServiceIds = ExtractExtraServiceIds(record.Notes, record.ServiceId);
+            var serviceMap = await _context.Services
+                .Where(s => s.Id == record.ServiceId || extraServiceIds.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id, s => s);
+
+            var treatmentNames = new List<string>();
+            if (serviceMap.TryGetValue(record.ServiceId, out var primaryService))
+                treatmentNames.Add(primaryService.Name);
+            else
+                treatmentNames.Add(record.Service.Name);
+
+            foreach (var extraId in extraServiceIds)
+            {
+                if (serviceMap.TryGetValue(extraId, out var extraService) && !treatmentNames.Contains(extraService.Name))
+                    treatmentNames.Add(extraService.Name);
+            }
 
             var model = new DentalSync.ViewModels.DentistPatientRecordItemViewModel
             {
@@ -361,11 +405,13 @@ namespace DentalSync.Controllers
                 PatientName = $"{record.Patient.FirstName} {record.Patient.LastName}",
                 DentistName = $"Dr. {record.Dentist.FirstName} {record.Dentist.LastName}",
                 ServiceName = record.Service.Name,
+                ServiceCategory = record.Service.Category ?? "General",
+                TreatmentNames = string.Join(", ", treatmentNames),
                 AppointmentDate = record.AppointmentDate,
                 StartTime = record.StartTime,
                 EndTime = record.EndTime,
                 Status = record.Status,
-                Notes = record.Notes
+                Notes = CleanNotesText(record.Notes)
             };
 
             return View("~/Views/Dentist/ViewPatientRecord.cshtml", model);

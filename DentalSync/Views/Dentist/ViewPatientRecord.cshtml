@@ -25,7 +25,8 @@
                 <dt>Date</dt><dd>@Model.AppointmentDate.ToString("MMMM dd, yyyy")</dd>
                 <dt>Time</dt><dd>@Model.StartTime.ToString("hh:mm tt")</dd>
                 <dt>Dentist</dt><dd>@Model.DentistName</dd>
-                <dt>Service</dt><dd>@Model.ServiceName</dd>
+                <dt>Service Type</dt><dd>@(string.IsNullOrWhiteSpace(Model.ServiceCategory) ? "General" : Model.ServiceCategory)</dd>
+                <dt>Treatment</dt><dd>@(string.IsNullOrWhiteSpace(Model.TreatmentNames) ? Model.ServiceName : Model.TreatmentNames)</dd>
                 <dt>Status</dt><dd>@Model.Status</dd>
                 <dt>Notes</dt><dd>@(string.IsNullOrWhiteSpace(Model.Notes) ? "No notes recorded." : Model.Notes)</dd>
             </dl>

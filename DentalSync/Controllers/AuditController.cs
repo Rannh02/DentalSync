@@ -37,9 +37,12 @@ namespace DentalSync.Controllers
 
             const int pageSize = 5;
             var total = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+            var currentPage = Math.Clamp(page, 1, totalPages);
+
             var logs = await query
                 .OrderByDescending(l => l.DateTime)
-                .Skip((page - 1) * pageSize)
+                .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .Select(l => new AuditLogEntry
                 {
@@ -61,7 +64,7 @@ namespace DentalSync.Controllers
                 Roles     = allRoles,
                 Logs      = logs,
                 TotalLogs = total,
-                Page      = page,
+                Page      = currentPage,
                 PageSize  = pageSize,
             };
 

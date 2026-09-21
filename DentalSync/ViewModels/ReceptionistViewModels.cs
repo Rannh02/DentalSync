@@ -180,6 +180,8 @@ namespace DentalSync.ViewModels
         public string PatientName { get; set; } = string.Empty;
         public string DentistName { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;
+        public string ServiceCategory { get; set; } = string.Empty;
+        public string TreatmentNames { get; set; } = string.Empty;
         public DateOnly AppointmentDate { get; set; }
         public TimeOnly StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }

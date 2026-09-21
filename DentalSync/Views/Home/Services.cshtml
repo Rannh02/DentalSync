@@ -129,13 +129,55 @@
 
             @if (Model.TotalPages > 1)
             {
+                var currentPage = Math.Max(1, Model.Page);
+                var totalPages = Model.TotalPages;
+                var startPage = Math.Max(1, currentPage - 2);
+                var endPage = Math.Min(totalPages, currentPage + 2);
+
+                if (currentPage <= 3)
+                {
+                    startPage = 1;
+                    endPage = Math.Min(5, totalPages);
+                }
+
+                if (currentPage >= totalPages - 2)
+                {
+                    startPage = Math.Max(1, totalPages - 4);
+                    endPage = totalPages;
+                }
+
+                var pageNumbers = Enumerable.Range(startPage, endPage - startPage + 1).ToList();
+                var showStartEllipsis = startPage > 2;
+                var showEndEllipsis = endPage < totalPages - 1;
+
                 <nav class="users-pagination" aria-label="Services pages">
-                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalServices == 0 ? 0 : 1))-@Math.Min(Model.Page * Model.PageSize, Model.TotalServices) of @Model.TotalServices</span>
-                    <div>
-                        @for (var page = 1; page <= Model.TotalPages; page++)
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalServices == 0 ? 0 : 1))–@Math.Min(Model.Page * Model.PageSize, Model.TotalServices) of @Model.TotalServices</span>
+                    <div class="pagination-controls">
+                        <a class="page-nav @(currentPage == 1 ? "disabled" : "")"
+                           href="@Url.Action("Services", "Home", new { search = Model.Search, status = Model.Status, page = Math.Max(1, currentPage - 1) })"
+                           aria-label="Previous page">‹</a>
+
+                        @if (showStartEllipsis)
                         {
-                            <a class="@(page == Model.Page ? "current" : "")" asp-controller="Home" asp-action="Services" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-page="@(page)">@(page)</a>
+                            <a class="page-button" href="@Url.Action("Services", "Home", new { search = Model.Search, status = Model.Status, page = 1 })">1</a>
+                            <span class="page-ellipsis">…</span>
                         }
+
+                        @foreach (var pageNumber in pageNumbers)
+                        {
+                            <a class="page-button @(pageNumber == currentPage ? "current" : "")"
+                               href="@Url.Action("Services", "Home", new { search = Model.Search, status = Model.Status, page = pageNumber })">@pageNumber</a>
+                        }
+
+                        @if (showEndEllipsis)
+                        {
+                            <span class="page-ellipsis">…</span>
+                            <a class="page-button" href="@Url.Action("Services", "Home", new { search = Model.Search, status = Model.Status, page = totalPages })">@totalPages</a>
+                        }
+
+                        <a class="page-nav @(currentPage == totalPages ? "disabled" : "")"
+                           href="@Url.Action("Services", "Home", new { search = Model.Search, status = Model.Status, page = Math.Min(totalPages, currentPage + 1) })"
+                           aria-label="Next page">›</a>
                     </div>
                 </nav>
             }

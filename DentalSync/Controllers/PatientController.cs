@@ -22,18 +22,21 @@ namespace DentalSync.Controllers
             _audit = audit;
         }
 
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
+            await SetUserNameViewBagAsync();
             return View("~/Views/Patients/Dashboard.cshtml");
         }
 
-        public IActionResult ManageProfile()
+        public async Task<IActionResult> ManageProfile()
         {
+            await SetUserNameViewBagAsync();
             return View("~/Views/Patients/ManageProfile.cshtml");
         }
 
         public async Task<IActionResult> RequestAppointment()
         {
+            await SetUserNameViewBagAsync();
             var user = await _userManager.GetUserAsync(User);
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user!.Id);
 
@@ -99,19 +102,28 @@ namespace DentalSync.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        public IActionResult ViewBillingPayments()
+        public async Task<IActionResult> ViewBillingPayments()
         {
+            await SetUserNameViewBagAsync();
             return View("~/Views/Patients/ViewBillingPayments.cshtml");
         }
 
-        public IActionResult ReceiveReminders()
+        public async Task<IActionResult> ReceiveReminders()
         {
+            await SetUserNameViewBagAsync();
             return View("~/Views/Patients/ReceiveReminders.cshtml");
         }
 
-        public IActionResult ViewTreatmentTransaction()
+        public async Task<IActionResult> ViewTreatmentTransaction()
         {
+            await SetUserNameViewBagAsync();
             return View("~/Views/Patients/ViewTreatmentTransaction.cshtml");
+        }
+
+        private async Task SetUserNameViewBagAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            ViewBag.UserFullName = user?.FullName ?? user?.UserName ?? "there";
         }
     }
 }

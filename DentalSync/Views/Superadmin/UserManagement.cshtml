@@ -2,6 +2,26 @@
 @{
     ViewData["Title"] = "Users";
     Layout = null;
+    var currentPage = Math.Max(1, Model.Page);
+    var totalPages = Model.TotalPages;
+    var startPage = Math.Max(1, currentPage - 2);
+    var endPage = Math.Min(totalPages, currentPage + 2);
+
+    if (currentPage <= 3)
+    {
+        startPage = 1;
+        endPage = Math.Min(5, totalPages);
+    }
+
+    if (currentPage >= totalPages - 2)
+    {
+        startPage = Math.Max(1, totalPages - 4);
+        endPage = totalPages;
+    }
+
+    var pageNumbers = Enumerable.Range(startPage, endPage - startPage + 1).ToList();
+    var showStartEllipsis = startPage > 2;
+    var showEndEllipsis = endPage < totalPages - 1;
 }
 
 @await Html.PartialAsync("~/Views/Shared/SuperadminBars/_Header.cshtml")
@@ -26,7 +46,7 @@
                 <p>Manage user accounts, roles, and access status.</p>
             </div>
             <div class="users-heading-actions">
-                <span class="users-total">@Model.Administrators.Count users</span>
+                <span class="users-total">@Model.TotalUsers users</span>
             </div>
         </div>
 
@@ -122,6 +142,67 @@
                     </tbody>
                 </table>
             </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="users-pagination" aria-label="Users pages">
+                    <span>Showing @((Model.Page - 1) * Model.PageSize + (Model.TotalUsers == 0 ? 0 : 1))–@Math.Min(Model.Page * Model.PageSize, Model.TotalUsers) of @Model.TotalUsers</span>
+                    <div class="pagination-controls">
+                        <a class="page-nav @(currentPage == 1 ? "disabled" : "")"
+                           asp-controller="Superadmin"
+                           asp-action="UserManagement"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-role="@ViewBag.Role"
+                           asp-route-status="@ViewBag.Status"
+                           asp-route-page="@(Math.Max(1, currentPage - 1))"
+                           aria-label="Previous page">‹</a>
+
+                        @if (showStartEllipsis)
+                        {
+                            <a class="page-button"
+                               asp-controller="Superadmin"
+                               asp-action="UserManagement"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-role="@ViewBag.Role"
+                               asp-route-status="@ViewBag.Status"
+                               asp-route-page="1">1</a>
+                            <span class="page-ellipsis">…</span>
+                        }
+
+                        @foreach (var pageNumber in pageNumbers)
+                        {
+                            <a class="page-button @(pageNumber == currentPage ? "current" : "")"
+                               asp-controller="Superadmin"
+                               asp-action="UserManagement"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-role="@ViewBag.Role"
+                               asp-route-status="@ViewBag.Status"
+                               asp-route-page="@pageNumber">@pageNumber</a>
+                        }
+
+                        @if (showEndEllipsis)
+                        {
+                            <span class="page-ellipsis">…</span>
+                            <a class="page-button"
+                               asp-controller="Superadmin"
+                               asp-action="UserManagement"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-role="@ViewBag.Role"
+                               asp-route-status="@ViewBag.Status"
+                               asp-route-page="@totalPages">@totalPages</a>
+                        }
+
+                        <a class="page-nav @(currentPage == totalPages ? "disabled" : "")"
+                           asp-controller="Superadmin"
+                           asp-action="UserManagement"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-role="@ViewBag.Role"
+                           asp-route-status="@ViewBag.Status"
+                           asp-route-page="@(Math.Min(totalPages, currentPage + 1))"
+                           aria-label="Next page">›</a>
+                    </div>
+                </nav>
+            }
         </section>
 
     </main>
