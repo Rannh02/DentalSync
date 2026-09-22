@@ -6,7 +6,6 @@ namespace DentalSync.ViewModels
     {
         public static readonly string[] All =
         {
-            "Administrator",
             "Receptionist",
             "Dentist",
             "Patient"

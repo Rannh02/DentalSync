@@ -449,7 +449,9 @@ namespace DentalSync.Controllers
         public async Task<IActionResult> ViewAppointments(string search = "", string statusFilter = "", int page = 1)
         {
             var user = await _userManager.GetUserAsync(User);
-            var dentist = await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user!.Id);
+            var dentist = user == null
+                ? null
+                : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
 
             const int pageSize = 5;
             var vm = new DentalSync.ViewModels.DentistViewAppointmentsViewModel
@@ -482,31 +484,225 @@ namespace DentalSync.Controllers
                     query = query.Where(a => a.Status == statusFilter);
 
                 vm.TotalAppointments = await query.CountAsync();
-                vm.Appointments = await query
+                var rawAppointments = await query
                     .OrderByDescending(a => a.AppointmentDate)
                     .ThenByDescending(a => a.StartTime)
                     .Skip((vm.Page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(a => new DentalSync.ViewModels.AppointmentListItemViewModel
+                    .ToListAsync();
+
+                var allExtraServiceIds = rawAppointments
+                    .SelectMany(a => ExtractExtraServiceIds(a.Notes, a.ServiceId))
+                    .Distinct()
+                    .ToList();
+
+                var allServiceIds = rawAppointments.Select(a => a.ServiceId).Concat(allExtraServiceIds).Distinct().ToList();
+                var serviceMap = await _context.Services
+                    .Where(s => allServiceIds.Contains(s.Id))
+                    .ToDictionaryAsync(s => s.Id, s => s);
+
+                vm.Appointments = rawAppointments.Select(a =>
+                {
+                    var extraIds = ExtractExtraServiceIds(a.Notes, a.ServiceId);
+                    var cleanNotes = CleanNotesText(a.Notes);
+
+                    var primaryName = serviceMap.TryGetValue(a.ServiceId, out var ps) ? ps.Name : (a.Service?.Name ?? "General Service");
+                    var primaryCost = ps?.Cost ?? a.Service?.Cost ?? 0m;
+
+                    decimal extraCost = 0m;
+                    var extraNames = new List<string>();
+                    foreach (var eid in extraIds)
+                    {
+                        if (serviceMap.TryGetValue(eid, out var es))
+                        {
+                            extraNames.Add(es.Name);
+                            extraCost += es.Cost;
+                        }
+                    }
+
+                    var allNames = new[] { primaryName }.Concat(extraNames);
+
+                    return new DentalSync.ViewModels.AppointmentListItemViewModel
                     {
                         Id = a.Id,
                         PatientId = a.PatientId,
-                        PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                        PatientName = $"{a.Patient?.FirstName} {a.Patient?.LastName}",
                         DentistId = a.DentistId,
-                        DentistName = "Dr. " + dentist.FirstName + " " + dentist.LastName,
+                        DentistName = $"Dr. {dentist.FirstName} {dentist.LastName}",
                         ServiceId = a.ServiceId,
-                        ServiceNames = a.Service.Name,
-                        TotalCost = a.Service.Cost,
+                        ServiceName = primaryName,
+                        ServiceNames = string.Join(", ", allNames),
+                        TotalCost = primaryCost + extraCost,
                         AppointmentDate = a.AppointmentDate,
                         StartTime = a.StartTime,
                         EndTime = a.EndTime,
                         Status = a.Status,
-                        Notes = a.Notes
-                    })
-                    .ToListAsync();
+                        Notes = cleanNotes
+                    };
+                }).ToList();
             }
 
             return View("~/Views/Dentist/ViewAppointments.cshtml", vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAppointmentDetails(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var dentist = user == null
+                ? null
+                : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            if (dentist == null)
+                return Json(new { success = false, message = "Dentist profile not found." });
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .Include(a => a.Service)
+                .FirstOrDefaultAsync(a => a.Id == id && a.DentistId == dentist.Id);
+
+            if (appointment == null)
+                return Json(new { success = false, message = "Appointment not found." });
+
+            var patient = appointment.Patient;
+
+            // Extract all services
+            var extraServiceIds = ExtractExtraServiceIds(appointment.Notes, appointment.ServiceId);
+            var allServiceIds = new List<int> { appointment.ServiceId }.Concat(extraServiceIds).Distinct().ToList();
+
+            var servicesList = await _context.Services
+                .Where(s => allServiceIds.Contains(s.Id))
+                .ToListAsync();
+
+            var serviceDetails = new List<object>();
+            decimal totalServicesCost = 0m;
+
+            // Primary service
+            var primary = servicesList.FirstOrDefault(s => s.Id == appointment.ServiceId) ?? appointment.Service;
+            if (primary != null)
+            {
+                serviceDetails.Add(new
+                {
+                    id = primary.Id,
+                    name = primary.Name,
+                    category = primary.Category ?? "General",
+                    cost = primary.Cost,
+                    isPrimary = true
+                });
+                totalServicesCost += primary.Cost;
+            }
+
+            // Extra services
+            foreach (var extraId in extraServiceIds)
+            {
+                var extra = servicesList.FirstOrDefault(s => s.Id == extraId);
+                if (extra != null)
+                {
+                    serviceDetails.Add(new
+                    {
+                        id = extra.Id,
+                        name = extra.Name,
+                        category = extra.Category ?? "General",
+                        cost = extra.Cost,
+                        isPrimary = false
+                    });
+                    totalServicesCost += extra.Cost;
+                }
+            }
+
+            // Patient Invoices & Billing
+            var rawInvoices = await _context.Invoices
+                .Where(i => i.PatientId == appointment.PatientId)
+                .Include(i => i.InvoiceItems)
+                .Include(i => i.Payments)
+                .OrderByDescending(i => i.InvoiceDate)
+                .ToListAsync();
+
+            var invoiceList = rawInvoices.Select(inv => new
+            {
+                id = inv.Id,
+                invoiceNumber = inv.InvoiceNumber,
+                invoiceDate = inv.InvoiceDate.ToString("MMMM dd, yyyy"),
+                subtotal = inv.Subtotal,
+                discount = inv.Discount ?? 0,
+                totalAmount = inv.TotalAmount,
+                amountPaid = inv.Payments.Sum(p => p.Amount),
+                balance = inv.TotalAmount - inv.Payments.Sum(p => p.Amount),
+                status = inv.Status,
+                items = inv.InvoiceItems.Select(item => new
+                {
+                    description = item.Description ?? "Dental Service",
+                    quantity = item.Quantity,
+                    unitPrice = item.UnitPrice,
+                    amount = item.Amount
+                }).ToList()
+            }).ToList();
+
+            decimal totalBilled = invoiceList.Sum(i => i.totalAmount);
+            decimal totalPaid = invoiceList.Sum(i => i.amountPaid);
+            decimal totalBalance = invoiceList.Sum(i => i.balance);
+
+            // Calculate Patient Age
+            int? age = null;
+            if (patient?.DateOfBirth.HasValue == true)
+            {
+                var dob = patient.DateOfBirth.Value;
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var calculatedAge = today.Year - dob.Year;
+                if (dob > today.AddYears(-calculatedAge)) calculatedAge--;
+                age = calculatedAge;
+            }
+
+            var patientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "Unknown Patient";
+            var initials = patient != null && !string.IsNullOrWhiteSpace(patient.FirstName) && !string.IsNullOrWhiteSpace(patient.LastName)
+                ? $"{(patient.FirstName.Length > 0 ? patient.FirstName[..1] : "")}{(patient.LastName.Length > 0 ? patient.LastName[..1] : "")}".ToUpper() 
+                : "PT";
+
+            return Json(new
+            {
+                success = true,
+                appointment = new
+                {
+                    id = appointment.Id,
+                    date = appointment.AppointmentDate.ToString("MMMM dd, yyyy"),
+                    time = appointment.StartTime.ToString("hh:mm tt"),
+                    endTime = appointment.EndTime.HasValue ? appointment.EndTime.Value.ToString("hh:mm tt") : null,
+                    status = appointment.Status,
+                    notes = CleanNotesText(appointment.Notes),
+                    createdAt = appointment.CreatedAt.ToString("MMMM dd, yyyy hh:mm tt")
+                },
+                patient = new
+                {
+                    id = patient?.Id ?? 0,
+                    fullName = patientName,
+                    initials = initials,
+                    contactNumber = string.IsNullOrWhiteSpace(patient?.ContactNumber) ? "N/A" : patient.ContactNumber,
+                    email = string.IsNullOrWhiteSpace(patient?.Email) ? "N/A" : patient.Email,
+                    gender = string.IsNullOrWhiteSpace(patient?.Gender) ? "Not Specified" : patient.Gender,
+                    dateOfBirth = patient?.DateOfBirth.HasValue == true ? patient.DateOfBirth.Value.ToString("MMMM dd, yyyy") : "N/A",
+                    age = age.HasValue ? $"{age} yrs old" : "N/A",
+                    address = string.IsNullOrWhiteSpace(patient?.Address) ? "N/A" : patient.Address,
+                    emergencyContact = string.IsNullOrWhiteSpace(patient?.EmergencyContact) ? "N/A" : patient.EmergencyContact,
+                    emergencyPhone = string.IsNullOrWhiteSpace(patient?.EmergencyPhone) ? "N/A" : patient.EmergencyPhone,
+                    medicalNotes = string.IsNullOrWhiteSpace(patient?.MedicalNotes) ? "No medical alerts or special conditions recorded." : patient.MedicalNotes
+                },
+                dentist = new
+                {
+                    id = dentist.Id,
+                    name = $"Dr. {dentist.FirstName} {dentist.LastName}",
+                    specialization = dentist.Specialization
+                },
+                services = serviceDetails,
+                totalServicesCost = totalServicesCost,
+                billing = new
+                {
+                    totalBilled = totalBilled,
+                    totalPaid = totalPaid,
+                    totalBalance = totalBalance,
+                    invoices = invoiceList
+                }
+            });
         }
 
         [HttpPost]

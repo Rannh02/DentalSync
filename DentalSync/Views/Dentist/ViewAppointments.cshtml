@@ -11,6 +11,280 @@
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
+<style>
+    .appt-modal-card {
+        width: min(100%, 780px);
+        max-height: 88vh;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .appt-modal-header {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .appt-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .appt-avatar-badge {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 17px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+        flex-shrink: 0;
+    }
+
+    .appt-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 3px;
+    }
+
+    .appt-modal-subtitle {
+        font-size: 12.5px;
+        color: #64748b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .appt-modal-tabs {
+        display: flex;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 0 24px;
+        gap: 8px;
+    }
+
+    .appt-tab-btn {
+        background: transparent;
+        border: none;
+        padding: 12px 16px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .appt-tab-btn:hover {
+        color: #1e293b;
+    }
+
+    .appt-tab-btn.active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+        background: rgba(79, 70, 229, 0.04);
+    }
+
+    .appt-modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .appt-tab-content {
+        display: none;
+    }
+
+    .appt-tab-content.active {
+        display: block;
+        animation: fadeInTab 0.2s ease-in-out;
+    }
+
+    @@keyframes fadeInTab {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .info-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+    }
+
+    .info-card-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .info-card-value {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #0f172a;
+        word-break: break-word;
+    }
+
+    .medical-alert-box {
+        background: #fffbeb;
+        border: 1px solid #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-top: 12px;
+    }
+
+    .medical-alert-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #92400e;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+
+    .medical-alert-text {
+        font-size: 13px;
+        color: #78350f;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .stat-pill-card {
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+
+    .stat-pill-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .stat-pill-amount {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .stat-pill-paid .stat-pill-amount { color: #16a34a; }
+    .stat-pill-balance .stat-pill-amount { color: #dc2626; }
+    .stat-pill-zero .stat-pill-amount { color: #64748b; }
+
+    .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 13px;
+    }
+
+    .modal-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 10px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+    }
+
+    .modal-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    .modal-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .appt-modal-footer {
+        padding: 16px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .empty-tab-note {
+        text-align: center;
+        padding: 32px 16px;
+        color: #94a3b8;
+        font-size: 13.5px;
+    }
+
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 16px;
+        gap: 12px;
+        color: #64748b;
+        font-size: 13.5px;
+        font-weight: 500;
+    }
+
+    .spinner-svg {
+        width: 32px;
+        height: 32px;
+        animation: spin 0.8s linear infinite;
+        color: #4f46e5;
+    }
+
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/DentistSideBars/_SidebarDentist.cshtml")
 
@@ -63,20 +337,20 @@
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Patient</th>
-                            <th>Dentist</th>
-                            <th>Service</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th style="width: 17%;">Date</th>
+                            <th style="width: 11%;">Time</th>
+                            <th style="width: 18%;">Patient</th>
+                            <th style="width: 16%;">Dentist</th>
+                            <th style="width: 18%;">Service</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 10%; text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model.Appointments.Count == 0)
                         {
                             <tr>
-                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 32px;">
+                                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">
                                     No appointments scheduled yet.
                                 </td>
                             </tr>
@@ -101,19 +375,21 @@
                                         <span class="ds-badge ds-badge-@app.Status.ToLower()">@app.Status</span>
                                     </td>
                                     <td>
-                                        @if (app.Status == "Pending Dentist Approval" || app.Status == "Scheduled")
-                                        {
-                                            <form asp-controller="Dentist" asp-action="UpdateAppointmentStatus" method="post" style="display:inline;">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@app.Id" />
-                                                <input type="hidden" name="status" value="Confirmed" />
-                                                <button type="submit" class="action-button action-view" style="padding: 8px 12px; min-width: 90px;">Accept</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#64748b; font-size:12px;">—</span>
-                                        }
+                                        <div class="user-actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                                            <button type="button" class="action-button action-view btn-view-appointment" data-id="@app.Id" style="display:inline-flex; align-items:center; gap:5px; font-weight:600; padding:6px 12px; cursor:pointer;" title="View patient, services, and billing details">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                View
+                                            </button>
+                                            @if (app.Status == "Pending Dentist Approval" || app.Status == "Scheduled")
+                                            {
+                                                <form asp-controller="Dentist" asp-action="UpdateAppointmentStatus" method="post" style="display:inline; margin: 0;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@app.Id" />
+                                                    <input type="hidden" name="status" value="Confirmed" />
+                                                    <button type="submit" class="action-button action-edit" style="padding: 6px 12px; font-weight:600; background: #059669; color: #fff; border: none; cursor: pointer;">Accept</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -136,3 +412,366 @@
         </section>
     </main>
 </div>
+
+<!-- Appointment Details Modal -->
+<div class="modal-overlay" id="appointmentDetailsModal">
+    <div class="appt-modal-card">
+        <!-- Header -->
+        <div class="appt-modal-header">
+            <div class="appt-modal-header-left">
+                <div class="appt-avatar-badge" id="modalPatientInitials">PT</div>
+                <div>
+                    <h3 class="appt-modal-title" id="modalPatientFullName">Patient Name</h3>
+                    <p class="appt-modal-subtitle">
+                        <span id="modalAppointmentDateTime">Date & Time</span>
+                        <span>•</span>
+                        <span id="modalDentistName">Dentist</span>
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span id="modalAppointmentStatusBadge" class="ds-badge ds-badge-scheduled">Scheduled</span>
+                <button type="button" class="modal-close" id="closeAppointmentDetailsModal" title="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="appt-modal-tabs">
+            <button type="button" class="appt-tab-btn active" data-target="tabPatient">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Patient Details
+            </button>
+            <button type="button" class="appt-tab-btn" data-target="tabServices">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                Services & Procedures
+            </button>
+            <button type="button" class="appt-tab-btn" data-target="tabBilling">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Total Bills & Invoices
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="appt-modal-body">
+            <!-- Loading State -->
+            <div id="modalLoadingState" class="loading-spinner">
+                <svg class="spinner-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                </svg>
+                <span>Loading appointment information...</span>
+            </div>
+
+            <!-- Tab 1: Patient Information -->
+            <div id="tabPatient" class="appt-tab-content">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-card-label">Full Name</div>
+                        <div class="info-card-value" id="patFullName">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Contact Number</div>
+                        <div class="info-card-value" id="patContact">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Email Address</div>
+                        <div class="info-card-value" id="patEmail">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Gender / Age</div>
+                        <div class="info-card-value" id="patGenderAge">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Date of Birth</div>
+                        <div class="info-card-value" id="patDob">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Residential Address</div>
+                        <div class="info-card-value" id="patAddress">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Emergency Contact</div>
+                        <div class="info-card-value" id="patEmergencyContact">—</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-label">Emergency Phone</div>
+                        <div class="info-card-value" id="patEmergencyPhone">—</div>
+                    </div>
+                </div>
+
+                <div class="medical-alert-box">
+                    <div class="medical-alert-title">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        Medical Notes / Health Alerts
+                    </div>
+                    <p class="medical-alert-text" id="patMedicalNotes">No medical alerts or special conditions recorded.</p>
+                </div>
+            </div>
+
+            <!-- Tab 2: Services & Procedures -->
+            <div id="tabServices" class="appt-tab-content">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.04em;">Booked Services</span>
+                        <span id="servicesCountBadge" style="font-size: 12px; font-weight: 600; color: #4f46e5; background: #eef2ff; padding: 2px 8px; border-radius: 999px;">1 service</span>
+                    </div>
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th style="text-align: right;">Fee</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalServicesTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                    <div style="padding: 14px 18px; background: #f1f5f9; border-top: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight: 700; color: #1e293b; font-size: 14px;">Total Estimated Services Cost</span>
+                        <span id="modalServicesTotalCost" style="font-size: 16px; font-weight: 800; color: #4f46e5;">₱0.00</span>
+                    </div>
+                </div>
+
+                <div class="info-card" style="margin-top: 14px;">
+                    <div class="info-card-label">Appointment Notes / Symptoms</div>
+                    <div class="info-card-value" id="modalApptNotes" style="font-weight: 500; line-height: 1.5; color: #334155;">No notes recorded.</div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Billing & Invoices -->
+            <div id="tabBilling" class="appt-tab-content">
+                <!-- KPI Stats -->
+                <div class="stats-row">
+                    <div class="stat-pill-card">
+                        <div class="stat-pill-label">Total Invoiced</div>
+                        <div class="stat-pill-amount" id="billingTotalBilled">₱0.00</div>
+                    </div>
+                    <div class="stat-pill-card stat-pill-paid">
+                        <div class="stat-pill-label">Total Paid</div>
+                        <div class="stat-pill-amount" id="billingTotalPaid">₱0.00</div>
+                    </div>
+                    <div class="stat-pill-card stat-pill-balance" id="billingBalanceCard">
+                        <div class="stat-pill-label">Outstanding Balance</div>
+                        <div class="stat-pill-amount" id="billingTotalBalance">₱0.00</div>
+                    </div>
+                </div>
+
+                <!-- Invoices Table -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <div style="padding: 14px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.04em;">Patient Billing Invoices</span>
+                        <span id="invoicesCountBadge" style="font-size: 12px; font-weight: 600; color: #64748b;">0 Invoices</span>
+                    </div>
+
+                    <div id="invoicesTableWrap" style="overflow-x: auto;">
+                        <table class="modal-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Date</th>
+                                    <th>Services</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalInvoicesTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noInvoicesMessage" class="empty-tab-note" style="display:none;">
+                        No formal billing invoices generated for this patient yet.<br />
+                        <span style="font-size: 12px; color: #64748b; margin-top: 4px; display: inline-block;">Estimated appointment services fee: <strong id="noInvoicesEstCost" style="color: #4f46e5;">₱0.00</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="appt-modal-footer">
+            <button type="button" class="btn-secondary" id="btnDismissDetailsModal">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const detailsModal = document.getElementById('appointmentDetailsModal');
+    const closeDetailsBtn = document.getElementById('closeAppointmentDetailsModal');
+    const dismissDetailsBtn = document.getElementById('btnDismissDetailsModal');
+    const loadingState = document.getElementById('modalLoadingState');
+
+    // Tab buttons
+    const tabBtns = document.querySelectorAll('.appt-tab-btn');
+    const tabContents = document.querySelectorAll('.appt-tab-content');
+
+    function switchTab(targetId) {
+        tabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.target === targetId);
+        });
+        tabContents.forEach(content => {
+            content.classList.toggle('active', content.id === targetId);
+        });
+    }
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.target));
+    });
+
+    function closeDetails() {
+        detailsModal.classList.remove('active');
+    }
+
+    closeDetailsBtn.addEventListener('click', closeDetails);
+    dismissDetailsBtn.addEventListener('click', closeDetails);
+    detailsModal.addEventListener('click', (e) => {
+        if (e.target === detailsModal) closeDetails();
+    });
+
+    function formatCurrency(val) {
+        const num = parseFloat(val) || 0;
+        return '₱' + num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Attach click listener to all "View" buttons
+    document.querySelectorAll('.btn-view-appointment').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const apptId = this.dataset.id;
+            if (!apptId) return;
+
+            // Reset modal & show loading
+            loadingState.style.display = 'flex';
+            tabContents.forEach(c => c.style.display = 'none');
+            switchTab('tabPatient');
+            detailsModal.classList.add('active');
+
+            try {
+                const res = await fetch(`/Dentist/GetAppointmentDetails?id=${apptId}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || 'Unable to load appointment details.');
+                    closeDetails();
+                    return;
+                }
+
+                // Header info
+                document.getElementById('modalPatientInitials').textContent = data.patient.initials || 'PT';
+                document.getElementById('modalPatientFullName').textContent = data.patient.fullName;
+                document.getElementById('modalAppointmentDateTime').textContent = `${data.appointment.date} • ${data.appointment.time}`;
+                document.getElementById('modalDentistName').textContent = data.dentist.name;
+
+                const statusBadge = document.getElementById('modalAppointmentStatusBadge');
+                statusBadge.textContent = data.appointment.status;
+                statusBadge.className = `ds-badge ds-badge-${(data.appointment.status || '').toLowerCase()}`;
+
+                // Patient Details Tab
+                document.getElementById('patFullName').textContent = data.patient.fullName;
+                document.getElementById('patContact').textContent = data.patient.contactNumber;
+                document.getElementById('patEmail').textContent = data.patient.email;
+                document.getElementById('patGenderAge').textContent = `${data.patient.gender} (${data.patient.age})`;
+                document.getElementById('patDob').textContent = data.patient.dateOfBirth;
+                document.getElementById('patAddress').textContent = data.patient.address;
+                document.getElementById('patEmergencyContact').textContent = data.patient.emergencyContact;
+                document.getElementById('patEmergencyPhone').textContent = data.patient.emergencyPhone;
+                document.getElementById('patMedicalNotes').textContent = data.patient.medicalNotes || 'No medical alerts or special conditions recorded.';
+
+                // Services Tab
+                const servicesTbody = document.getElementById('modalServicesTableBody');
+                servicesTbody.innerHTML = '';
+                if (data.services && data.services.length > 0) {
+                    data.services.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <strong style="color:#0f172a;">${s.name}</strong>
+                            </td>
+                            <td>
+                                <span style="color:#64748b; font-size:12px; background:#f1f5f9; padding:2px 8px; border-radius:6px;">${s.category || 'General'}</span>
+                            </td>
+                            <td>
+                                <span style="font-size:11.5px; font-weight:600; color:${s.isPrimary ? '#4f46e5' : '#059669'};">${s.isPrimary ? 'Primary' : 'Additional'}</span>
+                            </td>
+                            <td style="text-align:right; font-weight:700; color:#0f172a;">
+                                ${formatCurrency(s.cost)}
+                            </td>
+                        `;
+                        servicesTbody.appendChild(tr);
+                    });
+                    document.getElementById('servicesCountBadge').textContent = `${data.services.length} service${data.services.length > 1 ? 's' : ''}`;
+                } else {
+                    servicesTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:18px;">No services recorded.</td></tr>';
+                    document.getElementById('servicesCountBadge').textContent = '0 services';
+                }
+
+                document.getElementById('modalServicesTotalCost').textContent = formatCurrency(data.totalServicesCost);
+                document.getElementById('modalApptNotes').textContent = data.appointment.notes || 'No symptoms or patient notes recorded.';
+
+                // Billing Tab
+                document.getElementById('billingTotalBilled').textContent = formatCurrency(data.billing.totalBilled);
+                document.getElementById('billingTotalPaid').textContent = formatCurrency(data.billing.totalPaid);
+                document.getElementById('billingTotalBalance').textContent = formatCurrency(data.billing.totalBalance);
+
+                const balanceCard = document.getElementById('billingBalanceCard');
+                if (data.billing.totalBalance > 0) {
+                    balanceCard.className = 'stat-pill-card stat-pill-balance';
+                } else if (data.billing.totalPaid > 0) {
+                    balanceCard.className = 'stat-pill-card stat-pill-paid';
+                } else {
+                    balanceCard.className = 'stat-pill-card stat-pill-zero';
+                }
+
+                const invoicesTbody = document.getElementById('modalInvoicesTableBody');
+                invoicesTbody.innerHTML = '';
+                const invoicesTableWrap = document.getElementById('invoicesTableWrap');
+                const noInvoicesMsg = document.getElementById('noInvoicesMessage');
+
+                if (data.billing.invoices && data.billing.invoices.length > 0) {
+                    document.getElementById('invoicesCountBadge').textContent = `${data.billing.invoices.length} Invoice${data.billing.invoices.length > 1 ? 's' : ''}`;
+                    invoicesTableWrap.style.display = 'block';
+                    noInvoicesMsg.style.display = 'none';
+
+                    data.billing.invoices.forEach(inv => {
+                        const tr = document.createElement('tr');
+                        const itemList = inv.items && inv.items.length > 0
+                            ? inv.items.map(it => it.description).join(', ')
+                            : 'Dental Services';
+
+                        tr.innerHTML = `
+                            <td><strong style="color:#0f172a;">${inv.invoiceNumber}</strong></td>
+                            <td style="color:#64748b; font-size:12px;">${inv.invoiceDate}</td>
+                            <td><div style="max-width:180px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:#475569;" title="${itemList}">${itemList}</div></td>
+                            <td style="font-weight:700;">${formatCurrency(inv.totalAmount)}</td>
+                            <td style="color:#16a34a; font-weight:600;">${formatCurrency(inv.amountPaid)}</td>
+                            <td style="color:${inv.balance > 0 ? '#dc2626' : '#64748b'}; font-weight:700;">${formatCurrency(inv.balance)}</td>
+                            <td><span class="ds-badge ds-badge-${(inv.status || '').toLowerCase()}">${inv.status}</span></td>
+                        `;
+                        invoicesTbody.appendChild(tr);
+                    });
+                } else {
+                    document.getElementById('invoicesCountBadge').textContent = '0 Invoices';
+                    invoicesTableWrap.style.display = 'none';
+                    noInvoicesMsg.style.display = 'block';
+                    document.getElementById('noInvoicesEstCost').textContent = formatCurrency(data.totalServicesCost);
+                }
+
+                // Finished loading, display tabs
+                loadingState.style.display = 'none';
+                tabContents.forEach(c => c.style.display = '');
+                switchTab('tabPatient');
+
+            } catch (err) {
+                console.error('Error fetching appointment details:', err);
+                alert('An error occurred while loading appointment details.');
+                closeDetails();
+            }
+        });
+    });
+</script>
+

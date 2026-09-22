@@ -679,54 +679,79 @@
     });
 
     // ── User Logins Line Chart ──────────────────────────────────────────────
-    var loginsLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-        Model.LoginsByMonth.Select(c => {
-            var parts = c.Label.Split('-');
-            return System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat
-                .GetAbbreviatedMonthName(int.Parse(parts[1])) + " " + parts[0].Substring(2);
-        }).ToList()));
+    (function() {
+        var loginSeries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.LoginsByMonth.Select(item => new { label = item.Label, count = item.Count }).ToList()
+        ));
+        var loginMap = {};
+        loginSeries.forEach(function(item) {
+            loginMap[item.label] = item.count;
+        });
 
-    var loginsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-        Model.LoginsByMonth.Select(c => c.Count).ToList()));
-
-    new Chart(document.getElementById('loginsChart'), {
-        type: 'line',
-        data: {
-            labels: loginsLabels,
-            datasets: [{
-                label: 'Logins',
-                data: loginsData,
-                borderColor: '#0b84ff',
-                backgroundColor: 'rgba(11,132,255,0.08)',
-                borderWidth: 2,
-                pointRadius: 4,
-                pointBackgroundColor: '#0b84ff',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1 } }
-            }
+        var loginLabels = [];
+        var loginData = [];
+        var loginCursor = new Date();
+        loginCursor.setDate(1);
+        loginCursor.setHours(0, 0, 0, 0);
+        for (var i = 5; i >= 0; i--) {
+            var d = new Date(loginCursor.getFullYear(), loginCursor.getMonth() - i, 1);
+            var monthKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            var label = d.toLocaleString('en-US', { month: 'short' }) + ' ' + String(d.getFullYear()).slice(-2);
+            loginLabels.push(label);
+            loginData.push(loginMap[monthKey] || 0);
         }
-    });
+
+        new Chart(document.getElementById('loginsChart'), {
+            type: 'line',
+            data: {
+                labels: loginLabels,
+                datasets: [{
+                    label: 'Logins',
+                    data: loginData,
+                    borderColor: '#0b84ff',
+                    backgroundColor: 'rgba(11,132,255,0.08)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#0b84ff',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    })();
 
     // ── Failed Logins Bar Chart ─────────────────────────────────────────────
-    var failedLoginsLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-        Model.FailedLoginsByMonth.Select(c => {
-            var parts = c.Label.Split('-');
-            return System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat
-                .GetAbbreviatedMonthName(int.Parse(parts[1])) + " " + parts[0].Substring(2);
-        }).ToList()));
+    (function() {
+        var failedSeries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.FailedLoginsByMonth.Select(item => new { label = item.Label, count = item.Count }).ToList()
+        ));
+        var failedMap = {};
+        failedSeries.forEach(function(item) {
+            failedMap[item.label] = item.count;
+        });
 
-    var failedLoginsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-        Model.FailedLoginsByMonth.Select(c => c.Count).ToList()));
+        var failedLoginsLabels = [];
+        var failedLoginsData = [];
+        var failedCursor = new Date();
+        failedCursor.setDate(1);
+        failedCursor.setHours(0, 0, 0, 0);
+        for (var i = 5; i >= 0; i--) {
+            var d = new Date(failedCursor.getFullYear(), failedCursor.getMonth() - i, 1);
+            var monthKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            var label = d.toLocaleString('en-US', { month: 'short' }) + ' ' + String(d.getFullYear()).slice(-2);
+            failedLoginsLabels.push(label);
+            failedLoginsData.push(failedMap[monthKey] || 0);
+        }
 
-    new Chart(document.getElementById('failedLoginsChart'), {
+        new Chart(document.getElementById('failedLoginsChart'), {
         type: 'bar',
         data: {
             labels: failedLoginsLabels,
@@ -749,6 +774,7 @@
             }
         }
     });
+    })();
 
     // ── Browser Usage Pie Chart ─────────────────────────────────────────────
     (function () {

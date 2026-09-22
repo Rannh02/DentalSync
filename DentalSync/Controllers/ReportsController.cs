@@ -147,44 +147,50 @@ namespace DentalSync.Controllers
 
             // ── Revenue by month (last 6 months) ─────────────────────────────
             var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
-            var revenueByMonth = (await _db.Set<Payment>()
-                .Where(p => p.PaymentDate >= sixMonthsAgo)
-                .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
-                .Select(g => new
-                {
-                    g.Key.Year,
-                    g.Key.Month,
-                    Value = g.Sum(p => p.Amount),
-                    Count = g.Count()
-                })
-                .ToListAsync())
-                .Select(g => new ChartPoint
-                {
-                    Label = $"{g.Year}-{g.Month:D2}",
-                    Value = g.Value,
-                    Count = g.Count
-                })
-                .OrderBy(c => c.Label)
-                .ToList();
+            var revenueByMonth = FillMonthlySeries(
+                (await _db.Set<Payment>()
+                    .Where(p => p.PaymentDate >= sixMonthsAgo)
+                    .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Value = g.Sum(p => p.Amount),
+                        Count = g.Count()
+                    })
+                    .ToListAsync())
+                    .Select(g => new ChartPoint
+                    {
+                        Label = $"{g.Year}-{g.Month:D2}",
+                        Value = g.Value,
+                        Count = g.Count
+                    })
+                    .OrderBy(c => c.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
             // ── Patient growth (last 6 months) ────────────────────────────────
-            var patientGrowth = (await _db.Set<Patient>()
-                .Where(p => p.CreatedAt >= sixMonthsAgo)
-                .GroupBy(p => new { p.CreatedAt.Year, p.CreatedAt.Month })
-                .Select(g => new
-                {
-                    g.Key.Year,
-                    g.Key.Month,
-                    Count = g.Count()
-                })
-                .ToListAsync())
-                .Select(g => new ChartPoint
-                {
-                    Label = $"{g.Year}-{g.Month:D2}",
-                    Count = g.Count
-                })
-                .OrderBy(c => c.Label)
-                .ToList();
+            var patientGrowth = FillMonthlySeries(
+                (await _db.Set<Patient>()
+                    .Where(p => p.CreatedAt >= sixMonthsAgo)
+                    .GroupBy(p => new { p.CreatedAt.Year, p.CreatedAt.Month })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Count = g.Count()
+                    })
+                    .ToListAsync())
+                    .Select(g => new ChartPoint
+                    {
+                        Label = $"{g.Year}-{g.Month:D2}",
+                        Count = g.Count
+                    })
+                    .OrderBy(c => c.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
             // ── Top services ──────────────────────────────────────────────────
             var topServices = await _db.Set<TreatmentRecord>()
@@ -238,43 +244,49 @@ namespace DentalSync.Controllers
             var lockedAccounts = await _userManager.Users
                 .CountAsync(u => u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow);
 
-            var loginsByMonth = (await _db.AuditLogs
-                .AsNoTracking()
-                .Where(l => l.Module == "Authentication" && l.Action == "Login" && l.DateTime >= sixMonthsAgo)
-                .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
-                .Select(g => new
-                {
-                    g.Key.Year,
-                    g.Key.Month,
-                    Count = g.Count()
-                })
-                .ToListAsync())
-                .Select(g => new ChartPoint
-                {
-                    Label = $"{g.Year}-{g.Month:D2}",
-                    Count = g.Count
-                })
-                .OrderBy(c => c.Label)
-                .ToList();
+            var loginsByMonth = FillMonthlySeries(
+                (await _db.AuditLogs
+                    .AsNoTracking()
+                    .Where(l => l.Module == "Authentication" && l.Action == "Login" && l.DateTime >= sixMonthsAgo)
+                    .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Count = g.Count()
+                    })
+                    .ToListAsync())
+                    .Select(g => new ChartPoint
+                    {
+                        Label = $"{g.Year}-{g.Month:D2}",
+                        Count = g.Count
+                    })
+                    .OrderBy(c => c.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
-            var failedLoginsByMonth = (await _db.AuditLogs
-                .AsNoTracking()
-                .Where(l => l.Module == "Authentication" && l.Action == "Failed Login" && l.DateTime >= sixMonthsAgo)
-                .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
-                .Select(g => new
-                {
-                    g.Key.Year,
-                    g.Key.Month,
-                    Count = g.Count()
-                })
-                .ToListAsync())
-                .Select(g => new ChartPoint
-                {
-                    Label = $"{g.Year}-{g.Month:D2}",
-                    Count = g.Count
-                })
-                .OrderBy(c => c.Label)
-                .ToList();
+            var failedLoginsByMonth = FillMonthlySeries(
+                (await _db.AuditLogs
+                    .AsNoTracking()
+                    .Where(l => l.Module == "Authentication" && l.Action == "Failed Login" && l.DateTime >= sixMonthsAgo)
+                    .GroupBy(l => new { l.DateTime.Year, l.DateTime.Month })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Count = g.Count()
+                    })
+                    .ToListAsync())
+                    .Select(g => new ChartPoint
+                    {
+                        Label = $"{g.Year}-{g.Month:D2}",
+                        Count = g.Count
+                    })
+                    .OrderBy(c => c.Label)
+                    .ToList(),
+                sixMonthsAgo,
+                6);
 
             // ── Browser usage (all-time) ──────────────────────────────────────
             var browserStats = (await _db.AuditLogs
@@ -347,6 +359,35 @@ namespace DentalSync.Controllers
             };
 
             return View("~/Views/Home/Records.cshtml", vm);
+        }
+
+        private static List<ChartPoint> FillMonthlySeries(List<ChartPoint> points, DateTime startDate, int monthsToInclude)
+        {
+            var chartMap = points
+                .GroupBy(point => point.Label)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+            var series = new List<ChartPoint>();
+            var cursor = new DateTime(startDate.Year, startDate.Month, 1);
+
+            for (var index = 0; index < monthsToInclude; index++)
+            {
+                var label = $"{cursor.Year}-{cursor.Month:D2}";
+                var point = chartMap.TryGetValue(label, out var existing)
+                    ? existing
+                    : new ChartPoint { Label = label, Count = 0, Value = 0m };
+
+                series.Add(new ChartPoint
+                {
+                    Label = label,
+                    Count = point.Count,
+                    Value = point.Value
+                });
+
+                cursor = cursor.AddMonths(1);
+            }
+
+            return series;
         }
     }
 }
