@@ -75,25 +75,7 @@ namespace DentalSync.Data
                 }
             }
 
-            // One-time cleanup: remove accidentally seeded dummy dentist account
-            const string dummyDentistEmail = "dentist@dentalsync.com";
-            var dummyDentist = await userManager.FindByEmailAsync(dummyDentistEmail);
-            if (dummyDentist != null)
-            {
-                // Deactivate + unlink the Dentist record instead of deleting it
-                // (deleting would violate FK from Appointments table)
-                var dummyRecord = await dbContext.Dentists.FirstOrDefaultAsync(d => d.UserId == dummyDentist.Id);
-                if (dummyRecord != null)
-                {
-                    dummyRecord.Status    = "Inactive";
-                    dummyRecord.UserId    = null;
-                    dummyRecord.UpdatedAt = DateTime.UtcNow;
-                    await dbContext.SaveChangesAsync();
-                }
-                // Remove the Identity user account
-                await userManager.DeleteAsync(dummyDentist);
-                logger.LogInformation("Cleaned up dummy dentist account: {Email}", dummyDentistEmail);
-            }
+
 
             // Ensure all existing dentist users have matching Dentist records
             var dentistUsers = await userManager.GetUsersInRoleAsync("Dentist");
@@ -200,6 +182,147 @@ DentalSync grants your clinic a non-exclusive, non-transferable subscription lic
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Failed to create or verify PromotionalMessages table.");
+            }
+
+            // Seed Default Inventory Categories & Dental Supplies
+            try
+            {
+                if (!await dbContext.InventoryCategories.AnyAsync())
+                {
+                    var ppeCat = new InventoryCategory { CategoryName = "Personal Protective Equipment", Description = "Gloves, masks, bibs, and protective wear." };
+                    var consumablesCat = new InventoryCategory { CategoryName = "Dental Consumables", Description = "Saliva ejectors, cotton rolls, pouches, and needles." };
+                    var anestheticsCat = new InventoryCategory { CategoryName = "Anesthetics & Medications", Description = "Local anesthetics, topical gels, and cartridges." };
+                    var restorativeCat = new InventoryCategory { CategoryName = "Surgical & Restorative", Description = "Composites, bonding agents, alloys, and cements." };
+                    var impressionCat = new InventoryCategory { CategoryName = "Impression Materials", Description = "Alginates, silicone, and impression trays." };
+
+                    dbContext.InventoryCategories.AddRange(ppeCat, consumablesCat, anestheticsCat, restorativeCat, impressionCat);
+                    await dbContext.SaveChangesAsync();
+
+                    if (!await dbContext.Supplies.AnyAsync())
+                    {
+                        var supplies = new List<Supply>
+                        {
+                            new Supply
+                            {
+                                CategoryId = ppeCat.Id,
+                                SupplyName = "Nitrile Dental Examination Gloves (M)",
+                                Description = "Powder-free nitrile examination gloves, 100 pcs per box.",
+                                Unit = "Box",
+                                Quantity = 50,
+                                MinimumStock = 10,
+                                PurchasePrice = 350.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = ppeCat.Id,
+                                SupplyName = "3-Ply Disposable Surgical Face Masks",
+                                Description = "Fluid resistant 3-ply earloop masks, 50 pcs per box.",
+                                Unit = "Box",
+                                Quantity = 40,
+                                MinimumStock = 10,
+                                PurchasePrice = 150.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = consumablesCat.Id,
+                                SupplyName = "Saliva Ejector Suction Tips",
+                                Description = "Disposable clear flexible suction tips, 100 pcs per pack.",
+                                Unit = "Pack",
+                                Quantity = 45,
+                                MinimumStock = 10,
+                                PurchasePrice = 220.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = consumablesCat.Id,
+                                SupplyName = "Self-Sealing Sterilization Pouches (3.5\" x 9\")",
+                                Description = "Autoclave sterilization pouches, 200 pcs per box.",
+                                Unit = "Box",
+                                Quantity = 30,
+                                MinimumStock = 8,
+                                PurchasePrice = 380.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = anestheticsCat.Id,
+                                SupplyName = "Lidocaine HCl 2% with Epinephrine Cartridges",
+                                Description = "Local anesthetic cartridges for dental procedures, 50 cartridges per box.",
+                                Unit = "Box",
+                                Quantity = 25,
+                                MinimumStock = 5,
+                                PurchasePrice = 1250.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = anestheticsCat.Id,
+                                SupplyName = "Disposable Dental Needles 30G Short",
+                                Description = "Sterile single-use dental needles, 100 pcs per box.",
+                                Unit = "Box",
+                                Quantity = 35,
+                                MinimumStock = 5,
+                                PurchasePrice = 400.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = restorativeCat.Id,
+                                SupplyName = "Universal Nano-Hybrid Composite Resin (Shade A2)",
+                                Description = "Light-cured restorative composite syringe, 4g.",
+                                Unit = "Syringe",
+                                Quantity = 20,
+                                MinimumStock = 4,
+                                PurchasePrice = 850.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            },
+                            new Supply
+                            {
+                                CategoryId = impressionCat.Id,
+                                SupplyName = "Alginate Impression Powder (Dust-free)",
+                                Description = "Fast-set chromatic alginate impression material, 454g bag.",
+                                Unit = "Bag",
+                                Quantity = 18,
+                                MinimumStock = 5,
+                                PurchasePrice = 450.00m,
+                                Status = "In Stock",
+                                CreatedAt = DateTime.UtcNow
+                            }
+                        };
+
+                        dbContext.Supplies.AddRange(supplies);
+                        await dbContext.SaveChangesAsync();
+
+                        var stockTxns = supplies.Select(s => new StockTransaction
+                        {
+                            SupplyId = s.Id,
+                            UserId = superadminUser?.Id,
+                            TransactionType = "In",
+                            Quantity = s.Quantity,
+                            TransactionDate = DateTime.UtcNow,
+                            Reference = "INIT-STOCK",
+                            Notes = "Initial inventory stock intake"
+                        }).ToList();
+
+                        dbContext.StockTransactions.AddRange(stockTxns);
+                        await dbContext.SaveChangesAsync();
+                        logger.LogInformation("Seeded default inventory categories, supplies, and stock transactions.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to seed default inventory categories and supplies.");
             }
         }
     }

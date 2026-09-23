@@ -128,8 +128,8 @@ namespace DentalSync.Controllers
                 }
             }
 
-            // Fallback sample data if DB is empty for demonstration
-            EnsureDemoData(vm);
+            // Fallback sample data removed - strictly display real database records
+            // EnsureDemoData(vm);
 
             // Apply search & status filters specifically to Administrators if requested
             if (!string.IsNullOrWhiteSpace(search))
@@ -192,65 +192,7 @@ namespace DentalSync.Controllers
         // Helper to ensure rich demo data if DB contains minimal entries
         private void EnsureDemoData(SuperadminUserManagementViewModel vm)
         {
-            if (!vm.Superadmins.Any())
-            {
-                vm.Superadmins.Add(new SuperadminUserViewModel
-                {
-                    UserId = "sa-1", FullName = "System Administrator", Email = "superadmin@dentalsync.ph", Phone = "+63 (082) 221-0190", Role = "Superadmin", ExtraInfo = "Full Platform Root", IsSuspended = false
-                });
-            }
-
-            if (!vm.Administrators.Any())
-            {
-                vm.Administrators.Add(new SuperadminUserViewModel
-                {
-                    UserId = "admin-1", FullName = "Ralph David Milla Soliva", Email = "ralph@clinic.ph", Phone = "+63 (082) 221-0190", Role = "Administrator", ExtraInfo = "Main Branch (Davao)", IsSuspended = false
-                });
-            }
-
-            if (!vm.Dentists.Any())
-            {
-                vm.Dentists.Add(new SuperadminUserViewModel
-                {
-                    UserId = "dent-1", FullName = "Dr. Maria Santos", Email = "maria.santos@dentalsync.ph", Phone = "+63 917 111 2222", Role = "Dentist", ExtraInfo = "General Dentistry", IsSuspended = false
-                });
-                vm.Dentists.Add(new SuperadminUserViewModel
-                {
-                    UserId = "dent-2", FullName = "Dr. Damby Malupiton", Email = "damby.malupiton@dentalsync.ph", Phone = "+63 918 333 4444", Role = "Dentist", ExtraInfo = "Restorative Dentistry", IsSuspended = false
-                });
-                vm.Dentists.Add(new SuperadminUserViewModel
-                {
-                    UserId = "dent-3", FullName = "Dr. Angela Cruz", Email = "angela.cruz@dentalsync.ph", Phone = "+63 919 555 6666", Role = "Dentist", ExtraInfo = "Cosmetic Dentistry", IsSuspended = false
-                });
-            }
-
-            if (!vm.Receptionists.Any())
-            {
-                vm.Receptionists.Add(new SuperadminUserViewModel
-                {
-                    UserId = "rec-1", FullName = "Juana Dela Cruz", Email = "reception@dentalsync.ph", Phone = "+63 920 777 8888", Role = "Receptionist", ExtraInfo = "Downtown Branch", IsSuspended = false
-                });
-                vm.Receptionists.Add(new SuperadminUserViewModel
-                {
-                    UserId = "rec-2", FullName = "Pedro Penduko", Email = "reception.north@dentalsync.ph", Phone = "+63 921 999 0000", Role = "Receptionist", ExtraInfo = "North Branch", IsSuspended = false
-                });
-            }
-
-            if (!vm.Patients.Any())
-            {
-                vm.Patients.Add(new SuperadminUserViewModel
-                {
-                    UserId = "pat-1", FullName = "José Rizal", Email = "jose.rizal@gmail.com", Phone = "+63 917 123 4567", Role = "Patient", ExtraInfo = "Main Branch (Davao)", IsSuspended = true
-                });
-                vm.Patients.Add(new SuperadminUserViewModel
-                {
-                    UserId = "pat-2", FullName = "Juan Luna", Email = "juan.luna@gmail.com", Phone = "+63 918 234 5678", Role = "Patient", ExtraInfo = "North Branch", IsSuspended = false
-                });
-                vm.Patients.Add(new SuperadminUserViewModel
-                {
-                    UserId = "pat-3", FullName = "Andres Bonifacio", Email = "andres.b@gmail.com", Phone = "+63 919 345 6789", Role = "Patient", ExtraInfo = "Downtown Branch", IsSuspended = false
-                });
-            }
+            // Demo fallback user injection disabled to strictly mirror real database state
         }
 
         // =========================================================================

@@ -1,6 +1,9 @@
-﻿@{
+@model List<DentalSync.ViewModels.AppointmentListItemViewModel>
+@{
     Layout = null;
-    ViewData["Title"] = "View Treatment Transactions";
+    ViewData["Title"] = "Treatment History";
+    string searchVal = ViewBag.Search ?? "";
+    string statusVal = ViewBag.Status ?? "";
 }
 
 @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_HeaderPatient.cshtml")
@@ -8,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_SidebarPatient.cshtml")
@@ -15,15 +19,91 @@
     <main class="receptionist-page">
         <div class="page-header">
             <div>
-                <h1>Treatment Transactions</h1>
-                <p>Review your complete dental treatment history and past procedures.</p>
+                <h1>Treatment History</h1>
+                <p>View your booked dental treatments, scheduled date & time, services, and appointment status.</p>
             </div>
         </div>
 
+        <!-- Filter Bar -->
+        <section class="users-panel" aria-label="Treatment History Filters" style="margin-bottom: 24px;">
+            <form method="get" asp-controller="Patient" asp-action="ViewTreatmentTransaction" class="users-filters">
+                <label class="users-search" style="flex: 1;">
+                    <span class="sr-only">Search treatment history</span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@searchVal" placeholder="Search by service or dentist..." />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="status">
+                        <option value="">All Statuses</option>
+                        <option value="Completed" selected="@(statusVal == "Completed")">Completed</option>
+                        <option value="Confirmed" selected="@(statusVal == "Confirmed")">Confirmed</option>
+                        <option value="Scheduled" selected="@(statusVal == "Scheduled")">Scheduled</option>
+                        <option value="Pending" selected="@(statusVal == "Pending")">Pending</option>
+                        <option value="Cancelled" selected="@(statusVal == "Cancelled")">Cancelled</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply Filter</button>
+                <a asp-controller="Patient" asp-action="ViewTreatmentTransaction" class="users-clear-button">Clear</a>
+            </form>
+        </section>
+
+        <!-- Booked Treatments & Services Table -->
         <div class="layout-card">
-            <p style="color: #64748b; text-align: center; padding: 40px 0;">
-                Your treatment transaction history will be displayed here.
-            </p>
+            <h3 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Booked Dental Treatments & Services Log</h3>
+
+            @if (Model == null || Model.Count == 0)
+            {
+                <div style="text-align: center; color: #94a3b8; padding: 48px 0;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    <p style="font-size: 14px; margin: 0;">No treatment records match your search criteria.</p>
+                </div>
+            }
+            else
+            {
+                <div class="ds-table-responsive">
+                    <table class="ds-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time Booked</th>
+                                <th>Dentist</th>
+                                <th>Services</th>
+                                <th>Total Fee</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var app in Model)
+                            {
+                                var badgeClass = app.Status.ToLower() switch {
+                                    "completed" => "ds-badge-completed",
+                                    "confirmed" => "ds-badge-confirmed",
+                                    "scheduled" => "ds-badge-scheduled",
+                                    "pending"   => "ds-badge-pending",
+                                    "cancelled" => "ds-badge-cancelled",
+                                    _ => "ds-badge-scheduled"
+                                };
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 600; color: #1e293b;">@app.AppointmentDate.ToString("MMMM dd, yyyy")</div>
+                                        <div style="font-size: 12px; color: #64748b; font-weight: 500;">@app.StartTime.ToString("hh:mm tt")</div>
+                                    </td>
+                                    <td style="font-weight: 600; color: #4f46e5;">@app.DentistName</td>
+                                    <td>
+                                        <div style="font-weight: 600; color: #1e293b;">@app.ServiceNames</div>
+                                    </td>
+                                    <td style="font-weight: 800; color: #10b981;">
+                                        ₱@app.TotalCost.ToString("N2")
+                                    </td>
+                                    <td>
+                                        <span class="ds-badge @badgeClass">@app.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </main>
 </div>

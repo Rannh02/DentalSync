@@ -735,7 +735,7 @@ namespace DentalSync.Controllers
         [HttpGet]
         public async Task<IActionResult> GetPatientServices(int patientId)
         {
-            // Get all appointments for this patient (any status) and collect their services
+            // Get all appointments for this patient and collect all primary + additional services
             var appointments = await _context.Appointments
                 .Where(a => a.PatientId == patientId)
                 .Include(a => a.Service)
@@ -746,17 +746,40 @@ namespace DentalSync.Controllers
             if (appointments.Count == 0)
                 return Json(new { services = Array.Empty<object>() });
 
-            // Return distinct services across all appointments
-            var services = appointments
-                .Where(a => a.Service != null)
-                .GroupBy(a => a.Service.Id)
-                .Select(g => new
+            var allServiceIds = new List<int>();
+
+            foreach (var a in appointments)
+            {
+                if (a.ServiceId > 0)
                 {
-                    id   = g.Key,
-                    name = g.First().Service.Name,
-                    cost = g.First().Service.Cost
+                    allServiceIds.Add(a.ServiceId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(a.Notes) && a.Notes.StartsWith("[svc:"))
+                {
+                    var closeBracket = a.Notes.IndexOf(']');
+                    if (closeBracket > 5)
+                    {
+                        var rawIds = a.Notes.Substring(5, closeBracket - 5);
+                        var parsedIds = rawIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(idStr => int.TryParse(idStr, out var val) ? val : 0)
+                            .Where(val => val > 0);
+                        allServiceIds.AddRange(parsedIds);
+                    }
+                }
+            }
+
+            var distinctServiceIds = allServiceIds.Distinct().ToList();
+
+            var services = await _context.Services
+                .Where(s => distinctServiceIds.Contains(s.Id))
+                .Select(s => new
+                {
+                    id   = s.Id,
+                    name = s.Name,
+                    cost = s.Cost
                 })
-                .ToArray();
+                .ToListAsync();
 
             return Json(new { services });
         }

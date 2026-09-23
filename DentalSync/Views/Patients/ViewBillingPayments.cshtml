@@ -1,6 +1,9 @@
-﻿@{
+@model List<DentalSync.Models.Invoice>
+@{
     Layout = null;
-    ViewData["Title"] = "View Billing & Payments";
+    ViewData["Title"] = "Billing & Payments";
+    string searchVal = ViewBag.Search ?? "";
+    string statusVal = ViewBag.Status ?? "";
 }
 
 @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_HeaderPatient.cshtml")
@@ -8,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_SidebarPatient.cshtml")
@@ -16,14 +20,112 @@
         <div class="page-header">
             <div>
                 <h1>Billing & Payments</h1>
-                <p>View your invoices, outstanding balances, and payment history.</p>
+                <p>View your billing statement, invoice status, and receptionist payment transactions.</p>
             </div>
         </div>
 
+        <!-- Filter Bar matching Receptionist style -->
+        <section class="users-panel" aria-label="Billing & Payments" style="margin-bottom: 24px;">
+            <form method="get" asp-controller="Patient" asp-action="ViewBillingPayments" class="users-filters">
+                <label class="users-search">
+                    <span class="sr-only">Search invoices</span>
+                    <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                    <input type="search" name="search" value="@searchVal" placeholder="Search by invoice number or service..." />
+                </label>
+                <label>
+                    <span class="sr-only">Filter by status</span>
+                    <select name="status">
+                        <option value="">All Statuses</option>
+                        <option value="Paid" selected="@(statusVal == "Paid")">Paid</option>
+                        <option value="Partial" selected="@(statusVal == "Partial")">Partial</option>
+                        <option value="Pending" selected="@(statusVal == "Pending")">Pending</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-filter-button">Apply Filter</button>
+                <a asp-controller="Patient" asp-action="ViewBillingPayments" class="users-clear-button">Clear</a>
+            </form>
+        </section>
+
+        <!-- Invoices & Payments Table -->
         <div class="layout-card">
-            <p style="color: #64748b; text-align: center; padding: 40px 0;">
-                Billing and payment records will be displayed here.
-            </p>
+            <h3 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Billing & Payment Transactions</h3>
+
+            @if (Model == null || Model.Count == 0)
+            {
+                <div style="text-align: center; color: #94a3b8; padding: 48px 0;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <p style="font-size: 14px; margin: 0;">No invoice or payment records match your query.</p>
+                </div>
+            }
+            else
+            {
+                <div class="ds-table-responsive">
+                    <table class="ds-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice No.</th>
+                                <th>Date</th>
+                                <th>Services Included</th>
+                                <th>Total Amount</th>
+                                <th>Amount Paid</th>
+                                <th>Status</th>
+                                <th>Processed Payments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inv in Model)
+                            {
+                                var paid = inv.Payments.Sum(p => p.Amount);
+                                var statusColor = inv.Status.Equals("Paid", StringComparison.OrdinalIgnoreCase) ? "#10b981" :
+                                                  inv.Status.Equals("Partial", StringComparison.OrdinalIgnoreCase) ? "#f59e0b" : "#ef4444";
+                                <tr>
+                                    <td style="font-weight: 700; color: #4f46e5;">@inv.InvoiceNumber</td>
+                                    <td>@inv.InvoiceDate.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        @if (inv.InvoiceItems != null && inv.InvoiceItems.Count > 0)
+                                        {
+                                            @string.Join(", ", inv.InvoiceItems.Select(item => item.Description ?? "Dental Service"))
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#94a3b8;">Dental Services</span>
+                                        }
+                                    </td>
+                                    <td style="font-weight: 700; color: #1e293b;">₱@inv.TotalAmount.ToString("N2")</td>
+                                    <td style="font-weight: 700; color: #10b981;">₱@paid.ToString("N2")</td>
+                                    <td>
+                                        <span style="font-weight: 700; font-size: 12px; color: @statusColor; background: @(statusColor)15; padding: 4px 10px; border-radius: 999px;">
+                                            @inv.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (inv.Payments != null && inv.Payments.Count > 0)
+                                        {
+                                            <div style="font-size: 12px;">
+                                                @foreach (var pm in inv.Payments)
+                                                {
+                                                    <div style="padding: 2px 0;">
+                                                        <strong>₱@pm.Amount.ToString("N2")</strong> via <span style="color:#4f46e5; font-weight:600;">@pm.PaymentMethod</span> 
+                                                        <small style="color:#64748b;">(@pm.PaymentDate.ToString("MMM dd, hh:mm tt"))</small>
+                                                        @if (!string.IsNullOrWhiteSpace(pm.ReferenceNumber))
+                                                        {
+                                                            <small style="color:#94a3b8;"> [Ref: @pm.ReferenceNumber]</small>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#94a3b8; font-size: 12px;">Pending Payment</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </main>
 </div>
