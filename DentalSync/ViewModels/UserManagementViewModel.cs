@@ -104,4 +104,15 @@ namespace DentalSync.ViewModels
         [Display(Name = "Confirm password")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
+
+    public class DentistScheduleViewModel
+    {
+        public int DentistId { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string DentistName { get; set; } = string.Empty;
+        public List<string> SelectedWorkingDays { get; set; } = new();
+        public TimeOnly WorkingStartTime { get; set; } = new TimeOnly(9, 0);
+        public TimeOnly WorkingEndTime { get; set; } = new TimeOnly(17, 0);
+        public static readonly string[] AllDaysOfWeek = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    }
 }

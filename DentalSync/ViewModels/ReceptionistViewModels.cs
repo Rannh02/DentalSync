@@ -159,6 +159,13 @@ namespace DentalSync.ViewModels
         public List<Dentist> Dentists { get; set; } = new();
     }
 
+    public class DentistAvailabilityOptionViewModel
+    {
+        public int DentistId { get; set; }
+        public string DentistName { get; set; } = string.Empty;
+        public bool IsAvailable { get; set; }
+    }
+
     public class DentistTransferRequestItemViewModel
     {
         public int AuditLogId { get; set; }
@@ -170,6 +177,7 @@ namespace DentalSync.ViewModels
         public DateOnly AppointmentDate { get; set; }
         public TimeOnly StartTime { get; set; }
         public DateTime RequestedAt { get; set; }
+        public List<DentistAvailabilityOptionViewModel> AvailableDentists { get; set; } = new();
     }
 
     public class DentistPatientRecordItemViewModel
@@ -188,6 +196,7 @@ namespace DentalSync.ViewModels
         public string Status { get; set; } = "Scheduled";
         public string? Notes { get; set; }
         public bool TransferRequested { get; set; }
+        public List<DentistAvailabilityOptionViewModel> AvailableDentists { get; set; } = new();
     }
 
     public class PromotionalMessageItemViewModel

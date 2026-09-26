@@ -79,8 +79,22 @@
                                         <form asp-controller="Dentist" asp-action="ApprovePatientTransfer" method="post" class="transfer-approval-form">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="appointmentId" value="@request.AppointmentId" />
-                                            <input type="hidden" name="targetDentistId" value="@request.TargetDentistId" />
-                                            <button type="submit" class="action-button action-view">Approve Transfer</button>
+                                            <select name="targetDentistId" class="transfer-target-select" required aria-label="Select dentist to transfer patient to">
+                                                <option value="">Select Dentist</option>
+                                                <option disabled>────────────────────────────</option>
+                                                @foreach (var dentist in request.AvailableDentists)
+                                                {
+                                                    if (dentist.IsAvailable)
+                                                    {
+                                                        <option value="@dentist.DentistId" selected="@(dentist.DentistId == request.TargetDentistId)">@dentist.DentistName - Available</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@dentist.DentistId" disabled selected="@(dentist.DentistId == request.TargetDentistId)">@dentist.DentistName - Not Available</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <button type="submit" class="action-button action-view transfer-submit-btn">Approve Transfer</button>
                                         </form>
                                     </div>
                                 </td>
@@ -105,3 +119,39 @@
         </section>
     </main>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const transferForms = document.querySelectorAll('.transfer-approval-form');
+        transferForms.forEach(form => {
+            const select = form.querySelector('.transfer-target-select');
+            const submitBtn = form.querySelector('.transfer-submit-btn');
+            if (!select || !submitBtn) return;
+
+            function updateButtonState() {
+                const selectedOpt = select.options[select.selectedIndex];
+                const val = select.value;
+                const isDisabled = selectedOpt ? selectedOpt.disabled : true;
+                if (!val || isDisabled) {
+                    submitBtn.disabled = true;
+                } else {
+                    submitBtn.disabled = false;
+                }
+            }
+
+            select.addEventListener('change', updateButtonState);
+            updateButtonState();
+
+            form.addEventListener('submit', function (e) {
+                const selectedOpt = select.options[select.selectedIndex];
+                const val = select.value;
+                const isDisabled = selectedOpt ? selectedOpt.disabled : true;
+
+                if (!val || isDisabled) {
+                    e.preventDefault();
+                    alert('Selected dentist is not available on this appointment date.');
+                }
+            });
+        });
+    });
+</script>

@@ -272,6 +272,7 @@
                                     </td>
                                     <td>
                                         <div class="user-actions">
+                                            <a class="action-button action-edit" style="background:#e0e7ff;color:#3730a3;" asp-controller="Users" asp-action="EditDentistSchedule" asp-route-id="@item.UserId">Schedule</a>
                                             <form method="post" asp-controller="Superadmin" asp-action="ToggleSuspend">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="userId" value="@item.UserId" />

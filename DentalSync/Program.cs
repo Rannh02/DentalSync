@@ -10,6 +10,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<DentalSync.Services.AuditService>();
 builder.Services.AddScoped<DentalSync.Services.InventoryDeductionService>();
+builder.Services.AddScoped<DentalSync.Services.IDentistAvailabilityService, DentalSync.Services.DentistAvailabilityService>();
 builder.Services.AddHttpClient<DentalSync.Services.IPayMongoService, DentalSync.Services.PayMongoService>();
 
 

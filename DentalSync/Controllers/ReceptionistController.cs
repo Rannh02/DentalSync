@@ -18,19 +18,22 @@ namespace DentalSync.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly AuditService _audit;
         private readonly InventoryDeductionService _deductionService;
+        private readonly IDentistAvailabilityService _availabilityService;
 
         public ReceptionistController(
             AppDbContext context,
             UserManager<Users> userManager,
             RoleManager<IdentityRole> roleManager,
             AuditService audit,
-            InventoryDeductionService deductionService)
+            InventoryDeductionService deductionService,
+            IDentistAvailabilityService availabilityService)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _audit = audit;
             _deductionService = deductionService;
+            _availabilityService = availabilityService;
         }
 
         public async Task<IActionResult> Receptionist_Dashboard()
@@ -299,6 +302,13 @@ namespace DentalSync.Controllers
             {
                 record.TransferRequested = pendingAppointmentIds.Contains(record.AppointmentId)
                     || string.Equals(record.Status, "Pending Dentist Approval", StringComparison.OrdinalIgnoreCase);
+
+                record.AvailableDentists = await _availabilityService.GetDentistAvailabilityOptionsAsync(
+                    record.AppointmentDate,
+                    record.StartTime,
+                    record.EndTime,
+                    record.CurrentDentistId,
+                    record.AppointmentId);
             }
 
             var activeDentists = await _context.Dentists
@@ -358,6 +368,19 @@ namespace DentalSync.Controllers
             if (targetDentist == null || targetDentistId == appointment.DentistId)
             {
                 TempData["PatientRecordError"] = "Please choose a valid dentist other than the current one.";
+                return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
+            }
+
+            var isAvailable = await _availabilityService.IsDentistAvailableAsync(
+                targetDentistId,
+                appointment.AppointmentDate,
+                appointment.StartTime,
+                appointment.EndTime,
+                appointment.Id);
+
+            if (!isAvailable)
+            {
+                TempData["PatientRecordError"] = "Selected dentist is not available on this appointment date.";
                 return RedirectToAction(nameof(PatientRecords), new { search, statusFilter, page });
             }
 

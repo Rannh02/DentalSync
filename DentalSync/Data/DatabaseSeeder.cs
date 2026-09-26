@@ -12,6 +12,20 @@ namespace DentalSync.Data
             var userManager = serviceProvider.GetRequiredService<UserManager<Users>>();
             var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
 
+            // Ensure Dentists table has WorkingDays, WorkingStartTime, and WorkingEndTime columns
+            try { await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE `Dentists` ADD COLUMN `WorkingDays` VARCHAR(200) NULL DEFAULT 'Monday,Tuesday,Wednesday,Thursday,Friday';"); } catch { }
+            try { await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE `Dentists` ADD COLUMN `WorkingStartTime` TIME NULL DEFAULT '09:00:00';"); } catch { }
+            try { await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE `Dentists` ADD COLUMN `WorkingEndTime` TIME NULL DEFAULT '17:00:00';"); } catch { }
+            try
+            {
+                await dbContext.Database.ExecuteSqlRawAsync(@"
+                    UPDATE `Dentists` SET `WorkingDays` = 'Monday,Tuesday,Wednesday,Thursday,Friday' WHERE `WorkingDays` IS NULL OR `WorkingDays` = '';
+                    UPDATE `Dentists` SET `WorkingStartTime` = '09:00:00' WHERE `WorkingStartTime` IS NULL;
+                    UPDATE `Dentists` SET `WorkingEndTime` = '17:00:00' WHERE `WorkingEndTime` IS NULL;
+                ");
+            }
+            catch { }
+
             // Ensure roles exist
             var roles = new[] { "Superadmin", "Administrator", "Receptionist", "Dentist", "Patient" };
             foreach (var role in roles)
@@ -102,6 +116,7 @@ namespace DentalSync.Data
                     logger.LogInformation("Automatically created Dentist record for existing user {Email}", user.Email);
                 }
             }
+
             await dbContext.SaveChangesAsync();
 
             // Ensure TermsAndConditions table exists and has default content

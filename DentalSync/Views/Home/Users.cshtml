@@ -1,4 +1,4 @@
-﻿@model DentalSync.ViewModels.UserManagementViewModel
+@model DentalSync.ViewModels.UserManagementViewModel
 @{ Layout = null; }
 
 @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
@@ -35,7 +35,7 @@
                                 <td><div class="user-cell"><span class="user-avatar">@GetInitials(user.FullName)</span><span><strong>@user.FullName</strong><small>@user.Email</small></span></div></td>
                                 <td><span class="role-pill">@user.Role</span></td>
                                 <td><span class="status-pill @(user.IsActive ? "status-active" : "status-inactive")">@(user.IsActive ? "Active" : "Inactive")</span></td>
-                                <td><div class="user-actions"><a class="action-button action-view" asp-controller="Users" asp-action="UserDetails" asp-route-id="@user.Id">View</a><a class="action-button action-edit" asp-controller="Users" asp-action="EditUser" asp-route-id="@user.Id">Edit</a><form method="post" asp-controller="Users" asp-action="ToggleUserStatus" asp-route-id="@user.Id">@Html.AntiForgeryToken()<button type="submit" class="action-button action-status">@(user.IsActive ? "Deactivate" : "Activate")</button></form><a class="action-button action-reset" asp-controller="Users" asp-action="ResetUserPassword" asp-route-id="@user.Id">Reset password</a></div></td>
+                                <td><div class="user-actions"><a class="action-button action-view" asp-controller="Users" asp-action="UserDetails" asp-route-id="@user.Id">View</a><a class="action-button action-edit" asp-controller="Users" asp-action="EditUser" asp-route-id="@user.Id">Edit</a>@if (user.Role == "Dentist") { <a class="action-button action-edit" style="background:#e0e7ff;color:#3730a3;" asp-controller="Users" asp-action="EditDentistSchedule" asp-route-id="@user.Id">Schedule</a> }<form method="post" asp-controller="Users" asp-action="ToggleUserStatus" asp-route-id="@user.Id">@Html.AntiForgeryToken()<button type="submit" class="action-button action-status">@(user.IsActive ? "Deactivate" : "Activate")</button></form><a class="action-button action-reset" asp-controller="Users" asp-action="ResetUserPassword" asp-route-id="@user.Id">Reset password</a></div></td>
                             </tr>
                         }
                     }

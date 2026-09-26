@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DentalSync.Controllers
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Administrator,Superadmin")]
     public class UsersController : Controller
     {
         private readonly UserManager<Users> userManager;
@@ -269,6 +269,62 @@ namespace DentalSync.Controllers
             }
 
             await _audit.LogAsync("Updated", "User Management", $"Password reset for user: {user.FullName ?? user.Email}");
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditDentistSchedule(string id)
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var dentist = await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (dentist == null)
+            {
+                TempData["UserCreateError"] = "Dentist profile not found.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var workingDaysStr = string.IsNullOrWhiteSpace(dentist.WorkingDays)
+                ? "Monday,Tuesday,Wednesday,Thursday,Friday"
+                : dentist.WorkingDays;
+
+            var selectedDays = workingDaysStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+            var model = new DentistScheduleViewModel
+            {
+                DentistId = dentist.Id,
+                UserId = user.Id,
+                DentistName = $"Dr. {dentist.FirstName} {dentist.LastName}",
+                SelectedWorkingDays = selectedDays,
+                WorkingStartTime = dentist.WorkingStartTime == default ? new TimeOnly(9, 0) : dentist.WorkingStartTime,
+                WorkingEndTime = dentist.WorkingEndTime == default ? new TimeOnly(17, 0) : dentist.WorkingEndTime
+            };
+
+            return View("UserManagement/EditDentistSchedule", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDentistSchedule(DentistScheduleViewModel model)
+        {
+            var dentist = await _context.Dentists.FirstOrDefaultAsync(d => d.Id == model.DentistId);
+            if (dentist == null) return NotFound();
+
+            var days = model.SelectedWorkingDays != null && model.SelectedWorkingDays.Any()
+                ? string.Join(",", model.SelectedWorkingDays)
+                : "Monday,Tuesday,Wednesday,Thursday,Friday";
+
+            dentist.WorkingDays = days;
+            dentist.WorkingStartTime = model.WorkingStartTime;
+            dentist.WorkingEndTime = model.WorkingEndTime;
+            dentist.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Updated", "User Management", $"Administrator updated schedule for Dr. {dentist.FirstName} {dentist.LastName}: {days} ({model.WorkingStartTime:hh\\:mm} - {model.WorkingEndTime:hh\\:mm})");
+
+            TempData["UserSuccess"] = $"Schedule updated for Dr. {dentist.FirstName} {dentist.LastName}.";
             return RedirectToAction(nameof(Users));
         }
 

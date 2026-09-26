@@ -36,6 +36,13 @@ namespace DentalSync.Models
         [StringLength(20)]
         public string Status { get; set; } = "Active";
 
+        [StringLength(200)]
+        public string WorkingDays { get; set; } = "Monday,Tuesday,Wednesday,Thursday,Friday";
+
+        public TimeOnly WorkingStartTime { get; set; } = new TimeOnly(9, 0);
+
+        public TimeOnly WorkingEndTime { get; set; } = new TimeOnly(17, 0);
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }

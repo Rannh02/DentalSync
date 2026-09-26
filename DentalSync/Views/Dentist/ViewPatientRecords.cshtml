@@ -1,4 +1,4 @@
-﻿@model DentalSync.ViewModels.DentistPatientRecordsViewModel
+@model DentalSync.ViewModels.DentistPatientRecordsViewModel
 @{
     Layout = null;
     ViewData["Title"] = "Patient Records";
@@ -28,6 +28,10 @@
         @if (TempData["PatientRecordSuccess"] != null)
         {
             <div class="alert-banner alert-success">@TempData["PatientRecordSuccess"]</div>
+        }
+        @if (TempData["PatientRecordError"] != null)
+        {
+            <div class="alert-banner alert-danger" style="background:#fceaea;color:#c22a2a;padding:12px 16px;border-radius:8px;margin-bottom:16px;">@TempData["PatientRecordError"]</div>
         }
 
         <div class="layout-card">
@@ -85,7 +89,7 @@
                                     <td class="patient-record-actions-cell">
                                         <div class="user-actions patient-record-actions">
                                             <a asp-controller="Dentist" asp-action="ViewPatientRecord" asp-route-id="@record.AppointmentId" class="action-button action-view">View</a>
-                                            <form asp-controller="Dentist" asp-action="ArchivePatientRecord" asp-route-id="@record.AppointmentId" method="post" onsubmit="return confirm('Archive this patient record?');">
+                                            <form asp-controller="Dentist" asp-action="ArchivePatientRecord" asp-route-id="@record.AppointmentId" method="post" onsubmit="return confirm('Archive this patient record?');" style="display:inline;">
                                                 @Html.AntiForgeryToken()
                                                 <button type="submit" class="action-button action-delete">Archive</button>
                                             </form>

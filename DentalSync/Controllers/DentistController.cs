@@ -14,12 +14,18 @@ namespace DentalSync.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<Users> _userManager;
         private readonly AuditService _audit;
+        private readonly IDentistAvailabilityService _availabilityService;
 
-        public DentistController(AppDbContext context, UserManager<Users> userManager, AuditService audit)
+        public DentistController(
+            AppDbContext context,
+            UserManager<Users> userManager,
+            AuditService audit,
+            IDentistAvailabilityService availabilityService)
         {
             _context = context;
             _userManager = userManager;
             _audit = audit;
+            _availabilityService = availabilityService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -120,6 +126,7 @@ namespace DentalSync.Controllers
                     {
                         AppointmentId = a.Id,
                         PatientId = a.PatientId,
+                        CurrentDentistId = a.DentistId,
                         PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
                         DentistName = "Dr. " + a.Dentist.FirstName + " " + a.Dentist.LastName,
                         ServiceName = a.Service.Name,
@@ -128,8 +135,18 @@ namespace DentalSync.Controllers
                         EndTime = a.EndTime,
                         Status = a.Status,
                         Notes = a.Notes
-                        })
-                        .ToListAsync();
+                    })
+                    .ToListAsync();
+
+                foreach (var record in model.Records)
+                {
+                    record.AvailableDentists = await _availabilityService.GetDentistAvailabilityOptionsAsync(
+                        record.AppointmentDate,
+                        record.StartTime,
+                        record.EndTime,
+                        record.CurrentDentistId,
+                        record.AppointmentId);
+                }
             }
 
             return View("~/Views/Dentist/ViewPatientRecords.cshtml", model);
@@ -251,6 +268,16 @@ namespace DentalSync.Controllers
                 })
                 .ToList();
 
+            foreach (var req in model.Requests)
+            {
+                req.AvailableDentists = await _availabilityService.GetDentistAvailabilityOptionsAsync(
+                    req.AppointmentDate,
+                    req.StartTime,
+                    null,
+                    dentist.Id,
+                    req.AppointmentId);
+            }
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
@@ -324,6 +351,19 @@ namespace DentalSync.Controllers
             if (!hasRequest || targetDentist == null || targetDentist.Id == sourceDentist.Id)
             {
                 TempData["TransferError"] = "This transfer request is no longer valid for approval.";
+                return RedirectToAction(nameof(TransferRequests));
+            }
+
+            var isAvailable = await _availabilityService.IsDentistAvailableAsync(
+                targetDentist.Id,
+                appointment.AppointmentDate,
+                appointment.StartTime,
+                appointment.EndTime,
+                appointment.Id);
+
+            if (!isAvailable)
+            {
+                TempData["TransferError"] = "Selected dentist is not available on this appointment date.";
                 return RedirectToAction(nameof(TransferRequests));
             }
 
@@ -415,6 +455,68 @@ namespace DentalSync.Controllers
             };
 
             return View("~/Views/Dentist/ViewPatientRecord.cshtml", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestPatientTransfer(int id, int targetDentistId, string search = "", string statusFilter = "", int page = 1)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var sourceDentist = user == null ? null : await _context.Dentists.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (sourceDentist == null)
+                return NotFound();
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Dentist)
+                .FirstOrDefaultAsync(a => a.Id == id && a.DentistId == sourceDentist.Id);
+
+            if (appointment == null)
+                return NotFound();
+
+            if (targetDentistId <= 0)
+            {
+                TempData["PatientRecordError"] = "Please select a dentist to transfer the patient to.";
+                return RedirectToAction(nameof(ViewPatientRecords), new { search, statusFilter, page });
+            }
+
+            var targetDentist = await _context.Dentists
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == targetDentistId && d.Status == "Active");
+
+            if (targetDentist == null || targetDentistId == appointment.DentistId)
+            {
+                TempData["PatientRecordError"] = "Please choose a valid dentist other than the current one.";
+                return RedirectToAction(nameof(ViewPatientRecords), new { search, statusFilter, page });
+            }
+
+            var isAvailable = await _availabilityService.IsDentistAvailableAsync(
+                targetDentistId,
+                appointment.AppointmentDate,
+                appointment.StartTime,
+                appointment.EndTime,
+                appointment.Id);
+
+            if (!isAvailable)
+            {
+                TempData["PatientRecordError"] = "Selected dentist is not available on this appointment date.";
+                return RedirectToAction(nameof(ViewPatientRecords), new { search, statusFilter, page });
+            }
+
+            var previousStatus = appointment.Status;
+            var patientName = $"{appointment.Patient.FirstName} {appointment.Patient.LastName}";
+            appointment.Status = "Pending Dentist Approval";
+            appointment.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync(
+                "Request Patient Transfer",
+                "Medical Records",
+                $"[transfer-request][appointment:{appointment.Id}][source-dentist:{appointment.DentistId}][target-dentist:{targetDentist.Id}][previous-status:{previousStatus}] Dentist Dr. {sourceDentist.FirstName} {sourceDentist.LastName} requested to transfer patient {patientName} to Dr. {targetDentist.FirstName} {targetDentist.LastName}."
+            );
+
+            TempData["PatientRecordSuccess"] = "Transfer request submitted successfully.";
+            return RedirectToAction(nameof(ViewPatientRecords), new { search, statusFilter, page });
         }
 
         [HttpPost]

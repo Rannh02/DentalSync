@@ -1,0 +1,81 @@
+@model DentalSync.ViewModels.DentistScheduleViewModel
+@{ Layout = null; }
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Header.cshtml")
+<link rel="stylesheet" href="~/css/users.css" />
+
+<div class="dashboard-root">
+    @await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Sidebar.cshtml")
+    <main class="users-page">
+
+        <a asp-controller="Users" asp-action="Users" class="back-link">
+            ← Back to Users
+        </a>
+
+        <div class="users-page-heading">
+            <div>
+                <h1>Manage Dentist Schedule</h1>
+                <p>Configure working days and shift hours for <strong>@Model.DentistName</strong>.</p>
+            </div>
+        </div>
+
+        <section class="users-panel user-form-card" aria-label="Edit dentist schedule form">
+            <form method="post"
+                  asp-controller="Users"
+                  asp-action="EditDentistSchedule"
+                  autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="DentistId" />
+                <input type="hidden" asp-for="UserId" />
+                <input type="hidden" asp-for="DentistName" />
+
+                <div asp-validation-summary="All" class="modal-error" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+                <div class="modal-section-title">Schedule Settings for @Model.DentistName</div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Working Days</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        @foreach (var day in DentalSync.ViewModels.DentistScheduleViewModel.AllDaysOfWeek)
+                        {
+                            var isChecked = Model.SelectedWorkingDays.Contains(day, StringComparer.OrdinalIgnoreCase);
+                            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; min-width: 110px;">
+                                <input type="checkbox" name="SelectedWorkingDays" value="@day" @(isChecked ? "checked" : "") style="width: 16px; height: 16px; accent-color: #2563eb;" />
+                                <span>@day</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <label for="workingStartTime" style="font-weight: 600; display: block; margin-bottom: 6px;">Working Start Time</label>
+                        <input id="workingStartTime"
+                               asp-for="WorkingStartTime"
+                               type="time"
+                               required
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;" />
+                    </div>
+                    <div>
+                        <label for="workingEndTime" style="font-weight: 600; display: block; margin-bottom: 6px;">Working End Time</label>
+                        <input id="workingEndTime"
+                               asp-for="WorkingEndTime"
+                               type="time"
+                               required
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;" />
+                    </div>
+                </div>
+
+                <div class="user-modal-actions" style="margin-top:24px;">
+                    <a asp-controller="Users"
+                       asp-action="Users"
+                       class="users-clear-button">Cancel</a>
+                    <button type="submit" class="users-filter-button">Save Schedule</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/AdministratorBars/_Footer.cshtml")
