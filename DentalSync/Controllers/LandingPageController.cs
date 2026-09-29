@@ -103,7 +103,8 @@ namespace DentalSync.Controllers
             string plan,
             string billing,
             string price,
-            string paymentMethod = "card")
+            string paymentMethod = "card",
+            string? phone = null)
         {
             // Ensure the Administrator role exists
             if (!await _roleManager.RoleExistsAsync("Administrator"))
@@ -128,6 +129,7 @@ namespace DentalSync.Controllers
             // Store registration info temporarily in TempData for account activation upon successful payment return
             TempData["Pending_FullName"] = fullName;
             TempData["Pending_Email"]    = email;
+            TempData["Pending_Phone"]    = phone;
             TempData["Pending_Password"] = password;
             TempData["Pending_Plan"]     = plan;
             TempData["Pending_Billing"]  = billing;
@@ -153,7 +155,7 @@ namespace DentalSync.Controllers
 
             // If PayMongo API returns null (e.g., test API key unconfigured), fallback to direct registration
             _logger.LogWarning("PayMongo checkout session creation returned null or unconfigured key. Proceeding with registration fallback.");
-            return await CompleteAdminRegistration(fullName, email, password);
+            return await CompleteAdminRegistration(fullName, email, password, phone);
         }
 
         [HttpGet]
@@ -167,6 +169,7 @@ namespace DentalSync.Controllers
 
             string? fullName = TempData["Pending_FullName"] as string;
             string? email    = TempData["Pending_Email"] as string;
+            string? phone    = TempData["Pending_Phone"] as string;
             string? password = TempData["Pending_Password"] as string;
 
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
@@ -175,7 +178,7 @@ namespace DentalSync.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            return await CompleteAdminRegistration(fullName ?? email, email, password);
+            return await CompleteAdminRegistration(fullName ?? email, email, password, phone);
         }
 
         [HttpPost]
@@ -187,12 +190,13 @@ namespace DentalSync.Controllers
             string plan,
             string billing,
             string price,
-            string paymentMethod = "card")
+            string paymentMethod = "card",
+            string? phone = null)
         {
-            return await CreateCheckoutSession(fullName, email, password, plan, billing, price, paymentMethod);
+            return await CreateCheckoutSession(fullName, email, password, plan, billing, price, paymentMethod, phone);
         }
 
-        private async Task<IActionResult> CompleteAdminRegistration(string fullName, string email, string password)
+        private async Task<IActionResult> CompleteAdminRegistration(string fullName, string email, string password, string? phone = null)
         {
             if (!await _roleManager.RoleExistsAsync("Administrator"))
             {
@@ -211,8 +215,9 @@ namespace DentalSync.Controllers
                 FullName       = fullName,
                 UserName       = email,
                 Email          = email,
+                PhoneNumber    = phone,
                 EmailConfirmed = true,
-                LockoutEnabled = false
+                LockoutEnabled = true
             };
 
             var result = await _userManager.CreateAsync(user, password);

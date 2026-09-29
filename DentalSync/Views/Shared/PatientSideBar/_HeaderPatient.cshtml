@@ -6,37 +6,42 @@
 <header class="ds-header">
     <div class="ds-header-inner">
         <div class="ds-header-left">
-            <a class="ds-brand-link">
+            <a class="ds-brand-link" href="/Patient/Dashboard">
                 <h2 class="ds-brand-title">Dental<span class="ds-brand-accent">Sync</span></h2>
             </a>
         </div>
         <div class="ds-header-right">
 
+            <!-- NOTIFICATION BELL & DROPDOWN -->
             <div class="notification-container">
                 <button id="notifToggle" type="button" class="header-icon" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" aria-controls="notifDropdown">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                         <path d="M15 17H9a3 3 0 0 0 6 0z" fill="#0b1220"/>
                         <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7z" stroke="#0b1220" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                     </svg>
-                    <div class="badge" id="badgeDot"></div>
+                    <div class="badge is-hidden" id="badgeDot"></div>
                 </button>
                 <div class="dropdown" id="notifDropdown" role="menu" aria-hidden="true">
                     <div class="dd-header">
-                        <span class="dd-title">Notifications <span class="notif-count">(0)</span></span>
+                        <span class="dd-title">Reminders &amp; Notices <span class="notif-count" id="notifCountLabel">(0)</span></span>
                         <button type="button" class="dd-mark" id="markAllRead">Mark all as read</button>
                     </div>
-                    <div class="notif-list">
+                    <div class="notif-list" id="notifListContainer">
                         <div class="notif-item">
                             <div class="notif-content">
-                                <p class="notif-text">No new notifications.</p>
+                                <p class="notif-text" style="color: #64748b; font-size: 13px;">Checking for reminders...</p>
                             </div>
                         </div>
                     </div>
-                    <div class="dd-footer"><a href="#">View all notifications</a></div>
                 </div>
             </div>
 
-            <!--PROFILE DROPDOWN-->
+            <!-- HIDDEN ANTIFORGERY FORM FOR AJAX -->
+            <form id="notifTokenForm" style="display: none;">
+                @Html.AntiForgeryToken()
+            </form>
+
+            <!-- PROFILE DROPDOWN -->
             <div class="profile-wrap">
                 <button id="profileToggle" type="button" class="profile-btn" aria-haspopup="true" aria-expanded="false">
                     <span class="profile-avatar"></span>
@@ -54,12 +59,37 @@
     </div>
 </header>
 
+<!-- PATIENT REMINDER DETAILS POPUP MODAL -->
+<div class="user-modal" id="patientNotifModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px);" aria-hidden="true" role="dialog">
+    <div style="background: #ffffff; border-radius: 12px; width: min(100%, 480px); max-height: 85vh; padding: 24px; box-shadow: 0 20px 45px rgba(15,23,42,0.25); display: flex; flex-direction: column; gap: 16px; margin: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px;">
+            <div>
+                <span id="popupReminderBadge" style="display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #2e6ff2; margin-bottom: 6px;">Reminder</span>
+                <h3 id="popupReminderTitle" style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Clinic Reminder</h3>
+                <small id="popupReminderDate" style="color: #64748b; font-size: 12px;"></small>
+            </div>
+            <button type="button" onclick="closePatientNotifModal()" style="border: none; background: none; font-size: 22px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+        </div>
+        <div id="popupReminderBody" style="font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="button" onclick="closePatientNotifModal()" style="padding: 8px 18px; border-radius: 6px; background: #2e6ff2; color: #fff; border: none; font-size: 13px; font-weight: 600; cursor: pointer;">
+                Got it
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     (function() {
         var notificationToggle = document.getElementById('notifToggle');
         var notificationMenu = document.getElementById('notifDropdown');
         var notificationContainer = document.querySelector('.notification-container');
         var markAllReadButton = document.getElementById('markAllRead');
+        var notifListContainer = document.getElementById('notifListContainer');
+        var notifCountLabel = document.getElementById('notifCountLabel');
+        var badgeDot = document.getElementById('badgeDot');
+
+        var notifToken = document.querySelector('#notifTokenForm input[name="__RequestVerificationToken"]')?.value || '';
 
         function closeNotifications() {
             if (!notificationToggle || !notificationMenu) return;
@@ -74,37 +104,137 @@
                 var isOpen = notificationMenu.classList.toggle('is-open');
                 notificationToggle.setAttribute('aria-expanded', isOpen.toString());
                 notificationMenu.setAttribute('aria-hidden', (!isOpen).toString());
+                if (isOpen) {
+                    loadPatientNotifications();
+                }
             });
             notificationMenu.addEventListener('click', function(e) {
                 e.stopPropagation();
             });
         }
 
+        function loadPatientNotifications() {
+            fetch('/Patient/GetNotifications')
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    var count = data.count || 0;
+                    var list = data.notifications || [];
+
+                    if (notifCountLabel) {
+                        notifCountLabel.textContent = '(' + count + ')';
+                    }
+
+                    if (badgeDot) {
+                        if (count > 0) {
+                            badgeDot.classList.remove('is-hidden');
+                        } else {
+                            badgeDot.classList.add('is-hidden');
+                        }
+                    }
+
+                    if (!notifListContainer) return;
+
+                    if (list.length === 0) {
+                        notifListContainer.innerHTML = '<div class="notif-item"><div class="notif-content"><p class="notif-text" style="color:#64748b;font-size:13px;text-align:center;padding:12px 0;">No reminders yet.</p></div></div>';
+                        return;
+                    }
+
+                    var html = '';
+                    list.forEach(function(item) {
+                        var unreadClass = item.isUnread ? ' unread' : '';
+                        var unreadDot = item.isUnread ? '<span class="unread-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4f46e5;margin-left:6px;"></span>' : '';
+                        var msgPreview = item.message.length > 60 ? item.message.substring(0, 60) + '...' : item.message;
+                        
+                        html += '<div class="notif-item' + unreadClass + '" style="cursor:pointer;padding:12px 14px;border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onclick="openPatientReminderPopup(' + item.id + ', \'' + escapeHtml(item.type) + '\', \'' + escapeHtml(item.message) + '\', \'' + escapeHtml(item.dateFormatted) + '\')">';
+                        html += '  <div class="notif-content">';
+                        html += '    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">';
+                        html += '      <strong style="font-size:12.5px;color:#0f172a;">🔔 ' + item.type + ' ' + unreadDot + '</strong>';
+                        html += '      <small style="color:#94a3b8;font-size:11px;">' + item.timeAgo + '</small>';
+                        html += '    </div>';
+                        html += '    <p class="notif-text" style="font-size:12px;color:#475569;margin:0;line-height:1.4;">' + msgPreview + '</p>';
+                        html += '  </div>';
+                        html += '</div>';
+                    });
+                    notifListContainer.innerHTML = html;
+                })
+                .catch(function(err) {
+                    console.error('Error loading notifications:', err);
+                });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+        }
+
         if (markAllReadButton) {
             markAllReadButton.addEventListener('click', function() {
-                document.querySelectorAll('.notif-item.unread').forEach(function(item) {
-                    item.classList.remove('unread');
+                var formData = new FormData();
+                formData.append('__RequestVerificationToken', notifToken);
+
+                fetch('/Patient/MarkAllRemindersRead', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(function() {
+                    if (notifCountLabel) notifCountLabel.textContent = '(0)';
+                    if (badgeDot) badgeDot.classList.add('is-hidden');
+                    loadPatientNotifications();
                 });
-                document.querySelectorAll('.unread-dot').forEach(function(dot) {
-                    dot.remove();
-                });
-                document.querySelectorAll('.notif-count').forEach(function(count) {
-                    count.textContent = '(0)';
-                });
-                var badge = document.getElementById('badgeDot');
-                if (badge) badge.classList.add('is-hidden');
             });
         }
 
+        // Global function to open popup and mark reminder as read
+        window.openPatientReminderPopup = function(id, type, message, dateFormatted) {
+            var modal = document.getElementById('patientNotifModal');
+            var badge = document.getElementById('popupReminderBadge');
+            var title = document.getElementById('popupReminderTitle');
+            var date = document.getElementById('popupReminderDate');
+            var body = document.getElementById('popupReminderBody');
+
+            if (badge) badge.textContent = type || 'Reminder';
+            if (title) title.textContent = type || 'Clinic Reminder';
+            if (date) date.textContent = 'Received: ' + dateFormatted;
+            if (body) body.textContent = message;
+
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            // Call server to mark as read
+            var formData = new FormData();
+            formData.append('id', id);
+            formData.append('__RequestVerificationToken', notifToken);
+
+            fetch('/Patient/MarkReminderRead', {
+                method: 'POST',
+                body: formData
+            }).then(function() {
+                loadPatientNotifications();
+            });
+        };
+
+        window.closePatientNotifModal = function() {
+            var modal = document.getElementById('patientNotifModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            }
+        };
+
+        // Profile toggle
         var btn = document.getElementById('profileToggle');
         var menu = document.getElementById('profileMenu');
-        if (!btn || !menu) return;
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var shown = menu.style.display === 'block';
-            menu.style.display = shown ? 'none' : 'block';
-            btn.setAttribute('aria-expanded', (!shown).toString());
-        });
+        if (btn && menu) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var shown = menu.style.display === 'block';
+                menu.style.display = shown ? 'none' : 'block';
+                btn.setAttribute('aria-expanded', (!shown).toString());
+            });
+        }
+
         var logoutLink = document.getElementById('logoutLink');
         var logoutForm = document.getElementById('logoutFormMenu');
         if (logoutLink && logoutForm) {
@@ -113,17 +243,26 @@
                 logoutForm.submit();
             });
         }
+
         document.addEventListener('click', function(e) {
             if (notificationContainer && !notificationContainer.contains(e.target)) {
                 closeNotifications();
             }
-            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
                 menu.style.display = 'none';
                 btn.setAttribute('aria-expanded', 'false');
             }
         });
+
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeNotifications();
+            if (e.key === 'Escape') {
+                closeNotifications();
+                closePatientNotifModal();
+            }
         });
+
+        // Initial fetch on page load and periodic poll every 25s
+        loadPatientNotifications();
+        setInterval(loadPatientNotifications, 25000);
     })();
 </script>

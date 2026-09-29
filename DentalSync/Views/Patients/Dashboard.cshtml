@@ -1,4 +1,5 @@
-﻿@{
+@model List<DentalSync.Models.Reminder>
+@{
     Layout = null;
     ViewData["Title"] = "Patient Dashboard";
 }
@@ -8,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/receptionist.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/users.css" asp-append-version="true" />
 
 <div class="dashboard-root">
     @await Html.PartialAsync("~/Views/Shared/PatientSideBar/_SidebarPatient.cshtml")
@@ -41,7 +43,7 @@
                     <div style="background: #ecfdf5; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 16px;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
-                    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #0b1220;">Billing & Payments</h3>
+                    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #0b1220;">Billing &amp; Payments</h3>
                     <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin: 0;">Track invoices, view outstanding balances, and check transaction history.</p>
                 </div>
                 <div style="margin-top: 16px; font-size: 14px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 4px;">
@@ -63,5 +65,137 @@
                 </div>
             </div>
         </div>
+
+        <!-- REMINDERS & NOTICES SECTION -->
+        <div style="margin-top: 32px;">
+            <div style="margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    Clinic Reminders &amp; Notices
+                </h3>
+                <p style="margin: 4px 0 0; color: #64748b; font-size: 13px;">Important reminders sent by the clinic receptionist and dental staff.</p>
+            </div>
+
+            @if (Model != null && Model.Count > 0)
+            {
+                <div id="reminderCardsList" style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach (var reminder in Model)
+                    {
+                        var isUnread = string.Equals(reminder.Status, "Unread", StringComparison.OrdinalIgnoreCase) || string.Equals(reminder.Status, "Pending", StringComparison.OrdinalIgnoreCase);
+                        <div class="layout-card reminder-item-card" style="padding: 18px 22px; margin-bottom: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; background: @(isUnread ? "#f8faff" : "#ffffff");">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: @(isUnread ? "#2e6ff2" : "#475569");">
+                                        @reminder.ReminderType
+                                    </span>
+                                    @if (isUnread)
+                                    {
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #2e6ff2;">
+                                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #2e6ff2;"></span> NEW
+                                        </span>
+                                    }
+                                    <span style="font-size: 12px; color: #64748b;">
+                                        @reminder.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")
+                                    </span>
+                                </div>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #1e293b; white-space: pre-wrap;">@reminder.Message</p>
+                            </div>
+                            <button type="button" onclick="openPatientReminderPopup(@reminder.Id, '@Html.Raw(reminder.ReminderType.Replace("'", "\\'"))', '@Html.Raw(reminder.Message?.Replace("'", "\\'").Replace("\r\n", "\\n").Replace("\n", "\\n"))', '@reminder.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")')" class="btn-reminder" style="padding: 6px 14px; font-size: 12px;">
+                                View Details
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <!-- PAGINATION BAR -->
+                <nav class="users-pagination" id="remindersPaginationNav" aria-label="Reminders pagination" style="margin-top: 14px; background: #ffffff; border: 1px solid #e5e8ec; border-radius: 10px; padding: 12px 18px;">
+                    <span id="remindersPageInfo" style="font-size: 13px; color: #64748b; font-weight: 500;">Showing 1–@Model.Count of @Model.Count</span>
+                    <div style="display: flex; align-items: center; gap: 6px;" id="remindersPageControls"></div>
+                </nav>
+            }
+            else
+            {
+                <div class="layout-card" style="padding: 32px 20px; text-align: center; color: #64748b;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">📬</div>
+                    <strong style="display: block; font-size: 14px; color: #1e293b; margin-bottom: 4px;">No reminders at this time</strong>
+                    <p style="margin: 0; font-size: 13px;">When the clinic staff sends you appointment updates or care reminders, they will appear here and in your notification bell.</p>
+                </div>
+            }
+        </div>
     </main>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const pageSize = 3;
+        let currentPage = 1;
+        const items = Array.from(document.querySelectorAll('#reminderCardsList .reminder-item-card'));
+        const totalItems = items.length;
+        const totalPages = Math.ceil(totalItems / pageSize) || 1;
+        const pageInfo = document.getElementById('remindersPageInfo');
+        const pageControls = document.getElementById('remindersPageControls');
+
+        if (!items.length) return;
+
+        function showPage(page) {
+            currentPage = Math.max(1, Math.min(page, totalPages));
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+
+            items.forEach((item, index) => {
+                item.style.display = (index >= start && index < end) ? 'flex' : 'none';
+            });
+
+            const currentShowingEnd = Math.min(end, totalItems);
+            const currentShowingStart = totalItems === 0 ? 0 : start + 1;
+            if (pageInfo) {
+                pageInfo.textContent = `Showing ${currentShowingStart}–${currentShowingEnd} of ${totalItems} reminder${totalItems === 1 ? '' : 's'}`;
+            }
+
+            renderControls();
+        }
+
+        function renderControls() {
+            if (!pageControls) return;
+            pageControls.innerHTML = '';
+
+            // Previous Button
+            const prevBtn = document.createElement('a');
+            prevBtn.href = 'javascript:void(0)';
+            prevBtn.className = `page-nav ${currentPage === 1 ? 'disabled' : ''}`;
+            prevBtn.setAttribute('aria-label', 'Previous page');
+            prevBtn.innerHTML = '‹';
+            prevBtn.onclick = (e) => {
+                e.preventDefault();
+                if (currentPage > 1) showPage(currentPage - 1);
+            };
+            pageControls.appendChild(prevBtn);
+
+            // Page Number Buttons
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('a');
+                btn.href = 'javascript:void(0)';
+                btn.className = `page-button ${i === currentPage ? 'current' : ''}`;
+                btn.textContent = i;
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    showPage(i);
+                };
+                pageControls.appendChild(btn);
+            }
+
+            // Next Button
+            const nextBtn = document.createElement('a');
+            nextBtn.href = 'javascript:void(0)';
+            nextBtn.className = `page-nav ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextBtn.setAttribute('aria-label', 'Next page');
+            nextBtn.innerHTML = '›';
+            nextBtn.onclick = (e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) showPage(currentPage + 1);
+            };
+            pageControls.appendChild(nextBtn);
+        }
+
+        showPage(1);
+    });
+</script>

@@ -103,7 +103,7 @@ namespace DentalSync.Controllers
                     DateTime = l.DateTime,
                     User = l.User,
                     Event = (l.Action == "Failed Login") ? "Login" : l.Action,
-                    Status = (l.Action == "Failed Login") ? "Failed" : "Success",
+                    Status = (l.Action == "Failed Login" || l.Action == "Account Locked" || l.Action.Contains("Failed") || l.Action.Contains("Locked")) ? "Failed" : "Success",
                     IpAddress = l.IpAddress
                 })
                 .ToListAsync();

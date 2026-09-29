@@ -63,7 +63,7 @@ namespace DentalSync.Services
                 long amountInCentavos = Convert.ToInt64(amountPhp * 100);
 
                 var methodTypes = string.IsNullOrWhiteSpace(paymentMethod)
-                    ? new[] { "card", "gcash", "paymaya" }
+                    ? new[] { "card" }
                     : new[] { paymentMethod.ToLower() };
 
                 var requestBody = new

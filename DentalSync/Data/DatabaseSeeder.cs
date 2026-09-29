@@ -52,7 +52,7 @@ namespace DentalSync.Data
                     UserName       = superadminEmail,
                     Email          = superadminEmail,
                     EmailConfirmed = true,
-                    LockoutEnabled = false
+                    LockoutEnabled = true
                 };
 
                 var result = await userManager.CreateAsync(superadminUser, superadminPassword);
@@ -70,9 +70,11 @@ namespace DentalSync.Data
             else
             {
                 superadminUser.EmailConfirmed = true;
-                superadminUser.LockoutEnd = null;
-                superadminUser.LockoutEnabled = false;
-                await userManager.UpdateAsync(superadminUser);
+                if (!superadminUser.LockoutEnabled)
+                {
+                    superadminUser.LockoutEnabled = true;
+                    await userManager.UpdateAsync(superadminUser);
+                }
 
                 if (!await userManager.IsInRoleAsync(superadminUser, "Superadmin"))
                 {
@@ -87,6 +89,14 @@ namespace DentalSync.Data
                 {
                     logger.LogInformation("Superadmin password successfully updated.");
                 }
+            }
+
+            // Enforce lockout enabled for all user accounts
+            var usersWithoutLockout = await userManager.Users.Where(u => !u.LockoutEnabled).ToListAsync();
+            foreach (var u in usersWithoutLockout)
+            {
+                u.LockoutEnabled = true;
+                await userManager.UpdateAsync(u);
             }
 
 
@@ -154,7 +164,7 @@ DentalSync grants your clinic a non-exclusive, non-transferable subscription lic
 
 4. BILLING, PAYMENTS & RENEWAL
 - Subscription fees are billed in advance based on your selected billing cycle (Monthly or Annual).
-- Automated payments are processed securely via PayMongo (GCash, Credit/Debit Card, Maya).
+- Automated payments are processed securely via PayMongo (Credit/Debit Card).
 - Subscriptions auto-renew unless cancelled prior to the next billing date. Refunds are provided in accordance with applicable consumer rights.
 
 5. SYSTEM AVAILABILITY & SUPPORT

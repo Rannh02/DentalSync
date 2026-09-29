@@ -11,6 +11,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<DentalSync.Services.AuditService>();
 builder.Services.AddScoped<DentalSync.Services.InventoryDeductionService>();
 builder.Services.AddScoped<DentalSync.Services.IDentistAvailabilityService, DentalSync.Services.DentistAvailabilityService>();
+builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<DentalSync.Services.IPayMongoService, DentalSync.Services.PayMongoService>();
 
 
@@ -43,6 +44,11 @@ builder.Services.AddIdentity<Users, IdentityRole>(options =>
     options.SignIn.RequireConfirmedAccount = false;
     options.SignIn.RequireConfirmedEmail = false;
     options.SignIn.RequireConfirmedPhoneNumber = false;
+
+    // Account Lockout: Lock for 5 minutes after 3 failed attempts
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 3;
+    options.Lockout.AllowedForNewUsers = true;
 
 })
     .AddEntityFrameworkStores<AppDbContext>()

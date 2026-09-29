@@ -213,6 +213,40 @@ namespace DentalSync.Controllers
             return View("~/Views/Receptionists/Register_Patients.cshtml", model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendPatientReminder(int patientId, string reminderType, string message)
+        {
+            if (patientId <= 0 || string.IsNullOrWhiteSpace(message))
+            {
+                return Json(new { success = false, message = "Patient and reminder message are required." });
+            }
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId);
+            if (patient == null)
+            {
+                return Json(new { success = false, message = "Patient not found." });
+            }
+
+            var reminder = new Reminder
+            {
+                PatientId = patientId,
+                ReminderType = string.IsNullOrWhiteSpace(reminderType) ? "General Reminder" : reminderType.Trim(),
+                Message = message.Trim(),
+                ReminderDate = DateTime.Now,
+                SentVia = "In-App",
+                Status = "Unread",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Reminders.Add(reminder);
+            await _context.SaveChangesAsync();
+
+            await _audit.LogAsync("Send Reminder", "Receptionist Portal", $"Sent {reminder.ReminderType} to {patient.FirstName} {patient.LastName}");
+
+            return Json(new { success = true, message = $"Reminder successfully sent to {patient.FirstName} {patient.LastName}!" });
+        }
+
         public async Task<IActionResult> PatientRecords(string search = "", string statusFilter = "", int page = 1)
         {
             const int pageSize = 6;

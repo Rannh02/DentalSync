@@ -1,0 +1,61 @@
+name: Build and Deploy to MonsterASP
+on:
+  push:
+    branches:
+        - main
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish --configuration Release --output ./publish --runtime win-x86
+      - name: Check deployment configuration
+        shell: pwsh
+        env:
+          WN: ${{ secrets.WEBSITE_NAME }}
+          SCN: ${{ secrets.SERVER_COMPUTER_NAME }}
+          SU: ${{ secrets.SERVER_USERNAME }}
+          SP: ${{ secrets.SERVER_PASSWORD }}
+        run: |
+          Write-Host "WEBSITE_NAME length: $($env:WN.Length)"
+          Write-Host "SERVER_COMPUTER_NAME length: $($env:SCN.Length)"
+          Write-Host "SERVER_USERNAME length: $($env:SU.Length)"
+          Write-Host "SERVER_PASSWORD length: $($env:SP.Length)"
+          if ([string]::IsNullOrWhiteSpace($env:WN)) {
+            Write-Error "WEBSITE_NAME is EMPTY"
+          } else {
+            Write-Host "WEBSITE_NAME is configured"
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SCN)) {
+            Write-Error "SERVER_COMPUTER_NAME is EMPTY"
+          } else {
+            Write-Host "SERVER_COMPUTER_NAME is configured"
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SU)) {
+            Write-Error "SERVER_USERNAME is EMPTY"
+          } else {
+            Write-Host "SERVER_USERNAME is configured"
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SP)) {
+            Write-Error "SERVER_PASSWORD is EMPTY"
+          } else {
+            Write-Host "SERVER_PASSWORD is configured"
+          }
+      - name: Deploy to MonsterASP
+        uses: rasmusbuchholdt/simply-web-deploy@2.1.0
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          target-delete: true 

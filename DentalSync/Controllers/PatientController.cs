@@ -25,7 +25,20 @@ namespace DentalSync.Controllers
         public async Task<IActionResult> Dashboard()
         {
             await SetUserNameViewBagAsync();
-            return View("~/Views/Patients/Dashboard.cshtml");
+            var user = await _userManager.GetUserAsync(User);
+            var patient = user != null ? await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id) : null;
+
+            var reminders = new List<Reminder>();
+            if (patient != null)
+            {
+                reminders = await _context.Reminders
+                    .Where(r => r.PatientId == patient.Id)
+                    .OrderByDescending(r => r.CreatedAt)
+                    .ToListAsync();
+            }
+
+            ViewBag.RecentReminders = reminders;
+            return View("~/Views/Patients/Dashboard.cshtml", reminders);
         }
 
         public async Task<IActionResult> ManageProfile()
@@ -269,6 +282,84 @@ namespace DentalSync.Controllers
             ViewBag.Status = status;
 
             return View("~/Views/Patients/ViewTreatmentTransaction.cshtml", appointmentsList);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetNotifications()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { count = 0, notifications = new object[0] });
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (patient == null) return Json(new { count = 0, notifications = new object[0] });
+
+            var rawReminders = await _context.Reminders
+                .Where(r => r.PatientId == patient.Id)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(15)
+                .ToListAsync();
+
+            var list = rawReminders.Select(r => new
+            {
+                id = r.Id,
+                type = r.ReminderType,
+                message = r.Message ?? "",
+                status = r.Status,
+                isUnread = string.Equals(r.Status, "Unread", StringComparison.OrdinalIgnoreCase) || string.Equals(r.Status, "Pending", StringComparison.OrdinalIgnoreCase),
+                dateFormatted = r.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt"),
+                timeAgo = GetTimeAgo(r.CreatedAt)
+            }).ToList();
+
+            var unreadCount = list.Count(r => r.isUnread);
+
+            return Json(new { count = unreadCount, notifications = list });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkReminderRead(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var patient = user != null ? await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id) : null;
+            if (patient == null) return Json(new { success = false });
+
+            var reminder = await _context.Reminders.FirstOrDefaultAsync(r => r.Id == id && r.PatientId == patient.Id);
+            if (reminder != null)
+            {
+                reminder.Status = "Read";
+                await _context.SaveChangesAsync();
+            }
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllRemindersRead()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var patient = user != null ? await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id) : null;
+            if (patient == null) return Json(new { success = false });
+
+            var unread = await _context.Reminders
+                .Where(r => r.PatientId == patient.Id && (r.Status == "Unread" || r.Status == "Pending"))
+                .ToListAsync();
+
+            foreach (var r in unread)
+            {
+                r.Status = "Read";
+            }
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        private static string GetTimeAgo(DateTime utcDate)
+        {
+            var span = DateTime.UtcNow - utcDate;
+            if (span.TotalMinutes < 1) return "Just now";
+            if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+            if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+            if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
+            return utcDate.ToLocalTime().ToString("MMM dd, yyyy");
         }
 
         private async Task SetUserNameViewBagAsync()

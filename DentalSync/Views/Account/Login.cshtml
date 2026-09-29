@@ -1,4 +1,5 @@
 @using DentalSync.ViewModels;
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @model LoginViewModel;
 
 @{
@@ -49,6 +50,11 @@
                 </label>
             </div>
 
+            <!-- GOOGLE RECAPTCHA -->
+            <div class="mb-3 d-flex justify-content-center">
+                <div class="g-recaptcha" data-sitekey="@Configuration["ReCaptcha:SiteKey"]"></div>
+            </div>
+
             <button type="submit" class="account-btn-primary">Sign In</button>
 
             
@@ -57,6 +63,7 @@
 </div>
 
 @section Scripts {
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
     }

@@ -101,7 +101,13 @@
                         <div class="form-group-row">
                             <div class="form-group">
                                 <label for="adminPhone">Contact / Mobile Number *</label>
-                                <input type="tel" id="adminPhone" class="form-input" placeholder="0917 123 4567" required />
+                                <div class="phone-input-wrapper">
+                                    <span class="phone-prefix-badge">
+                                        <span class="flag-icon">🇵🇭</span> +63
+                                    </span>
+                                    <input type="tel" id="adminPhone" class="form-input phone-number-input" placeholder="917 123 4567" maxlength="12" required autocomplete="tel" />
+                                </div>
+                                <span class="phone-hint">Enter 10-digit mobile number starting with 9 (e.g. 995 886 5391)</span>
                             </div>
                             <div class="form-group">
                                 <label for="adminEmail">Email Address (Login Username) *</label>
@@ -138,31 +144,15 @@
                 <!-- STEP 2: PAYMENT METHOD -->
                 <div class="checkout-card" id="step-content-2" style="display: none;">
                     <h2 class="card-title">Choose Payment Option</h2>
-                    <p class="card-subtitle">Select your payment method. You will be redirected to PayMongo's secure checkout to complete your transaction.</p>
+                    <p class="card-subtitle">Complete your transaction securely with Credit or Debit Card processing.</p>
 
-                    <!-- METHOD SELECTOR OPTIONS (GCash, Credit/Debit Card, Maya) -->
-                    <div class="payment-methods">
-                        <div class="payment-method-card selected" id="method-gcash" onclick="selectPaymentMethod('gcash')">
-                            <div class="payment-icon">📱</div>
-                            <div class="payment-info">
-                                <span class="payment-title">GCash E-Wallet</span>
-                                <span class="payment-sub">Instant PH mobile payment</span>
-                            </div>
-                        </div>
-
-                        <div class="payment-method-card" id="method-card" onclick="selectPaymentMethod('card')">
+                    <!-- METHOD SELECTOR OPTIONS (Credit / Debit Card) -->
+                    <div class="payment-methods" style="grid-template-columns: 1fr;">
+                        <div class="payment-method-card selected" id="method-card" onclick="selectPaymentMethod('card')">
                             <div class="payment-icon">💳</div>
                             <div class="payment-info">
                                 <span class="payment-title">Credit / Debit Card</span>
-                                <span class="payment-sub">Visa, Mastercard, JCB</span>
-                            </div>
-                        </div>
-
-                        <div class="payment-method-card" id="method-paymaya" onclick="selectPaymentMethod('paymaya')">
-                            <div class="payment-icon">💚</div>
-                            <div class="payment-info">
-                                <span class="payment-title">Maya E-Wallet</span>
-                                <span class="payment-sub">Instant Maya mobile payment</span>
+                                <span class="payment-sub">Visa, Mastercard, JCB, American Express</span>
                             </div>
                         </div>
                     </div>
@@ -174,11 +164,48 @@
                         <!-- Hidden fields populated from Step 1 -->
                         <input type="hidden" id="h-fullName"      name="fullName"  />
                         <input type="hidden" id="h-email"         name="email"     />
+                        <input type="hidden" id="h-phone"         name="phone"     />
                         <input type="hidden" id="h-password"      name="password"  />
-                        <input type="hidden" id="h-paymentMethod" name="paymentMethod" value="gcash" />
+                        <input type="hidden" id="h-paymentMethod" name="paymentMethod" value="card" />
                         <input type="hidden" name="plan"          value="@plan"    />
                         <input type="hidden" name="billing"       value="@billing" />
                         <input type="hidden" name="price"         value="@priceStr" />
+
+                        <!-- CARD INFORMATION FIELDS -->
+                        <div id="card-details-section" class="card-details-box">
+                            <div style="font-weight: 700; font-size: 14px; color: var(--dark-blue); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Cardholder &amp; Payment Details</span>
+                                <span style="font-weight: 500; font-size: 12px; color: #64748b;">🔒 256-bit SSL Encrypted</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cardholderName">Cardholder Name *</label>
+                                <input type="text" id="cardholderName" name="cardholderName" class="form-input" placeholder="e.g. Maria Santos" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number *</label>
+                                <div class="card-input-wrapper">
+                                    <input type="text" id="cardNumber" name="cardNumber" class="form-input" placeholder="1234 5678 9101 1121" maxlength="19" required autocomplete="cc-number" />
+                                    <div class="card-brand-badges">
+                                        <span class="card-brand-badge visa">VISA</span>
+                                        <span class="card-brand-badge mc">MC</span>
+                                        <span class="card-brand-badge jcb">JCB</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group-row">
+                                <div class="form-group">
+                                    <label for="cardExpiry">Expiration Date *</label>
+                                    <input type="text" id="cardExpiry" name="cardExpiry" class="form-input" placeholder="MM / YY" maxlength="7" required autocomplete="cc-exp" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="cardCvc">CVC / CVV *</label>
+                                    <input type="password" id="cardCvc" name="cardCvc" class="form-input" placeholder="123" maxlength="4" required autocomplete="cc-csc" />
+                                </div>
+                            </div>
+                        </div>
 
                         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 20px 0; font-size: 13.5px; color: #166534; display: flex; align-items: center; justify-content: space-between;">
                             <div style="display:flex; align-items:center; gap:12px;">
@@ -196,10 +223,10 @@
 
                         <div class="form-actions-inline">
                             <button type="button" onclick="goToStep(1)" class="btn-checkout-secondary">
-                                ← Back to Account Info
+                                Back
                             </button>
                             <button type="submit" class="btn-checkout-primary" style="margin-top:0;">
-                                Pay via PayMongo (₱@price.ToString("N0"))
+                                Pay via Card (₱@price.ToString("N0"))
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M5 12h14M12 5l7 7-7 7"/>
                                 </svg>
@@ -328,6 +355,38 @@
             }
         }
 
+        // PH PHONE INPUT FORMATTING & LIMITING (STARTS WITH 9, MAX 10 DIGITS AFTER +63)
+        const adminPhoneInput = document.getElementById('adminPhone');
+        if (adminPhoneInput) {
+            adminPhoneInput.addEventListener('input', function (e) {
+                let digits = e.target.value.replace(/\D/g, '');
+                
+                // Strip 63 if user typed it
+                if (digits.startsWith('63')) {
+                    digits = digits.substring(2);
+                }
+
+                // Strip leading 0 since +63 badge is present
+                while (digits.startsWith('0')) {
+                    digits = digits.substring(1);
+                }
+
+                // Limit to 10 digits max (9XX XXX XXXX)
+                if (digits.length > 10) {
+                    digits = digits.substring(0, 10);
+                }
+
+                // Format as 9XX XXX XXXX
+                let formatted = digits;
+                if (digits.length > 6) {
+                    formatted = digits.substring(0, 3) + ' ' + digits.substring(3, 6) + ' ' + digits.substring(6);
+                } else if (digits.length > 3) {
+                    formatted = digits.substring(0, 3) + ' ' + digits.substring(3);
+                }
+                e.target.value = formatted;
+            });
+        }
+
         function handleStep1Submit(e) {
             e.preventDefault();
 
@@ -338,15 +397,29 @@
             const confirmPwd = document.getElementById('adminConfirmPassword').value;
             const email      = document.getElementById('adminEmail').value.trim();
 
+            const phoneInput = document.getElementById('adminPhone');
+            let phoneDigits  = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+            if (phoneDigits.startsWith('63')) phoneDigits = phoneDigits.substring(2);
+            while (phoneDigits.startsWith('0')) phoneDigits = phoneDigits.substring(1);
+
+            if (phoneDigits.length !== 10 || !phoneDigits.startsWith('9')) {
+                alert('Please enter a valid 10-digit mobile number starting with 9 (e.g. 995 886 5391).');
+                if (phoneInput) phoneInput.focus();
+                return;
+            }
+
             if (pwd !== confirmPwd) {
                 alert('Passwords do not match. Please re-check your password.');
                 return;
             }
 
+            const formattedPhone = '+63' + phoneDigits;
+
             // Build full name and copy to hidden fields used by the real POST form
             const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ');
             document.getElementById('h-fullName').value = fullName;
             document.getElementById('h-email').value    = email;
+            document.getElementById('h-phone').value    = formattedPhone;
             document.getElementById('h-password').value = pwd;
 
             // Advance step indicator to Payment & Setup and show Terms & Conditions modal
@@ -393,13 +466,44 @@
             const hiddenField = document.getElementById('h-paymentMethod');
             if (hiddenField) hiddenField.value = method;
 
-            const gcashPill = document.getElementById('method-gcash');
             const cardPill = document.getElementById('method-card');
-            const mayaPill = document.getElementById('method-paymaya');
-
-            if (gcashPill) gcashPill.className = (method === 'gcash') ? 'payment-method-card selected' : 'payment-method-card';
             if (cardPill) cardPill.className = (method === 'card') ? 'payment-method-card selected' : 'payment-method-card';
-            if (mayaPill) mayaPill.className = (method === 'paymaya') ? 'payment-method-card selected' : 'payment-method-card';
+
+            const cardSection = document.getElementById('card-details-section');
+            if (cardSection) {
+                cardSection.style.display = (method === 'card') ? 'block' : 'none';
+            }
+        }
+
+        // CARD INPUT AUTO-FORMATTING HELPERS
+        const cardNumberInput = document.getElementById('cardNumber');
+        if (cardNumberInput) {
+            cardNumberInput.addEventListener('input', function (e) {
+                let val = e.target.value.replace(/\D/g, '');
+                if (val.length > 16) val = val.substring(0, 16);
+                let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+                e.target.value = formatted;
+            });
+        }
+
+        const cardExpiryInput = document.getElementById('cardExpiry');
+        if (cardExpiryInput) {
+            cardExpiryInput.addEventListener('input', function (e) {
+                let val = e.target.value.replace(/\D/g, '');
+                if (val.length > 4) val = val.substring(0, 4);
+                if (val.length >= 3) {
+                    e.target.value = val.substring(0, 2) + ' / ' + val.substring(2);
+                } else {
+                    e.target.value = val;
+                }
+            });
+        }
+
+        const cardCvcInput = document.getElementById('cardCvc');
+        if (cardCvcInput) {
+            cardCvcInput.addEventListener('input', function (e) {
+                e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+            });
         }
 
         // The payment form now submits directly to the server — no JS override needed.

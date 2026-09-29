@@ -364,3 +364,29 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# .NET build output
+bin/
+obj/
+
+#local .NET EF tools
+.dotnet/
+
+#Node / Tailwind
+node_modules/
+
+#IDE / editor
+.vs/
+.vscode/
+*.user
+*.suo
+
+#OS
+Thumbs.db
+.DS_Store
+
+appsettings.json
+appsettings.*.json
+*.publishsettings
+*.PublishSettings
+
