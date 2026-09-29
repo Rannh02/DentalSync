@@ -29,12 +29,12 @@ jobs:
         run: dotnet publish DentalSync/DentalSync.csproj --configuration Release --output ./publish
 
       - name: FTP Deploy to MonsterASP
-        uses: SamKirsch/ftp-deploy-action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: site94771.siteasp.net
           username: site94771
-          password: ${{ secrets.FTP_PASSWORD || secrets.SERVER_PASSWORD || '4c?D!Et3i@6M' }}
+          password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftp
           local-dir: ./publish/
-          server-dir: /
+          server-dir: /wwwroot/
